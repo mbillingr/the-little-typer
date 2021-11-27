@@ -1,8 +1,17 @@
 import pytest
 
 from pypie.atom import Atom
+from pypie.context import Context
+from pypie.core import (
+    are_same,
+    are_same_type,
+    is_type,
+    typecheck,
+    NotATypeError,
+    TypeMismatch,
+)
+from pypie.nat import add1, Nat, zero
 from pypie.pair import car, cdr, cons, Pair
-from pypie.core import typecheck, is_type, are_same, are_same_type, NotATypeError
 
 
 # tests are numbered according to the frames in the book
@@ -76,4 +85,48 @@ def test_054_pair_type_only_accepts_types():
 def test_056_only_the_normal_form_matters():
     assert are_same_type(
         Pair(car(cons(Atom, "olive")), cdr(cons("oil", Atom))), Pair(Atom, Atom)
+    )
+
+
+def test_063_one_is_a_nat():
+    assert typecheck(1, Nat)
+
+
+def test_064_a_big_positive_integer_is_a_nat():
+    assert typecheck(1729, Nat)
+
+
+def test_065_minus_one_is_not_a_nat():
+    with pytest.raises(TypeMismatch):
+        typecheck(-1, Nat)
+
+
+def test_068_0_is_a_nat():
+    assert typecheck(0, Nat)
+
+
+def test_072_different_nats_are_not_the_same():
+    assert not are_same(Nat)(0, 26)
+
+
+def test_076_zero_is_a_nat():
+    assert typecheck(zero, Nat)
+
+
+def test_077_identifiers_must_be_claimed_before_definition():
+    ctx = Context()
+    with pytest.raises(AssertionError):
+        ctx.define("one", add1(zero))
+
+
+def test_079_identifiers_can_be_defined_after_claiming():
+    ctx = Context()
+    ctx.claim("one", Nat)
+    ctx.define("one", add1(zero))
+    typecheck(ctx.one, Nat)
+
+
+def test_120_nested_pair_types():
+    assert typecheck(
+        cons("basil", cons("thyme", "oregano")), Pair(Atom, Pair(Atom, Atom))
     )
