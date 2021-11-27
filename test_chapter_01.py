@@ -1,9 +1,8 @@
 import pytest
 
-from pypie import Pair, NotATypeError, cons
 from pypie.atom import Atom
-from pypie.pair import car, cdr
-from pypie.core import typecheck, is_type, are_same, are_same_type
+from pypie.pair import car, cdr, cons, Pair
+from pypie.core import typecheck, is_type, are_same, are_same_type, NotATypeError
 
 
 # tests are numbered according to the frames in the book

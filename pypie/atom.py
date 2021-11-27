@@ -1,4 +1,4 @@
-from pypie import Type
+from pypie.core import Type
 from pypie.typevar import TypeVar
 
 

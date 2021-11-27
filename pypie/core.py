@@ -39,7 +39,7 @@ def assert_type(thing):
         raise NotATypeError(thing)
 
 
-def are_same(typ) -> bool:
+def are_same(typ) -> callable:
     """Create a function that compares if two objects are the same according to a type"""
     assert_type(typ)
     return typ.compare

@@ -1,13 +1,13 @@
-from pypie import ParametricType, assert_type
+from pypie.core import ParametricType, assert_type
 from pypie.typevar import TypeVar
 
 
 class Pair(ParametricType):
-    def __init__(self, A, D):
-        assert_type(A)
-        assert_type(D)
-        self.A = A
-        self.D = D
+    def __init__(self, car_type, cdr_type):
+        assert_type(car_type)
+        assert_type(cdr_type)
+        self.A = car_type
+        self.D = cdr_type
 
     def check(self, obj):
         if isinstance(obj, TypeVar):
