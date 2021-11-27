@@ -24,20 +24,6 @@ class Π:
 
 
 
-@dataclass
-class Fun(Type):
-    Arg: Type
-    Ret: Type
-
-    def __str__(self):
-        return f"(-> {self.Arg} {self.Ret})"
-
-    def check(self, obj):
-        var = TypeVar(self.Arg)
-        res = obj(var)
-        return self.Ret.check(res)
-
-
 class Int(Type):
     @staticmethod
     def check(obj):

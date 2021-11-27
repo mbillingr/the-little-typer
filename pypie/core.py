@@ -14,10 +14,17 @@ class ParametricType:
     """Base class for parametric (compound) types"""
 
 
+def claim_define(typ, val):
+    """Return val (so it can be assigned to a name) if it is of the claimed type.
+    Otherwise, a TypeMismatch is raised."""
+    typecheck(val, typ)
+    return val
+
+
 def typecheck(obj, typ):
     """Check if obj is a typ.
     If the check succeeds, returns something truthy.
-    Otherwise, a TypeError is raised."""
+    Otherwise, a TypeMismatch is raised."""
     return typ.check(obj)
 
 

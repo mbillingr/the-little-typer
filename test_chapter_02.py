@@ -1,0 +1,55 @@
+import pytest
+
+from pypie.atom import Atom
+from pypie.context import Context
+from pypie.core import (
+    are_same,
+    are_same_type,
+    claim_define,
+    is_type,
+    typecheck,
+    NotATypeError,
+    TypeMismatch,
+)
+from pypie.fun import Fun
+from pypie.nat import add1, Nat, zero
+from pypie.pair import car, cdr, cons, Pair
+
+
+def test_015_functions_types():
+    assert typecheck(lambda x: cons(x, x), Fun(Atom, Pair(Atom, Atom)))
+
+
+def test_016_functions_types_can_be_computed():
+    assert are_same_type(
+        Fun(Atom, Pair(Atom, Atom)),
+        Fun(car(cons(Atom, "pepper")), Pair(cdr(cons("salt", Atom)), Atom)),
+    )
+
+
+def test_019_different_functions_with_same_body_are_the_same():
+    assert are_same(Fun(Nat, Pair(Nat, Nat)))(
+        lambda x: cons(x, x), lambda y: cons(y, y)
+    )
+
+
+def test_019_different_functions_with_same_body_are_the_same():
+    assert not are_same(Fun(Atom, Atom, Pair(Atom, Atom)))(
+        lambda a, d: cons(a, d), lambda d, a: cons(a, d)
+    )
+
+
+def test_initial_second_commandment_of_lambda():
+    """I interpret it as 'Two functions are the same if they behave the same'"""
+    F = Fun(Nat, Pair(Nat, Nat))
+
+    def f(x):
+        return cons(x, x)
+
+    assert are_same(F)(f, lambda y: f(y))
+
+
+def test_035_define_names():
+    vegetables = claim_define(Pair(Atom, Atom), cons("celery", "carrot"))
+
+    assert are_same(Pair(Atom, Atom))(vegetables, cons("celery", "carrot"))
