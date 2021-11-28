@@ -57,3 +57,12 @@ def are_same_type(a, b) -> bool:
     assert_type(a)
     assert_type(b)
     return a == b
+
+
+class U(Type):
+    @staticmethod
+    def check(obj):
+        if is_type(obj):
+            return "ok"
+
+        raise TypeMismatch(f"not a Type: {obj}")

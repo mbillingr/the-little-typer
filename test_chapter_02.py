@@ -10,6 +10,7 @@ from pypie.core import (
     typecheck,
     NotATypeError,
     TypeMismatch,
+    U,
 )
 from pypie.fun import Fun
 from pypie.nat import add1, Nat, which_nat, zero
@@ -76,3 +77,7 @@ def test_046_which_nat_zero():
 
 def test_049_which_nat_zero():
     assert are_same(Atom)(which_nat(4, "naught", lambda _: "more"), "more")
+
+
+def test_075_we_can_cons_types():
+    assert typecheck(cons(Atom, Atom), Pair(U, U))

@@ -42,6 +42,8 @@ def evaluate(expr, env):
 
 def is_constructor(expr):
     match expr:
+        case "U": return True
+
         case "Atom": return True
         case ["quote", _]: return True
 
@@ -101,6 +103,8 @@ def is_a(expr, claim, env=None):
         expr = normalize(expr, env)
         claim = normalize(claim, env)
     match (expr, claim):
+        case (_, "U"):
+            return is_type(expr)
         case (["quote", str()], "Atom"):
             return True
         case (["lambda", [*args], body], ["->", *Args, Ret]):
@@ -251,3 +255,5 @@ assert is_the_same(parse("(-> (Pair Atom Atom) (Pair Atom Atom))"),
 
 assert normalize(parse("(which-Nat zero 'naught (lambda (n) 'more))"), global_env) == parse("'naught")
 assert normalize(parse("(which-Nat 4 'naught (lambda (n) 'more))"), global_env) == parse("'more")
+
+assert is_a(parse("(cons Atom Atom)"), parse("(Pair U U)"), global_env)
