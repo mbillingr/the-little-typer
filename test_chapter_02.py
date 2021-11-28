@@ -12,7 +12,7 @@ from pypie.core import (
     TypeMismatch,
 )
 from pypie.fun import Fun
-from pypie.nat import add1, Nat, zero
+from pypie.nat import add1, Nat, which_nat, zero
 from pypie.pair import car, cdr, cons, Pair
 from pypie.typevar import TypeVar
 
@@ -68,3 +68,11 @@ def test_038_consing_the_parts_of_any_pair_yields_the_same_pair():
     t = Pair(Atom, Atom)
     p = TypeVar(t)
     assert are_same(t)(p, cons(car(p), cdr(p)))
+
+
+def test_046_which_nat_zero():
+    assert are_same(Atom)(which_nat(zero, "naught", lambda _: "more"), "naught")
+
+
+def test_049_which_nat_zero():
+    assert are_same(Atom)(which_nat(4, "naught", lambda _: "more"), "more")

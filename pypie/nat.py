@@ -28,3 +28,10 @@ class Nat(Type):
 def add1(n):
     Nat.check(n)
     return n + 1
+
+
+def which_nat(target, base, step):
+    if target == zero:
+        return base
+    else:
+        return step(target - 1)

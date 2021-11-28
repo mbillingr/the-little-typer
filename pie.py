@@ -17,6 +17,13 @@ def evaluate(expr, env):
         case ["+", a, "zero"]: return evaluate(a, env)
         case ["+", "zero", b]: return evaluate(b, env)
         case ["+", ["add-1", a], b]: return evaluate(["+", a, ["add-1", b]], env)
+        case ["which-Nat", target, base, step]:
+            target = evaluate(target, env)
+            assert is_nat(target)
+            if target == 0:
+                return base
+            else:
+                return evaluate([step, target - 1], env)
         case [func, *args]:
             func = evaluate(func, env)
             args = [evaluate(a, env) for a in args]
@@ -27,6 +34,8 @@ def evaluate(expr, env):
             return name
         case str() as name:
             return env[name][1]
+        case int() as x:
+            return x
         case _:
             raise NotImplementedError(f"evaluate {expr}")
 
@@ -42,7 +51,7 @@ def is_constructor(expr):
         case ["Pair", _, _]: return True
         case ["cons", _, _]: return True
 
-        case "zero": return True
+        case "Nat": return True
         case ["add-1", _]: return True
 
         case _: return False
@@ -51,6 +60,7 @@ def is_constructor(expr):
 def is_type(expr):
     match expr:
         case "Atom": return True
+        case "Nat": return True
         case ["->", *A, R]: return is_type(R) and all(is_type(a) for a in A)
         case ["Pair", A, D]: return is_type(A) and is_type(D)
         case _: return False
@@ -145,6 +155,10 @@ def stringify(expr):
             return str(expr)
 
 
+def is_nat(obj):
+    return isinstance(obj, int) and obj >= 0
+
+
 _n_vars = 0
 
 @contextmanager
@@ -178,7 +192,10 @@ def parse(inp):
         case s if s.startswith("'"):
             return ["quote", s[1:]]
         case s:
-            return s
+            try:
+                return int(s)
+            except ValueError:
+                return s
 
 
 def cons(a, d):
@@ -201,7 +218,9 @@ def add1(n):
     return ["add-1", n]
 
 
-global_env = {}
+global_env = {
+    "zero": ("Nat", 0)
+}
 
 
 print(stringify(evaluate(parse("((lambda (flavor) (cons flavor 'lentils)) 'garlic)"), global_env)))
@@ -229,3 +248,6 @@ assert is_the_same(parse("(-> (Pair Atom Atom) (Pair Atom Atom))"),
                    evaluate(parse("(lambda (p) p)"), global_env),
                    evaluate(parse("(lambda (p) (cons (car p) (cdr p)))"), global_env),
                    global_env)
+
+assert normalize(parse("(which-Nat zero 'naught (lambda (n) 'more))"), global_env) == parse("'naught")
+assert normalize(parse("(which-Nat 4 'naught (lambda (n) 'more))"), global_env) == parse("'more")
