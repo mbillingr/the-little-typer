@@ -14,6 +14,7 @@ from pypie.core import (
 from pypie.fun import Fun
 from pypie.nat import add1, Nat, zero
 from pypie.pair import car, cdr, cons, Pair
+from pypie.typevar import TypeVar
 
 
 def test_015_functions_types():
@@ -53,3 +54,17 @@ def test_035_define_names():
     vegetables = claim_define(Pair(Atom, Atom), cons("celery", "carrot"))
 
     assert are_same(Pair(Atom, Atom))(vegetables, cons("celery", "carrot"))
+
+
+def test_037_consing_the_parts_of_a_pair_yields_the_same_pair():
+    vegetables = claim_define(Pair(Atom, Atom), cons("celery", "carrot"))
+
+    assert are_same(Pair(Atom, Atom))(
+        vegetables, cons(car(vegetables), cdr(vegetables))
+    )
+
+
+def test_038_consing_the_parts_of_any_pair_yields_the_same_pair():
+    t = Pair(Atom, Atom)
+    p = TypeVar(t)
+    assert are_same(t)(p, cons(car(p), cdr(p)))

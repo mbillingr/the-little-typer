@@ -23,6 +23,8 @@ def evaluate(expr, env):
             assert func[0] == "lambda"
             mapping = {p: a for p, a in zip(func[1], args)}
             return substitute(func[2], mapping)
+        case str() as name if name.startswith('_'):
+            return name
         case str() as name:
             return env[name][1]
         case _:
@@ -34,6 +36,7 @@ def is_constructor(expr):
         case "Atom": return True
         case ["quote", _]: return True
 
+        case ["->", _, *_]: return True
         case ["lambda", _, _]: return True
 
         case ["Pair", _, _]: return True
@@ -48,6 +51,7 @@ def is_constructor(expr):
 def is_type(expr):
     match expr:
         case "Atom": return True
+        case ["->", *A, R]: return is_type(R) and all(is_type(a) for a in A)
         case ["Pair", A, D]: return is_type(A) and is_type(D)
         case _: return False
 
@@ -57,8 +61,9 @@ def normalize(expr, env):
         case ["lambda", params, body]:
             with scope():
                 mapping = {p: neutral() for p in params}
-                body = substitute(normalize(body, env), mapping)
+                body = normalize(substitute(body, mapping), env)
             return ["lambda", list(mapping.values()), body]
+        case ["cons", ["car", p1], ["cdr", p2]] if p1 is p2: return p1
         case ["cons", a, d]: return ["cons", normalize(a, env), normalize(d, env)]
         case ["add-1", n]: return ["add-1", normalize(n, env)]
         case value: return value
@@ -88,8 +93,12 @@ def is_a(expr, claim, env=None):
     match (expr, claim):
         case (["quote", str()], "Atom"):
             return True
+        case (["lambda", [*args], body], ["->", *Args, Ret]):
+            return is_a(body, Ret) and all(is_a(a, A) for a, A in zip(args, Args))
         case (["cons", a, d], ["Pair", A, D]):
             return is_a(a, A) and is_a(d, D)
+        case (str(), _) if expr.startswith('_'):
+            return True  # this is not quite correct... a variable can't be different types at different times
         case _:
             return False
 
@@ -214,4 +223,9 @@ print(stringify(evaluate(parse("vegetables"), global_env)))
 assert is_the_same(parse("(Pair Atom Atom)"),
                    evaluate(parse("vegetables"), global_env),
                    evaluate(parse("(cons (car vegetables) (cdr vegetables))"), global_env),
+                   global_env)
+
+assert is_the_same(parse("(-> (Pair Atom Atom) (Pair Atom Atom))"),
+                   evaluate(parse("(lambda (p) p)"), global_env),
+                   evaluate(parse("(lambda (p) (cons (car p) (cdr p)))"), global_env),
                    global_env)
