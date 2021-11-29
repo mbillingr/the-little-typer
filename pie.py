@@ -8,10 +8,14 @@ def evaluate(expr, env):
             return expr
         case ["car", p]:
             p = evaluate(p, env)
+            if isinstance(p, str):
+                return expr
             assert p[0] == "cons"
             return p[1]
         case ["cdr", p]:
             p = evaluate(p, env)
+            if isinstance(p, str):
+                return expr
             assert p[0] == "cons"
             return p[2]
         case ["+", a, "zero"]: return evaluate(a, env)
@@ -27,9 +31,11 @@ def evaluate(expr, env):
         case [func, *args]:
             func = evaluate(func, env)
             args = [evaluate(a, env) for a in args]
+            if isinstance(func, str):
+                return [func, *args]
             assert func[0] == "lambda"
             mapping = {p: a for p, a in zip(func[1], args)}
-            return substitute(func[2], mapping)
+            return evaluate(substitute(func[2], mapping), env)
         case str() as name if name.startswith('_'):
             return name
         case str() as name:
@@ -59,22 +65,29 @@ def is_constructor(expr):
         case _: return False
 
 
-def is_type(expr):
+def is_type(expr, env=None):
+    if env is not None:
+        expr = normalize(expr, env)
     match expr:
+        case "U": return True
         case "Atom": return True
         case "Nat": return True
-        case ["->", *A, R]: return is_type(R) and all(is_type(a) for a in A)
-        case ["Pair", A, D]: return is_type(A) and is_type(D)
+        case ["->", *A, R]: return is_type(R, env) and all(is_type(a, env) for a in A)
+        case ["Pair", A, D]: return is_type(A, env) and is_type(D, env)
         case _: return False
 
 
 def normalize(expr, env):
-    match evaluate(expr, env):
+    value = evaluate(expr, env)
+    match value:
+        case ["->", *T]:
+            return ["->", *[normalize(t, env) for t in T]]
         case ["lambda", params, body]:
             with scope():
                 mapping = {p: neutral() for p in params}
                 body = normalize(substitute(body, mapping), env)
             return ["lambda", list(mapping.values()), body]
+        case ["Pair", A, D]: return ["Pair", normalize(A, env), normalize(D, env)]
         case ["cons", ["car", p1], ["cdr", p2]] if p1 is p2: return p1
         case ["cons", a, d]: return ["cons", normalize(a, env), normalize(d, env)]
         case ["add-1", n]: return ["add-1", normalize(n, env)]
@@ -93,8 +106,8 @@ def define(name, expr, env):
     claimed_type, expr_place = env[name]
     assert claimed_type is not None
     assert expr_place is None
-    expr = normalize(expr, env)
-    assert_is_a(expr, claimed_type)
+    expr = evaluate(expr, env)
+    assert_is_a(expr, claimed_type, env)
     env[name] = (claimed_type, expr)
 
 
@@ -104,13 +117,28 @@ def is_a(expr, claim, env=None):
         claim = normalize(claim, env)
     match (expr, claim):
         case (_, "U"):
-            return is_type(expr)
+            return is_type(expr, env)
         case (["quote", str()], "Atom"):
             return True
-        case (["lambda", [*args], body], ["->", *Args, Ret]):
-            return is_a(body, Ret) and all(is_a(a, A) for a, A in zip(args, Args))
+        case (["lambda", [*params], body], ["->", *Params, Ret]):
+            return is_a(body, Ret, {a: (A, a) for a, A in zip(params, Params)})
         case (["cons", a, d], ["Pair", A, D]):
             return is_a(a, A) and is_a(d, D)
+        case (["car", p], _):
+            key, A, D = signature(p, env)
+            assert key == "Pair"
+            return A
+        case (["cdr", p], _):
+            key, A, D = signature(p, env)
+            assert key == "Pair"
+            return D
+        case ([func, *args], _):
+            key, *ptypes, rettype = signature(func, env)
+            assert key == "->"
+            assert len(args) == len(ptypes)
+            return rettype == claim and all(is_a(a, p, env) for a, p in zip(args, ptypes))
+        case (int(), Nat):
+            return expr >= 0
         case (str(), _) if expr.startswith('_'):
             return True  # this is not quite correct... a variable can't be different types at different times
         case _:
@@ -120,6 +148,16 @@ def is_a(expr, claim, env=None):
 def assert_is_a(expr, claim, env=None):
     if not is_a(expr, claim, env):
         raise TypeError(f"{expr} is not a {claim}")
+
+
+def signature(func, env):
+    match func:
+        case ["car", p]:
+            return signature(p)[1]
+        case str():
+            return signature(env[func][0], env)
+        case _:
+            return func
 
 
 def is_the_same(claim, a, b, env=None):
@@ -257,3 +295,15 @@ assert normalize(parse("(which-Nat zero 'naught (lambda (n) 'more))"), global_en
 assert normalize(parse("(which-Nat 4 'naught (lambda (n) 'more))"), global_env) == parse("'more")
 
 assert is_a(parse("(cons Atom Atom)"), parse("(Pair U U)"), global_env)
+
+claim("Pear", parse("U"), global_env)
+define("Pear", parse("(Pair Nat Nat)"), global_env)
+assert is_a(parse("(cons 3 5)"), parse("Pear"), global_env)
+
+claim('Pear-maker', parse("U"), global_env)
+define("Pear-maker", parse("(-> Nat Nat Pear)"), global_env)
+
+claim("elim-Pear", parse("(-> Pear Pear-maker Pear)"), global_env)
+define("elim-Pear", parse("(lambda (pear maker) (maker (car pear) (cdr pear)))"), global_env)
+
+assert is_the_same(parse("Pear"), parse("(elim-Pear (cons 3 17) (lambda (a d) (cons d a)))"), parse("(cons 17 3)"), global_env)

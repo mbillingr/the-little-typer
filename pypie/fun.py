@@ -29,3 +29,9 @@ class Fun(ParametricType):
         res_a = a(*variables)
         res_b = b(*variables)
         return self.Ret.compare(res_a, res_b)
+
+    def call_var(self, *args):
+        """A type variable of this type was called"""
+        for a, A in zip(args, self.Args):
+            A.check(a)
+        return TypeVar(self.Ret)

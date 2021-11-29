@@ -14,6 +14,9 @@ class TypeVar:
             self.attributes[attr] = value
             return value
 
+    def __call__(self, *args):
+        return self.typ.call_var(*args)
+
     def check(self, obj):
         if isinstance(obj, TypeVar):
             obj_type = obj.typ

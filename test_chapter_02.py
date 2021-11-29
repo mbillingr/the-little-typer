@@ -81,3 +81,18 @@ def test_049_which_nat_zero():
 
 def test_075_we_can_cons_types():
     assert typecheck(cons(Atom, Atom), Pair(U, U))
+
+
+def test_082_pears_are_pairs_of_nats():
+    Pear = claim_define(U, Pair(Nat, Nat))
+    assert typecheck(cons(3, 5), Pear)
+
+
+def test_095_elim_pear():
+    Pear = claim_define(U, Pair(Nat, Nat))
+    PearMaker = claim_define(U, Fun(Nat, Nat, Pear))
+    elim_pear = claim_define(
+        Fun(Pear, PearMaker, Pear), lambda pear, maker: maker(car(pear), cdr(pear))
+    )
+
+    assert are_same(Pear)(elim_pear(cons(3, 17), lambda a, d: cons(d, a)), cons(17, 3))
