@@ -21,11 +21,13 @@ def evaluate(expr, env):
         case ["+", a, "zero"]: return evaluate(a, env)
         case ["+", "zero", b]: return evaluate(b, env)
         case ["+", ["add-1", a], b]: return evaluate(["+", a, ["add-1", b]], env)
+        case ["+", a, b] if isinstance(a, int) and isinstance(b, int): return a + b
+        case ["+", _, _]: return expr
         case ["which-Nat", target, base, step]:
             target = evaluate(target, env)
             assert is_nat(target)
             if target == 0:
-                return base
+                return evaluate(base, env)
             else:
                 return evaluate([step, target - 1], env)
         case [func, *args]:
@@ -33,6 +35,9 @@ def evaluate(expr, env):
             args = [evaluate(a, env) for a in args]
             if isinstance(func, str):
                 return [func, *args]
+            if callable(func):
+                # primitive application
+                return func(*args)
             assert func[0] == "lambda"
             mapping = {p: a for p, a in zip(func[1], args)}
             return evaluate(substitute(func[2], mapping), env)
@@ -123,15 +128,17 @@ def is_a(expr, claim, env=None):
         case (["lambda", [*params], body], ["->", *Params, Ret]):
             return is_a(body, Ret, {a: (A, a) for a, A in zip(params, Params)})
         case (["cons", a, d], ["Pair", A, D]):
-            return is_a(a, A) and is_a(d, D)
+            return is_a(a, A, env) and is_a(d, D, env)
         case (["car", p], _):
             key, A, D = signature(p, env)
             assert key == "Pair"
-            return A
+            return A == claim
         case (["cdr", p], _):
             key, A, D = signature(p, env)
             assert key == "Pair"
-            return D
+            return D == claim
+        case (["+", a, b], _):
+            return is_a(a, "Nat", env) and is_a(b, "Nat", env) and claim == "Nat"
         case ([func, *args], _):
             key, *ptypes, rettype = signature(func, env)
             assert key == "->"
@@ -154,6 +161,8 @@ def signature(func, env):
     match func:
         case ["car", p]:
             return signature(p)[1]
+        case ["+", a, b]:
+            raise NotImplementedError()
         case str():
             return signature(env[func][0], env)
         case _:
@@ -177,7 +186,10 @@ def substitute(expr, mapping):
         case ["lambda", params, body]:
             mapping = mapping.copy()
             for p in params:
-                del mapping[p]
+                try:
+                    del mapping[p]
+                except KeyError:
+                    pass
             return ["lambda", params, substitute(body, mapping)]
         case [*items]:
             return list(substitute(x, mapping) for x in items)
@@ -261,7 +273,7 @@ def add1(n):
 
 
 global_env = {
-    "zero": ("Nat", 0)
+    "zero": ("Nat", 0),
 }
 
 
@@ -307,3 +319,13 @@ claim("elim-Pear", parse("(-> Pear Pear-maker Pear)"), global_env)
 define("elim-Pear", parse("(lambda (pear maker) (maker (car pear) (cdr pear)))"), global_env)
 
 assert is_the_same(parse("Pear"), parse("(elim-Pear (cons 3 17) (lambda (a d) (cons d a)))"), parse("(cons 17 3)"), global_env)
+
+claim("pearwise+", parse("(-> Pear Pear Pear)"), global_env)
+define("pearwise+", parse("(lambda (anjou bosc)"
+                          "  (elim-Pear anjou"
+                          "    (lambda (a1 d1)"
+                          "      (elim-Pear bosc"
+                          "        (lambda (a2 d2)"
+                          "          (cons (+ a1 a2) (+ d1 d2)))))))"), global_env)
+
+assert is_the_same(parse("Pear"), parse("(pearwise+ (cons 3 8) (cons 7 6))"), parse("(cons 10 14)"), global_env)

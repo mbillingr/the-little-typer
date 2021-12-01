@@ -24,6 +24,10 @@ class Nat(Type):
         cls.check(b)
         return a == b
 
+    @property
+    def minus1(self):
+        return Nat
+
 
 def add1(n):
     Nat.check(n)
@@ -35,3 +39,20 @@ def which_nat(target, base, step):
         return base
     else:
         return step(target - 1)
+
+
+def plus(a, b):
+    Nat.check(a)
+    Nat.check(b)
+    return _plus(a, b)
+
+
+def _plus(a, b):
+    if a == zero:
+        return b
+    if b == zero:
+        return a
+    if isinstance(a, TypeVar):
+        assert a.typ == Nat, f"not a nat {a}: {a.typ}"
+        return TypeVar(Nat)
+    return which_nat(b, a, lambda b_minus_one: _plus(add1(a), b_minus_one))

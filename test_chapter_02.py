@@ -13,7 +13,7 @@ from pypie.core import (
     U,
 )
 from pypie.fun import Fun
-from pypie.nat import add1, Nat, which_nat, zero
+from pypie.nat import add1, Nat, plus, which_nat, zero
 from pypie.pair import car, cdr, cons, Pair
 from pypie.typevar import TypeVar
 
@@ -96,3 +96,23 @@ def test_095_elim_pear():
     )
 
     assert are_same(Pear)(elim_pear(cons(3, 17), lambda a, d: cons(d, a)), cons(17, 3))
+
+
+def test_100_pairwise_plus():
+    Pear = claim_define(U, Pair(Nat, Nat))
+    PearMaker = claim_define(U, Fun(Nat, Nat, Pear))
+    elim_pear = claim_define(
+        Fun(Pear, PearMaker, Pear), lambda pear, maker: maker(car(pear), cdr(pear))
+    )
+
+    pearwise_add = claim_define(
+        Fun(Pear, Pear, Pear),
+        lambda anjou, bosc: elim_pear(
+            anjou,
+            lambda a1, d1: elim_pear(
+                bosc, lambda a2, d2: cons(plus(a1, a2), plus(d1, d2))
+            ),
+        ),
+    )
+
+    assert are_same(Pear)(pearwise_add(cons(3, 8), cons(7, 6)), cons(10, 14))
