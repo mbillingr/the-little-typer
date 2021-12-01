@@ -24,13 +24,15 @@ class Nat(Type):
         cls.check(b)
         return a == b
 
-    @property
-    def minus1(self):
-        return Nat
+
+Nat.minus1 = Nat
+Nat.add1 = Nat
 
 
 def add1(n):
     Nat.check(n)
+    if isinstance(n, TypeVar):
+        return n.request("add1")
     return n + 1
 
 
@@ -39,6 +41,15 @@ def which_nat(target, base, step):
         return base
     else:
         return step(target - 1)
+
+
+def iter_nat(target, base, step):
+    if isinstance(target, TypeVar):
+        return TypeVar(base.typ)
+    if target == zero:
+        return base
+    else:
+        return step(iter_nat(target - 1, base, step))
 
 
 def plus(a, b):
