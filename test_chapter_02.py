@@ -1,19 +1,13 @@
-import pytest
-
 from pypie.atom import Atom
-from pypie.context import Context
 from pypie.core import (
     are_same,
     are_same_type,
     claim_define,
-    is_type,
     typecheck,
-    NotATypeError,
-    TypeMismatch,
     U,
 )
 from pypie.fun import Fun
-from pypie.nat import add1, Nat, plus, which_nat, zero
+from pypie.nat import Nat, plus, which_nat, zero
 from pypie.pair import car, cdr, cons, Pair
 from pypie.typevar import TypeVar
 

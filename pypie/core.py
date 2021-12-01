@@ -28,6 +28,11 @@ def typecheck(obj, typ):
     return typ.check(obj)
 
 
+def the(typ, obj):
+    """Type annotation"""
+    return obj
+
+
 def is_type(thing) -> bool:
     """Test if a thing is a type."""
     try:
