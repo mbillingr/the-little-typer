@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import typing
 
-from pypie import Ctx, Expr, Env, quote
+from pypie import Ctx, Expr, Env, quote, expr
 
 
 @dataclass
@@ -45,6 +45,7 @@ Value = typing.Union[
 def read_back_type(ctx: Ctx, typ_val: Value) -> Expr:
     match now(typ_val):
         case "ATOM": return "Atom"
+        case Pair(A, D): return ["Pair", read_back_type(ctx, A), read_back_type(ctx, D)]
         case t: raise NotImplementedError(f"read_back_type({t})")
 
 
@@ -67,7 +68,7 @@ def later(env, expr):
 
 
 def undelay(clos):
-    return now(value_of(clos.env, clos.expr))
+    return now(expr.value_of(clos.env, clos.expr))
 
 
 def now(val):

@@ -1,17 +1,17 @@
 import pytest
 
-from pypie.typechecker import synth, check_same
+from pypie.typechecker import synth, check_same, is_a
 
 
 # tests are numbered according to the frames in the book
 
 
 def test_002_a_quote_is_an_atom():
-    assert check_same({}, "Atom", "'atom", ['the', 'Atom', "'atom"])
+    assert is_a({}, "Atom", "'atom")
 
 
 def test_019_the_result_of_cons_is_a_pair():
-    assert typecheck(cons("ratatouille", "baguette"), Pair(Atom, Atom))
+    assert is_a({}, ["Pair", "Atom", "Atom"], ["cons", "'ratatouille", "'baguette"])
 
 
 def test_022_024_sameness_of_pairs():

@@ -1,8 +1,8 @@
 from pypie.alpha import is_alpha_equivalent
 from pypie.env import Ctx, Env, val_in_ctx
-from pypie.value import Value, read_back, read_back_type
+from pypie.value import Value, read_back, read_back_type, now
 from pypie.expr import Expr
-from pypie import is_quote
+from pypie import is_quote, value
 
 
 class ConversionError(Exception):
@@ -15,9 +15,13 @@ class TypeMismatch(Exception):
         super().__init__(f"Expected {expected} but given {given}")
 
 
+class TypeCheckError(Exception): pass
+
+
 def is_type(ctx: Ctx, renaming, expr: Expr) -> Expr:
     match expr:
         case "U" | "Atom": return expr
+        case ["Pair", A, D]: return ["Pair", is_type(ctx, renaming, A), is_type(ctx, renaming, D)]
         case _: raise NotImplementedError(f"is_type(..., {expr})")
 
 
@@ -49,10 +53,14 @@ def synth(ctx: Ctx, renaming, expr: Expr) -> Expr:
             raise NotImplementedError(f"synth({ctx}, {renaming}, {expr})")
 
 
-def check(ctx: Ctx, renaming, expr: Expr, tv: Value):
+def check(ctx: Ctx, renaming, expr: Expr, tv: Value) -> Expr:
     match expr:
-        case _:
-            pass
+        case ["cons", a, d]:
+            match now(tv):
+                case value.Pair(A, D):
+                    return ["cons", check(ctx, renaming, a, A), check(ctx, renaming, d, D)]
+                case non_sigma:
+                    raise TypeCheckError(f"cons requires a Pair or Σ type, but was used as a {read_back_type(ctx, non_sigma)}")
 
     match synth(ctx, renaming, expr):
         case ["the", t_out, e_out]:
@@ -68,3 +76,13 @@ def check_same(ctx: Ctx, t: Expr, a: Expr, b: Expr):
     a_val = val_in_ctx(ctx, a_out)
     b_val = val_in_ctx(ctx, b_out)
     return convert(ctx, t_val, a_val, b_val)
+
+
+def is_a(ctx:Ctx, t: Expr, e: Expr):
+    t_out = is_type(ctx, {}, t)
+    t_val = val_in_ctx(ctx, t_out)
+    try:
+        _ = check(ctx, {}, e, t_val)
+    except TypeMismatch:
+        return False
+    return True
