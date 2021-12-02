@@ -1,24 +1,13 @@
 import pytest
 
-from pypie.atom import Atom
-from pypie.context import Context
-from pypie.core import (
-    are_same,
-    are_same_type,
-    is_type,
-    typecheck,
-    NotATypeError,
-    TypeMismatch,
-)
-from pypie.nat import add1, Nat, zero
-from pypie.pair import car, cdr, cons, Pair
+from pypie.typechecker import synth, check_same
 
 
 # tests are numbered according to the frames in the book
 
 
-def test_002_a_string_is_an_atom():
-    assert typecheck("atom", Atom)
+def test_002_a_quote_is_an_atom():
+    assert check_same({}, "Atom", "'atom", ['the', 'Atom', "'atom"])
 
 
 def test_019_the_result_of_cons_is_a_pair():
