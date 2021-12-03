@@ -8,15 +8,20 @@ class The(Expr):
     typ: Expr
     exp: Expr
 
+    def eval(self, env: Env) -> v.Value:
+        return value_of(env, self.exp)
+
 
 @dataclass
 class U(Expr):
-    pass
+    def eval(self, env: Env) -> v.Value:
+        return v.Universe()
 
 
 @dataclass
 class Atom(Expr):
-    pass
+    def eval(self, env: Env) -> v.Value:
+        return v.Atom()
 
 
 @dataclass
@@ -24,40 +29,36 @@ class Pair(Expr):
     A: Expr
     D: Expr
 
+    def eval(self, env: Env) -> v.Value:
+        return v.Pair(v.later(env, self.A), v.later(env, self.D))
+
 
 @dataclass
 class Cons(Expr):
     car: Expr
     cdr: Expr
 
+    def eval(self, env: Env) -> v.Value:
+        return v.Cons(v.later(env, self.car), v.later(env, self.cdr))
+
 
 @dataclass
 class Car(Expr):
     pair: Expr
+
+    def eval(self, env: Env) -> v.Value:
+        return v.do_car(v.later(env, self.pair))
 
 
 @dataclass
 class Cdr(Expr):
     pair: Expr
 
+    def eval(self, env: Env) -> v.Value:
+        return v.do_cdr(v.later(env, self.pair))
+
 
 def value_of(env: Env, expr: Expr) -> v.Value:
-    match expr:
-        case The(typ, exp):
-            return value_of(env, exp)
-        case U():
-            return v.Universe()
-        case Atom():
-            return v.Atom()
-        case Pair(A, D):  # placeholder until we have 'Sigma' pairs
-            return v.Pair(v.later(env, A), v.later(env, D))
-        case Cons(a, d):
-            return v.Cons(v.later(env, a), v.later(env, d))
-        case Car(p):
-            return v.do_car(v.later(env, p))
-        case Cdr(p):
-            return v.do_cdr(v.later(env, p))
-        case str(s):
-            return v.Quote(s)
-        case x:
-            raise SyntaxError(f"No evaluator for {x}")
+    if isinstance(expr, str):
+        return v.Quote(expr)
+    return expr.eval(env)
