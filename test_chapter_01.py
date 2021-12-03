@@ -1,9 +1,16 @@
 import pytest
 
-from pypie.typechecker import synth, check_same, is_a
+from pypie.typechecker import synth, check_same, is_a, ConversionError
 
 
 # tests are numbered according to the frames in the book
+
+def same(t, a, b, ctx={}):
+    try:
+        check_same(ctx, t, a, b)
+    except ConversionError:
+        return False
+    return True
 
 
 def test_002_a_quote_is_an_atom():
@@ -15,12 +22,24 @@ def test_019_the_result_of_cons_is_a_pair():
 
 
 def test_022_024_sameness_of_pairs():
-    assert are_same(Pair(Atom, Atom))(
-        cons("ratatouille", "baguette"), cons("ratatouille", "baguette")
+    assert same(
+        ["Pair", "Atom", "Atom"],
+        ["cons", "'ratatouille", "'baguette"],
+        ["cons", "'ratatouille", "'baguette"],
     )
-    assert not are_same(Pair(Atom, Atom))(
-        cons("ratatouille", "baguette"), cons("baguette", "baguette")
+
+    assert not same(
+        ["Pair", "Atom", "Atom"],
+        ["cons", "'ratatouille", "'baguette"],
+        ["cons", "'baguette", "'baguette"],
     )
+
+    #assert are_same(Pair(Atom, Atom))(
+    #    cons("ratatouille", "baguette"), cons("ratatouille", "baguette")
+    #)
+    #assert not are_same(Pair(Atom, Atom))(
+    #    cons("ratatouille", "baguette"), cons("baguette", "baguette")
+    #)
 
 
 def test_026_a_pair_of_two_atoms_is_a_type():

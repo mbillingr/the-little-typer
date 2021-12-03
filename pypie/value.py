@@ -63,6 +63,20 @@ def read_back(ctx: Ctx, typ_val: Value, val: Value) -> Expr:
             raise NotImplementedError(f"read_back({t}, {v})")
 
 
+def do_car(pv):
+    match now(pv):
+        case Cons(a, _): return a
+        case _:
+            raise NotImplementedError(f"do_car({pv})")
+
+
+def do_cdr(pv):
+    match now(pv):
+        case Cons(_, d): return d
+        case _:
+            raise NotImplementedError(f"do_car({pv})")
+
+
 def later(env, expr):
     return Delay(DelayClos(env, expr))
 
