@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import typing
 
-from pypie import Ctx, Expr, Env, quote, expr
+from pypie import Ctx, Expr, Env, expr
 
 
 class Value(ABC):
@@ -65,7 +65,7 @@ class Atom(Value):
     def read_back(self, val: Value, ctx: Ctx) -> Expr:
         val = val.now()
         if isinstance(val, Quote):
-            return quote(val.name)
+            return val.name
         else:
             return super().read_back(val, ctx)
 
