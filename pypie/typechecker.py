@@ -1,6 +1,6 @@
 from pypie.alpha import is_alpha_equivalent
 from pypie.env import Ctx, Env, val_in_ctx
-from pypie.value import Value, read_back, read_back_type, now
+from pypie.value import Value, read_back, now
 from pypie.expr import Expr
 from pypie import is_quote, value
 
@@ -26,8 +26,8 @@ def is_type(ctx: Ctx, renaming, expr: Expr) -> Expr:
 
 
 def same_type(ctx: Ctx, given: Value, expected: Value):
-    given_e = read_back_type(ctx, given)
-    expected_e = read_back_type(ctx, expected)
+    given_e = given.read_back_type(ctx)
+    expected_e = expected.read_back_type(ctx)
     if not is_alpha_equivalent(given_e, expected_e):
         raise TypeMismatch(given_e, expected_e)
 
@@ -37,7 +37,7 @@ def convert(ctx: Ctx, tv: Value, av: Value, bv: Value):
     a = read_back(ctx, tv, av)
     b = read_back(ctx, tv, bv)
     if not is_alpha_equivalent(a, b):
-        raise ConversionError(read_back_type(ctx, tv), a, b)
+        raise ConversionError(tv.read_back_type(ctx), a, b)
     return "ok"
 
 
@@ -60,7 +60,7 @@ def check(ctx: Ctx, renaming, expr: Expr, tv: Value) -> Expr:
                 case value.Pair(A, D):
                     return ["cons", check(ctx, renaming, a, A), check(ctx, renaming, d, D)]
                 case non_sigma:
-                    raise TypeCheckError(f"cons requires a Pair or Σ type, but was used as a {read_back_type(ctx, non_sigma)}")
+                    raise TypeCheckError(f"cons requires a Pair or Σ type, but was used as a {non_sigma.read_back_type(ctx)}")
 
     match synth(ctx, renaming, expr):
         case ["the", t_out, e_out]:

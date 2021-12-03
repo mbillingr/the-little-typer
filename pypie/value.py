@@ -1,7 +1,13 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import typing
 
 from pypie import Ctx, Expr, Env, quote, expr
+
+
+class Value(ABC):
+    def read_back_type(self, ctx: Ctx) -> Expr:
+        raise NotImplementedError(f"{self}.read_back_type()")
 
 
 @dataclass
@@ -11,17 +17,17 @@ class DelayClos:
 
 
 @dataclass
-class Delay:
+class Delay(Value):
     val: typing.Union[DelayClos, "Value"]
 
-
-class Value:
-    pass
+    def read_back_type(self, ctx: Ctx) -> Expr:
+        return now(self).read_back_type(ctx)
 
 
 @dataclass
 class Universe(Value):
-    pass
+    def read_back_type(self, ctx: Ctx) -> Expr:
+        return "U"
 
 
 @dataclass
@@ -31,7 +37,8 @@ class Quote(Value):
 
 @dataclass
 class Atom(Value):
-    pass
+    def read_back_type(self, ctx: Ctx) -> Expr:
+        return "Atom"
 
 
 @dataclass
@@ -40,6 +47,9 @@ class Pair(Value):
     A: Delay
     D: Delay
 
+    def read_back_type(self, ctx: Ctx) -> Expr:
+        return ["Pair", self.A.read_back_type(ctx), self.D.read_back_type(ctx)]
+
 
 @dataclass
 class Cons(Value):
@@ -47,16 +57,9 @@ class Cons(Value):
     cdr: Delay
 
 
-def read_back_type(ctx: Ctx, typ_val: Value) -> Expr:
-    match now(typ_val):
-        case Atom(): return "Atom"
-        case Pair(A, D): return ["Pair", read_back_type(ctx, A), read_back_type(ctx, D)]
-        case t: raise NotImplementedError(f"read_back_type({t})")
-
-
 def read_back(ctx: Ctx, typ_val: Value, val: Value) -> Expr:
     match (now(typ_val), now(val)):
-        case (Universe(), v): return read_back_type(ctx, v)
+        case (Universe(), v): return v.read_back_type(ctx)
         case (Pair(A, D), pv):
             # placeholder until we have 'Sigma' pairs
             the_car = do_car(pv)
