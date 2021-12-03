@@ -1,6 +1,6 @@
 from pypie.alpha import is_alpha_equivalent
-from pypie.env import Ctx, Env, val_in_ctx
-from pypie.value import Value, read_back, now
+from pypie.env import Ctx, val_in_ctx
+from pypie.value import Value, now
 from pypie.expr import Expr
 from pypie import is_quote, value
 
@@ -34,8 +34,8 @@ def same_type(ctx: Ctx, given: Value, expected: Value):
 
 def convert(ctx: Ctx, tv: Value, av: Value, bv: Value):
     """Check the form of judgment Γ ⊢ c ≡ c : c"""
-    a = read_back(ctx, tv, av)
-    b = read_back(ctx, tv, bv)
+    a = tv.read_back(av, ctx)
+    b = tv.read_back(bv, ctx)
     if not is_alpha_equivalent(a, b):
         raise ConversionError(tv.read_back_type(ctx), a, b)
     return "ok"

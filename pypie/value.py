@@ -7,7 +7,10 @@ from pypie import Ctx, Expr, Env, quote, expr
 
 class Value(ABC):
     def read_back_type(self, ctx: Ctx) -> Expr:
-        raise NotImplementedError(f"{self}.read_back_type()")
+        raise NotImplementedError(f"{self.__class__.__name__}.read_back_type()")
+
+    def read_back(self, val: "Value", ctx: Ctx) -> Expr:
+        raise NotImplementedError(f"{self.__class__.__name__}.read_back({val})")
 
 
 @dataclass
@@ -18,16 +21,22 @@ class DelayClos:
 
 @dataclass
 class Delay(Value):
-    val: typing.Union[DelayClos, "Value"]
+    val: typing.Union[DelayClos, Value]
 
     def read_back_type(self, ctx: Ctx) -> Expr:
         return now(self).read_back_type(ctx)
+
+    def read_back(self, typ_val: Value, ctx: Ctx) -> Expr:
+        return now(self).read_back(typ_val, ctx)
 
 
 @dataclass
 class Universe(Value):
     def read_back_type(self, ctx: Ctx) -> Expr:
         return "U"
+
+    def read_back(self, val: Value, ctx: Ctx) -> Expr:
+        return val.read_back_type(ctx)
 
 
 @dataclass
@@ -40,6 +49,13 @@ class Atom(Value):
     def read_back_type(self, ctx: Ctx) -> Expr:
         return "Atom"
 
+    def read_back(self, val: Value, ctx: Ctx) -> Expr:
+        val = now(val)
+        if isinstance(val, Quote):
+            return quote(val.name)
+        else:
+            return super().read_back(val, ctx)
+
 
 @dataclass
 class Pair(Value):
@@ -50,25 +66,17 @@ class Pair(Value):
     def read_back_type(self, ctx: Ctx) -> Expr:
         return ["Pair", self.A.read_back_type(ctx), self.D.read_back_type(ctx)]
 
+    def read_back(self, val: Value, ctx: Ctx) -> Expr:
+        pv = now(val)
+        the_car = do_car(pv)
+        the_cdr = do_cdr(pv)
+        return ["cons", self.A.read_back(the_car, ctx), self.D.read_back(the_cdr, ctx)]
+
 
 @dataclass
 class Cons(Value):
     car: Delay
     cdr: Delay
-
-
-def read_back(ctx: Ctx, typ_val: Value, val: Value) -> Expr:
-    match (now(typ_val), now(val)):
-        case (Universe(), v): return v.read_back_type(ctx)
-        case (Pair(A, D), pv):
-            # placeholder until we have 'Sigma' pairs
-            the_car = do_car(pv)
-            the_cdr = do_cdr(pv)
-            return ["cons", read_back(ctx, A, the_car), read_back(ctx, D, the_cdr)]
-        case (Atom(), Quote(name)):
-            return quote(name)
-        case (t, v):
-            raise NotImplementedError(f"read_back({t}, {v})")
 
 
 def do_car(pv):
