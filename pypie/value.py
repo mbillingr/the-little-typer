@@ -15,49 +15,54 @@ class Delay:
     val: typing.Union[DelayClos, "Value"]
 
 
+class Value:
+    pass
+
+
 @dataclass
-class Quote:
+class Universe(Value):
+    pass
+
+
+@dataclass
+class Quote(Value):
     name: str
 
 
 @dataclass
-class Pair:
+class Atom(Value):
+    pass
+
+
+@dataclass
+class Pair(Value):
     """Placeholder because we don't have the more general "Sigma" pairs yet"""
     A: Delay
     D: Delay
 
 
 @dataclass
-class Cons:
+class Cons(Value):
     car: Delay
     cdr: Delay
 
 
-Value = typing.Union[
-    typing.Literal["UNIVERSE"],
-    typing.Literal["ATOM"],
-    Quote,
-    Pair,
-    Cons
-]
-
-
 def read_back_type(ctx: Ctx, typ_val: Value) -> Expr:
     match now(typ_val):
-        case "ATOM": return "Atom"
+        case Atom(): return "Atom"
         case Pair(A, D): return ["Pair", read_back_type(ctx, A), read_back_type(ctx, D)]
         case t: raise NotImplementedError(f"read_back_type({t})")
 
 
 def read_back(ctx: Ctx, typ_val: Value, val: Value) -> Expr:
     match (now(typ_val), now(val)):
-        case ("UNIVERSE", v): return read_back_type(ctx, v)
+        case (Universe(), v): return read_back_type(ctx, v)
         case (Pair(A, D), pv):
             # placeholder until we have 'Sigma' pairs
             the_car = do_car(pv)
             the_cdr = do_cdr(pv)
             return ["cons", read_back(ctx, A, the_car), read_back(ctx, D, the_cdr)]
-        case ("ATOM", Quote(name)):
+        case (Atom(), Quote(name)):
             return quote(name)
         case (t, v):
             raise NotImplementedError(f"read_back({t}, {v})")

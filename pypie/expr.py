@@ -7,9 +7,9 @@ def value_of(env: Env, expr: Expr) -> v.Value:
         case ["the", typ, exp]:
             return value_of(env, exp)
         case "U":
-            return "UNIVERSE"
+            return v.Universe()
         case "Atom":
-            return "ATOM"
+            return v.Atom()
         case ["Pair", A, D]:  # placeholder until we have 'Sigma' pairs
             return v.Pair(v.later(env, A), v.later(env, D))
         case ["cons", a, d]:
