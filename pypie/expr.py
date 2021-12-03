@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
-from pypie import value as v, Expr, Env
+import pypie.value
+
+from pypie import value as v, Env, Expr
 
 
 @dataclass

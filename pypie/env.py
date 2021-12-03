@@ -1,7 +1,5 @@
-import typing
-from pypie import Ctx, Expr, Env
+from pypie import Ctx, Env, Expr, Value
 from pypie.expr import value_of
-from pypie.value import Value
 
 
 def ctx_to_env(ctx: Ctx) -> Env:
