@@ -1,6 +1,6 @@
 from pypie.alpha import is_alpha_equivalent
 from pypie.env import Ctx, val_in_ctx
-from pypie.value import Value, now
+from pypie.value import Value
 from pypie.expr import Expr
 from pypie import is_quote, value
 
@@ -56,7 +56,7 @@ def synth(ctx: Ctx, renaming, expr: Expr) -> Expr:
 def check(ctx: Ctx, renaming, expr: Expr, tv: Value) -> Expr:
     match expr:
         case ["cons", a, d]:
-            match now(tv):
+            match tv.now():
                 case value.Pair(A, D):
                     return ["cons", check(ctx, renaming, a, A), check(ctx, renaming, d, D)]
                 case non_sigma:

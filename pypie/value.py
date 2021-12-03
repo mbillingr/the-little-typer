@@ -12,6 +12,9 @@ class Value(ABC):
     def read_back(self, val: "Value", ctx: Ctx) -> Expr:
         raise NotImplementedError(f"{self.__class__.__name__}.read_back({val})")
 
+    def now(self) -> "Value":
+        return self
+
 
 @dataclass
 class DelayClos:
@@ -24,10 +27,15 @@ class Delay(Value):
     val: typing.Union[DelayClos, Value]
 
     def read_back_type(self, ctx: Ctx) -> Expr:
-        return now(self).read_back_type(ctx)
+        return self.now().read_back_type(ctx)
 
     def read_back(self, typ_val: Value, ctx: Ctx) -> Expr:
-        return now(self).read_back(typ_val, ctx)
+        return self.now().read_back(typ_val, ctx)
+
+    def now(self) -> Value:
+        if isinstance(self.val, DelayClos):
+            self.val = undelay(self.val)
+        return self.val
 
 
 @dataclass
@@ -50,7 +58,7 @@ class Atom(Value):
         return "Atom"
 
     def read_back(self, val: Value, ctx: Ctx) -> Expr:
-        val = now(val)
+        val = val.now()
         if isinstance(val, Quote):
             return quote(val.name)
         else:
@@ -67,10 +75,8 @@ class Pair(Value):
         return ["Pair", self.A.read_back_type(ctx), self.D.read_back_type(ctx)]
 
     def read_back(self, val: Value, ctx: Ctx) -> Expr:
-        pv = now(val)
-        the_car = do_car(pv)
-        the_cdr = do_cdr(pv)
-        return ["cons", self.A.read_back(the_car, ctx), self.D.read_back(the_cdr, ctx)]
+        pv = val.now()
+        return ["cons", self.A.read_back(pv.car, ctx), self.D.read_back(pv.cdr, ctx)]
 
 
 @dataclass
@@ -79,35 +85,9 @@ class Cons(Value):
     cdr: Delay
 
 
-def do_car(pv):
-    match now(pv):
-        case Cons(a, _): return a
-        case _:
-            raise NotImplementedError(f"do_car({pv})")
-
-
-def do_cdr(pv):
-    match now(pv):
-        case Cons(_, d): return d
-        case _:
-            raise NotImplementedError(f"do_car({pv})")
-
-
 def later(env, expr):
     return Delay(DelayClos(env, expr))
 
 
 def undelay(clos):
-    return now(expr.value_of(clos.env, clos.expr))
-
-
-def now(val):
-    match val:
-        case Delay(v):
-            if isinstance(v, DelayClos):
-                the_value = undelay(v)
-                val.val = the_value
-                return the_value
-            return v
-        case other:
-            return other
+    return expr.value_of(clos.env, clos.expr).now()
