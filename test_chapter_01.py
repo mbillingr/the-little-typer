@@ -1,7 +1,8 @@
 import pytest
 
-from pypie.expr import Atom, Cons, Pair
-from pypie.typechecker import synth, check_same, is_a, ConversionError
+from pypie.expr import Atom, Cons, Pair, U
+from pypie import typechecker as tc
+from pypie.typechecker import ConversionError, TypeMismatch
 
 
 # tests are numbered according to the frames in the book
@@ -9,18 +10,30 @@ from pypie.typechecker import synth, check_same, is_a, ConversionError
 
 def same(t, a, b, ctx={}):
     try:
-        check_same(ctx, t, a, b)
+        tc.check_same(ctx, t, a, b)
     except ConversionError:
         return False
     return True
 
 
+def same_type(a, b, ctx={}):
+    return same(U(), a, b, ctx)
+
+
+def is_a(t, v, ctx={}):
+    return tc.is_a(ctx, t, v)
+
+
+def is_type(t, ctx={}):
+    return tc.is_type(ctx, {}, t)
+
+
 def test_002_a_quote_is_an_atom():
-    assert is_a({}, Atom(), "'atom")
+    assert is_a(Atom(), "atom")
 
 
 def test_019_the_result_of_cons_is_a_pair():
-    assert is_a({}, Pair(Atom(), Atom()), Cons("'ratatouille", "'baguette"))
+    assert is_a(Pair(Atom(), Atom()), Cons("ratatouille", "baguette"))
 
 
 def test_022_024_sameness_of_pairs():
@@ -38,19 +51,19 @@ def test_022_024_sameness_of_pairs():
 
 
 def test_026_a_pair_of_two_atoms_is_a_type():
-    assert is_type(Pair(Atom, Atom))
+    assert is_type(Pair(Atom(), Atom()))
 
 
 def test_the_law_of_atom():
-    assert is_type(Atom)
+    assert is_type(Atom())
 
 
 def test_031_compare_types():
-    assert not are_same_type(Atom, Pair(Atom, Atom))
+    assert not same_type(Atom(), Pair(Atom(), Atom()))
 
 
 def test_032_compare_types():
-    assert are_same_type(Pair(Atom, Atom), Pair(Atom, Atom))
+    assert same_type(Pair(Atom(), Atom()), Pair(Atom(), Atom()))
 
 
 def test_033_compare_over_non_type():

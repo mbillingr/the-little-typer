@@ -20,7 +20,7 @@ class TypeCheckError(Exception): pass
 
 def is_type(ctx: Ctx, renaming, e: Expr) -> Expr:
     match e:
-        case "U" | expr.Atom(): return e
+        case expr.U() | expr.Atom(): return e
         case expr.Pair(A, D): return expr.Pair(is_type(ctx, renaming, A), is_type(ctx, renaming, D))
         case _: raise NotImplementedError(f"is_type(..., {e})")
 
@@ -43,6 +43,13 @@ def convert(ctx: Ctx, tv: Value, av: Value, bv: Value):
 
 def synth(ctx: Ctx, renaming, exp: Expr) -> Expr:
     match exp:
+        case expr.Atom():
+            return expr.The(expr.U(), exp)
+        case expr.Pair(A, D):
+            # placeholder until we have Sigma pairs
+            return expr.The(expr.U(),
+                            expr.Pair(check(ctx, renaming, A, value.Universe()),
+                                      check(ctx, renaming, D, value.Universe())))
         case str(s):
             return expr.The(expr.Atom(), s)
         case expr.The(t, e):
