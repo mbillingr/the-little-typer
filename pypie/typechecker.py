@@ -1,8 +1,8 @@
 from pypie.alpha import is_alpha_equivalent
 from pypie.env import Ctx, val_in_ctx
 from pypie.value import Value
-from pypie.expr import Expr
-from pypie import value, expr
+from pypie.expr import Atom, Car, Cdr, Cons, Expr, The, Pair, U
+from pypie import value
 
 
 class ConversionError(Exception):
@@ -20,8 +20,8 @@ class TypeCheckError(Exception): pass
 
 def is_type(ctx: Ctx, renaming, e: Expr) -> Expr:
     match e:
-        case expr.U() | expr.Atom(): return e
-        case expr.Pair(A, D): return expr.Pair(is_type(ctx, renaming, A), is_type(ctx, renaming, D))
+        case U() | Atom(): return e
+        case Pair(A, D): return Pair(is_type(ctx, renaming, A), is_type(ctx, renaming, D))
         case _: raise NotImplementedError(f"is_type(..., {e})")
 
 
@@ -43,34 +43,34 @@ def convert(ctx: Ctx, tv: Value, av: Value, bv: Value):
 
 def synth(ctx: Ctx, renaming, exp: Expr) -> Expr:
     match exp:
-        case expr.Atom():
-            return expr.The(expr.U(), exp)
-        case expr.Pair(A, D):
+        case Atom():
+            return The(U(), exp)
+        case Pair(A, D):
             # placeholder until we have Sigma pairs
-            return expr.The(expr.U(),
-                            expr.Pair(check(ctx, renaming, A, value.Universe()),
-                                      check(ctx, renaming, D, value.Universe())))
+            return The(U(),
+                       Pair(check(ctx, renaming, A, value.Universe()),
+                            check(ctx, renaming, D, value.Universe())))
         case str(s):
-            return expr.The(expr.Atom(), s)
-        case expr.The(t, e):
+            return The(Atom(), s)
+        case The(t, e):
             t_out = is_type(ctx, renaming, t)
             e_out = check(ctx, renaming, e, val_in_ctx(ctx, t_out))
-            return expr.The(t_out, e_out)
+            return The(t_out, e_out)
         case _:
             raise NotImplementedError(f"synth({ctx}, {renaming}, {exp})")
 
 
 def check(ctx: Ctx, renaming, exp: Expr, tv: Value) -> Expr:
     match exp:
-        case expr.Cons(a, d):
+        case Cons(a, d):
             match tv.now():
                 case value.Pair(A, D):
-                    return expr.Cons(check(ctx, renaming, a, A), check(ctx, renaming, d, D))
+                    return Cons(check(ctx, renaming, a, A), check(ctx, renaming, d, D))
                 case non_sigma:
                     raise TypeCheckError(f"cons requires a Pair or Σ type, but was used as a {non_sigma.read_back_type(ctx)}")
 
     match synth(ctx, renaming, exp):
-        case expr.The(t_out, e_out):
+        case The(t_out, e_out):
             same_type(ctx, val_in_ctx(ctx, t_out), tv)
             return e_out
 
@@ -85,7 +85,7 @@ def check_same(ctx: Ctx, t: Expr, a: Expr, b: Expr):
     return convert(ctx, t_val, a_val, b_val)
 
 
-def is_a(ctx:Ctx, t: Expr, e: Expr):
+def is_a(ctx: Ctx, t: Expr, e: Expr):
     t_out = is_type(ctx, {}, t)
     t_val = val_in_ctx(ctx, t_out)
     try:
