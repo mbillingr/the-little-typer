@@ -77,8 +77,9 @@ def test_038_car_gets_first_element_of_pair():
     assert same(Atom(), Car(the_pair), "ratatouille")
 
 
-def test_039_car_gets_first_element_of_pair():
-    assert are_same(Atom)(cdr(cons("ratatouille", "baguette")), "baguette")
+def test_039_cdr_gets_second_element_of_pair():
+    the_pair = The(Pair(Atom(), Atom()), Cons("ratatouille", "baguette"))
+    assert same(Atom(), Cdr(the_pair), "baguette")
 
 
 def test_040_nested_cons():

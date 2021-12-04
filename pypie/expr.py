@@ -88,6 +88,13 @@ class Car(Expr):
 class Cdr(Expr):
     pair: Expr
 
+    def synth(self, ctx: Ctx, renaming):
+        p = synth(ctx, renaming, self.pair)
+        match val_in_ctx(ctx, p.typ):
+            case v.Pair(A, D):
+                return The(D.read_back_type(ctx), p.exp.cdr)
+        raise NotImplementedError(f"{self.__class__.__name__}.synth()")
+
     def eval(self, env: Env) -> v.Value:
         return v.do_cdr(v.later(env, self.pair))
 
