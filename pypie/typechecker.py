@@ -1,7 +1,7 @@
 from pypie.alpha import is_alpha_equivalent
 from pypie.env import Ctx, val_in_ctx
 from pypie.value import Value
-from pypie.expr import Atom, Car, Cdr, Cons, Expr, The, Pair, U
+from pypie.expr import Atom, Cons, Expr, The
 from pypie import value
 
 
@@ -16,13 +16,6 @@ class TypeMismatch(Exception):
 
 
 class TypeCheckError(Exception): pass
-
-
-def is_type(ctx: Ctx, renaming, e: Expr) -> Expr:
-    match e:
-        case U() | Atom(): return e
-        case Pair(A, D): return Pair(is_type(ctx, renaming, A), is_type(ctx, renaming, D))
-        case _: raise NotImplementedError(f"is_type(..., {e})")
 
 
 def same_type(ctx: Ctx, given: Value, expected: Value):
@@ -63,7 +56,8 @@ def check(ctx: Ctx, renaming, exp: Expr, tv: Value) -> Expr:
 
 
 def check_same(ctx: Ctx, t: Expr, a: Expr, b: Expr):
-    t_out = is_type(ctx, {}, t)
+    renaming = {}
+    t_out = t.as_type(ctx, renaming)
     t_val = val_in_ctx(ctx, t_out)
     a_out = check(ctx, {}, a, t_val)
     b_out = check(ctx, {}, b, t_val)
@@ -73,7 +67,8 @@ def check_same(ctx: Ctx, t: Expr, a: Expr, b: Expr):
 
 
 def is_a(ctx: Ctx, t: Expr, e: Expr):
-    t_out = is_type(ctx, {}, t)
+    renaming = {}
+    t_out = t.as_type(ctx, renaming)
     t_val = val_in_ctx(ctx, t_out)
     try:
         _ = check(ctx, {}, e, t_val)

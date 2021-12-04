@@ -25,7 +25,8 @@ def is_a(t, v, ctx={}):
 
 
 def is_type(t, ctx={}):
-    return tc.is_type(ctx, {}, t)
+    renaming = {}
+    return t.as_type(ctx, renaming)
 
 
 def test_002_a_quote_is_an_atom():

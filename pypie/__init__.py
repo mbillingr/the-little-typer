@@ -10,6 +10,9 @@ class Expr:
     def synth(self, ctx: Ctx, renaming):
         raise NotImplementedError(f"{self.__class__.__name__}.synth()")
 
+    def as_type(self, ctx: Ctx, renaming):
+        raise NotImplementedError(f"{self.__class__.__name__}.as_type()")
+
     def eval(self, env: Env) -> "Value":
         raise NotImplementedError(f"{self.__class__.__name__}.eval()")
 
