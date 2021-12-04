@@ -36,6 +36,29 @@ class Universe(Value):
 
 
 @dataclass
+class Nat(Value):
+    def read_back_type(self, ctx: Ctx) -> Expr:
+        return expr.Nat()
+
+    def read_back(self, val: Value, ctx: Ctx) -> Expr:
+        val = val.now()
+        match val:
+            case Zero(): return 0
+            case Add1(n): return 1 + self.read_back(n, ctx)
+        raise NotImplementedError(val)
+
+
+@dataclass
+class Zero(Value):
+    pass
+
+
+@dataclass
+class Add1(Value):
+    n: Value
+
+
+@dataclass
 class Quote(Value):
     name: str
 

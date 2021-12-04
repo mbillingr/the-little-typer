@@ -1,6 +1,6 @@
 import pytest
 
-from pypie.expr import Atom, Car, Cdr, Cons, Pair, The, U
+from pypie.expr import Atom, Car, Cdr, Cons, Nat, Pair, The, U
 from pypie import typechecker as tc
 from pypie.typechecker import ConversionError, TypeMismatch, NotATypeError
 
@@ -105,24 +105,24 @@ def test_056_only_the_normal_form_matters():
 
 
 def test_063_one_is_a_nat():
-    assert typecheck(1, Nat)
+    assert is_a(Nat(), 1)
 
 
 def test_064_a_big_positive_integer_is_a_nat():
-    assert typecheck(1729, Nat)
+    assert is_a(Nat(), 1729)
 
 
 def test_065_minus_one_is_not_a_nat():
-    with pytest.raises(TypeMismatch):
-        typecheck(-1, Nat)
+    with pytest.raises(AssertionError):
+        is_a(Nat(), -1)
 
 
 def test_068_0_is_a_nat():
-    assert typecheck(0, Nat)
+    assert is_a(Nat(), 0)
 
 
 def test_072_different_nats_are_not_the_same():
-    assert not are_same(Nat)(0, 26)
+    assert not same(Nat(), 0, 26)
 
 
 def test_076_zero_is_a_nat():

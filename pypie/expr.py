@@ -32,6 +32,18 @@ class U(Expr):
 
 
 @dataclass
+class Nat(Expr):
+    def as_type(self, ctx: Ctx, renaming):
+        return self
+
+    def synth(self, ctx: Ctx, renaming):
+        return The(U(), self)
+
+    def eval(self, env: Env) -> v.Value:
+        return v.Nat()
+
+
+@dataclass
 class Atom(Expr):
     def as_type(self, ctx: Ctx, renaming):
         return self
@@ -107,12 +119,20 @@ class Cdr(Expr):
 def value_of(env: Env, expr: Expr) -> v.Value:
     if isinstance(expr, str):
         return v.Quote(expr)
+    if isinstance(expr, int):
+        if expr == 0:
+            return v.Zero()
+        else:
+            return v.Add1(v.later(env, expr - 1))
     return expr.eval(env)
 
 
 def synth(ctx: Ctx, renaming, exp: Expr) -> The:
     if isinstance(exp, str):
         return The(Atom(), exp)
+    if isinstance(exp, int):
+        assert exp >= 0
+        return The(Nat(), exp)
     return exp.synth(ctx, renaming)
 
 
