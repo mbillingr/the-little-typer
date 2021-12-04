@@ -97,5 +97,11 @@ def synth(ctx: Ctx, renaming, exp: Expr) -> Expr:
     return exp.synth(ctx, renaming)
 
 
+def as_type(ctx: Ctx, renaming, exp: Expr) -> Expr:
+    if isinstance(exp, str):
+        raise NotATypeError(exp)
+    return exp.as_type(ctx, renaming)
+
+
 # it's ugly, but serves as a quick fix of cicrular imports
-from pypie.typechecker import check, val_in_ctx
+from pypie.typechecker import check, val_in_ctx, NotATypeError

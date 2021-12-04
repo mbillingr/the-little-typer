@@ -1,7 +1,7 @@
 from pypie.alpha import is_alpha_equivalent
 from pypie.env import Ctx, val_in_ctx
 from pypie.value import Value
-from pypie.expr import Cons, Expr, The, synth
+from pypie.expr import Cons, Expr, The, synth, as_type
 from pypie import value
 
 
@@ -16,6 +16,9 @@ class TypeMismatch(Exception):
 
 
 class TypeCheckError(Exception): pass
+
+
+class NotATypeError(Exception): pass
 
 
 def same_type(ctx: Ctx, given: Value, expected: Value):
@@ -53,7 +56,7 @@ def check(ctx: Ctx, renaming, exp: Expr, tv: Value) -> Expr:
 
 def check_same(ctx: Ctx, t: Expr, a: Expr, b: Expr):
     renaming = {}
-    t_out = t.as_type(ctx, renaming)
+    t_out = as_type(ctx, renaming, t)
     t_val = val_in_ctx(ctx, t_out)
     a_out = check(ctx, {}, a, t_val)
     b_out = check(ctx, {}, b, t_val)
@@ -64,7 +67,7 @@ def check_same(ctx: Ctx, t: Expr, a: Expr, b: Expr):
 
 def is_a(ctx: Ctx, t: Expr, e: Expr):
     renaming = {}
-    t_out = t.as_type(ctx, renaming)
+    t_out = as_type(ctx, renaming, t)
     t_val = val_in_ctx(ctx, t_out)
     try:
         _ = check(ctx, {}, e, t_val)

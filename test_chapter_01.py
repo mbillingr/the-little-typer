@@ -2,7 +2,7 @@ import pytest
 
 from pypie.expr import Atom, Cons, Pair, U
 from pypie import typechecker as tc
-from pypie.typechecker import ConversionError, TypeMismatch
+from pypie.typechecker import ConversionError, TypeMismatch, NotATypeError
 
 
 # tests are numbered according to the frames in the book
@@ -69,7 +69,7 @@ def test_032_compare_types():
 
 def test_033_compare_over_non_type():
     with pytest.raises(NotATypeError):
-        are_same("fruit")("peche", "peche")
+        same("fruit", "peche", "peche")
 
 
 def test_038_car_gets_first_element_of_pair():
