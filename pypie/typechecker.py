@@ -42,22 +42,9 @@ def convert(ctx: Ctx, tv: Value, av: Value, bv: Value):
 
 
 def synth(ctx: Ctx, renaming, exp: Expr) -> Expr:
-    match exp:
-        case Atom():
-            return The(U(), exp)
-        case Pair(A, D):
-            # placeholder until we have Sigma pairs
-            return The(U(),
-                       Pair(check(ctx, renaming, A, value.Universe()),
-                            check(ctx, renaming, D, value.Universe())))
-        case str(s):
-            return The(Atom(), s)
-        case The(t, e):
-            t_out = is_type(ctx, renaming, t)
-            e_out = check(ctx, renaming, e, val_in_ctx(ctx, t_out))
-            return The(t_out, e_out)
-        case _:
-            raise NotImplementedError(f"synth({ctx}, {renaming}, {exp})")
+    if isinstance(exp, str):
+        return The(Atom(), exp)
+    return exp.synth(ctx, renaming)
 
 
 def check(ctx: Ctx, renaming, exp: Expr, tv: Value) -> Expr:
