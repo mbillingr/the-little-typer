@@ -98,17 +98,10 @@ def test_041_access_nested_cons():
     assert same(Atom(), Car(Cdr(outer_pair)), "baguette")
 
 
-def test_054_pair_type_only_accepts_types():
-    with pytest.raises(NotATypeError):
-        Pair(Atom, "olive")
-    with pytest.raises(NotATypeError):
-        Pair("oil", Atom)
-
-
 def test_056_only_the_normal_form_matters():
-    assert are_same_type(
-        Pair(car(cons(Atom, "olive")), cdr(cons("oil", Atom))), Pair(Atom, Atom)
-    )
+    pair1 = The(Pair(U(), Atom()), Cons(Atom(), "olive"))
+    pair2 = The(Pair(Atom(), U()), Cons("oil", Atom()))
+    assert same_type(Pair(Car(pair1), Cdr(pair2)), Pair(Atom(), Atom()))
 
 
 def test_063_one_is_a_nat():
