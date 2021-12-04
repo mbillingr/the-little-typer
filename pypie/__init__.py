@@ -7,7 +7,7 @@ Ctx = _ty.Dict[str, "Value"]
 
 
 class Expr:
-    def synth(self, ctx: Ctx, renaming):
+    def synth(self, ctx: Ctx, renaming) -> "The":
         raise NotImplementedError(f"{self.__class__.__name__}.synth()")
 
     def as_type(self, ctx: Ctx, renaming):

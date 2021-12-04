@@ -73,6 +73,13 @@ class Cons(Expr):
 class Car(Expr):
     pair: Expr
 
+    def synth(self, ctx: Ctx, renaming):
+        p = synth(ctx, renaming, self.pair)
+        match val_in_ctx(ctx, p.typ):
+            case v.Pair(A, D):
+                return The(A.read_back_type(ctx), p.exp.car)
+        raise NotImplementedError(f"{self.__class__.__name__}.synth()")
+
     def eval(self, env: Env) -> v.Value:
         return v.do_car(v.later(env, self.pair))
 
@@ -91,7 +98,7 @@ def value_of(env: Env, expr: Expr) -> v.Value:
     return expr.eval(env)
 
 
-def synth(ctx: Ctx, renaming, exp: Expr) -> Expr:
+def synth(ctx: Ctx, renaming, exp: Expr) -> The:
     if isinstance(exp, str):
         return The(Atom(), exp)
     return exp.synth(ctx, renaming)

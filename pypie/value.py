@@ -29,7 +29,7 @@ class Delay(Value):
 @dataclass
 class Universe(Value):
     def read_back_type(self, ctx: Ctx) -> Expr:
-        return "U"
+        return expr.U()
 
     def read_back(self, val: Value, ctx: Ctx) -> Expr:
         return val.read_back_type(ctx)
@@ -43,7 +43,7 @@ class Quote(Value):
 @dataclass
 class Atom(Value):
     def read_back_type(self, ctx: Ctx) -> Expr:
-        return "Atom"
+        return expr.Atom()
 
     def read_back(self, val: Value, ctx: Ctx) -> Expr:
         val = val.now()
@@ -56,15 +56,16 @@ class Atom(Value):
 @dataclass
 class Pair(Value):
     """Placeholder because we don't have the more general "Sigma" pairs yet"""
+
     A: Delay
     D: Delay
 
     def read_back_type(self, ctx: Ctx) -> Expr:
-        return ["Pair", self.A.read_back_type(ctx), self.D.read_back_type(ctx)]
+        return expr.Pair(self.A.read_back_type(ctx), self.D.read_back_type(ctx))
 
     def read_back(self, val: Value, ctx: Ctx) -> Expr:
         pv = val.now()
-        return ["cons", self.A.read_back(pv.car, ctx), self.D.read_back(pv.cdr, ctx)]
+        return expr.Cons(self.A.read_back(pv.car, ctx), self.D.read_back(pv.cdr, ctx))
 
 
 @dataclass

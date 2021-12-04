@@ -1,6 +1,6 @@
 import pytest
 
-from pypie.expr import Atom, Cons, Pair, U
+from pypie.expr import Atom, Car, Cdr, Cons, Pair, The, U
 from pypie import typechecker as tc
 from pypie.typechecker import ConversionError, TypeMismatch, NotATypeError
 
@@ -73,7 +73,8 @@ def test_033_compare_over_non_type():
 
 
 def test_038_car_gets_first_element_of_pair():
-    assert are_same(Atom)(car(cons("ratatouille", "baguette")), "ratatouille")
+    the_pair = The(Pair(Atom(), Atom()), Cons("ratatouille", "baguette"))
+    assert same(Atom(), Car(the_pair), "ratatouille")
 
 
 def test_039_car_gets_first_element_of_pair():
