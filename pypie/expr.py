@@ -16,6 +16,11 @@ class The(Expr):
     def eval(self, env: Env) -> v.Value:
         return value_of(env, self.exp)
 
+    def check(self, ctx:Ctx={}, renaming={}):
+        t_out = as_type(ctx, renaming, self.typ)
+        t_val = val_in_ctx(ctx, t_out)
+        return check(ctx, renaming, self.exp, t_val)
+
 
 @dataclass
 class U(Expr):

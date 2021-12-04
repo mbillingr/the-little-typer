@@ -70,7 +70,7 @@ def is_a(ctx: Ctx, t: Expr, e: Expr):
     t_out = as_type(ctx, renaming, t)
     t_val = val_in_ctx(ctx, t_out)
     try:
-        _ = check(ctx, {}, e, t_val)
+        _ = check(ctx, renaming, e, t_val)
     except TypeMismatch:
         return False
     return True

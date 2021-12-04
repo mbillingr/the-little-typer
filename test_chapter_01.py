@@ -83,15 +83,19 @@ def test_039_cdr_gets_second_element_of_pair():
 
 
 def test_040_nested_cons():
-    assert typecheck(
-        car(cons(cons("aubergine", "courgette"), "tomato")), Pair(Atom, Atom)
+    outer_pair = The(
+        Pair(Pair(Atom(), Atom()), Atom()),
+        Cons(Cons("aubergine", "courgette"), "tomato"),
     )
+    assert outer_pair.check()
 
 
 def test_041_access_nested_cons():
-    assert are_same(Atom)(
-        car(cdr(cons("ratatouille", cons("baguette", "olive oil")))), "baguette"
+    outer_pair = The(
+        Pair(Atom(), Pair(Atom(), Atom())),
+        Cons("ratatouille", Cons("baguette", "olive oil")),
     )
+    assert same(Atom(), Car(Cdr(outer_pair)), "baguette")
 
 
 def test_054_pair_type_only_accepts_types():
