@@ -1,7 +1,7 @@
 from pypie.alpha import is_alpha_equivalent
 from pypie.env import Ctx, val_in_ctx
 from pypie.value import Value
-from pypie.expr import Atom, Cons, Expr, The
+from pypie.expr import Cons, Expr, The, synth
 from pypie import value
 
 
@@ -34,12 +34,6 @@ def convert(ctx: Ctx, tv: Value, av: Value, bv: Value):
     return "ok"
 
 
-def synth(ctx: Ctx, renaming, exp: Expr) -> Expr:
-    if isinstance(exp, str):
-        return The(Atom(), exp)
-    return exp.synth(ctx, renaming)
-
-
 def check(ctx: Ctx, renaming, exp: Expr, tv: Value) -> Expr:
     match exp:
         case Cons(a, d):
@@ -53,6 +47,8 @@ def check(ctx: Ctx, renaming, exp: Expr, tv: Value) -> Expr:
         case The(t_out, e_out):
             same_type(ctx, val_in_ctx(ctx, t_out), tv)
             return e_out
+
+    raise NotImplementedError(f"check({exp}, {tv})")
 
 
 def check_same(ctx: Ctx, t: Expr, a: Expr, b: Expr):

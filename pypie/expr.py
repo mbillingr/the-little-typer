@@ -91,5 +91,11 @@ def value_of(env: Env, expr: Expr) -> v.Value:
     return expr.eval(env)
 
 
+def synth(ctx: Ctx, renaming, exp: Expr) -> Expr:
+    if isinstance(exp, str):
+        return The(Atom(), exp)
+    return exp.synth(ctx, renaming)
+
+
 # it's ugly, but serves as a quick fix of cicrular imports
 from pypie.typechecker import check, val_in_ctx
