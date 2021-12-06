@@ -1,8 +1,8 @@
 import pytest
 
-from pypie.expr import Atom, Car, Cdr, Cons, Nat, Pair, The, U
+from pypie.expr import Add1, Atom, Car, Cdr, Cons, Nat, Pair, Ref, The, U, zero
 from pypie import typechecker as tc
-from pypie.typechecker import ConversionError, TypeMismatch, NotATypeError
+from pypie.typechecker import Claim, ConversionError, TypeMismatch, NotATypeError, define, claim
 
 
 # tests are numbered according to the frames in the book
@@ -126,23 +126,23 @@ def test_072_different_nats_are_not_the_same():
 
 
 def test_076_zero_is_a_nat():
-    assert typecheck(zero, Nat)
+    assert is_a(Nat(), zero)
 
 
 def test_077_identifiers_must_be_claimed_before_definition():
-    ctx = Context()
     with pytest.raises(AssertionError):
-        ctx.define("one", add1(zero))
+        define({}, "one", Add1(zero))
 
 
 def test_079_identifiers_can_be_defined_after_claiming():
-    ctx = Context()
-    ctx.claim("one", Nat)
-    ctx.define("one", add1(zero))
-    typecheck(ctx.one, Nat)
+    ctx = {}
+    claim(ctx, "one", Nat())
+    define(ctx, "one", Add1(zero))
+    assert same(Nat(), Ref("one"), 1, ctx)
 
 
 def test_120_nested_pair_types():
-    assert typecheck(
-        cons("basil", cons("thyme", "oregano")), Pair(Atom, Pair(Atom, Atom))
-    )
+    assert The(
+        Pair(Atom(), Pair(Atom(), Atom())),
+        Cons("basil", Cons("thyme", "oregano"))
+    ).check()

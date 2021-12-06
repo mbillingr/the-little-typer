@@ -1,8 +1,9 @@
+from dataclasses import dataclass
 from pypie.alpha import is_alpha_equivalent
 from pypie.env import Ctx, val_in_ctx
 from pypie.value import Value
 from pypie.expr import Cons, Expr, The, synth, as_type
-from pypie import value
+from pypie import value, Binder
 
 
 class ConversionError(Exception):
@@ -74,3 +75,45 @@ def is_a(ctx: Ctx, t: Expr, e: Expr):
     except TypeMismatch:
         return False
     return True
+
+
+@dataclass(init=False)
+class Claim(Binder):
+    type: Value
+
+    def __init__(self, ctx: Ctx, t: Expr):
+        renaming = {}
+        t_out = as_type(ctx, renaming, t)
+        self.type = val_in_ctx(ctx, t_out)
+
+    def define(self, ctx: Ctx, e: Expr):
+        return Def(ctx, e, self.type)
+
+    def to_env_entry(self, name):
+        return None
+
+
+@dataclass(init=False)
+class Def(Binder):
+    type: Value
+    value: Value
+
+    def __init__(self, ctx: Ctx, e: Expr, tv: Value):
+        e_out = check(ctx, {}, e, tv)
+        e_val = val_in_ctx(ctx, e_out)
+        self.type = tv
+        self.value = e_val
+
+    def to_env_entry(self, name):
+        return self.value
+
+
+def claim(ctx: Ctx, name: str, t: Expr):
+    assert name not in ctx
+    ctx[name] = Claim(ctx, t)
+
+
+def define(ctx: Ctx, name: str, expr: Expr):
+    assert name in ctx
+    assert isinstance(ctx[name], Claim)
+    ctx[name] = ctx[name].define(ctx, expr)

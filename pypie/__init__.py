@@ -1,9 +1,10 @@
 from abc import ABC
+from dataclasses import dataclass
 import typing as _ty
 
 
 Env = _ty.Dict[str, "Value"]
-Ctx = _ty.Dict[str, "Value"]
+Ctx = _ty.Dict[str, "Binder"]
 
 
 class Expr:
@@ -31,3 +32,9 @@ class Value(ABC):
     def now(self) -> "Value":
         """Return the actual value, computing it if necessary."""
         return self
+
+
+@dataclass
+class Binder:
+    pass
+
