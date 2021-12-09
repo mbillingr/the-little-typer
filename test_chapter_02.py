@@ -1,19 +1,39 @@
-from pypie.atom import Atom
-from pypie.core import (
-    are_same,
-    are_same_type,
-    claim_define,
-    typecheck,
+import pytest
+
+from pypie.expr import (
+    Add1,
+    Atom,
+    Car,
+    Cdr,
+    Cons,
+    Fun,
+    Lambda,
+    Nat,
+    Pair,
+    Ref,
+    The,
     U,
+    zero,
 )
-from pypie.fun import Fun
-from pypie.nat import Nat, plus, which_nat, zero
-from pypie.pair import car, cdr, cons, Pair
-from pypie.typevar import TypeVar
+from pypie import typechecker as tc
+from pypie.typechecker import (
+    Claim,
+    ConversionError,
+    TypeMismatch,
+    NotATypeError,
+    define,
+    claim,
+)
+from test_utils import same
 
 
 def test_015_functions_types():
-    assert typecheck(lambda x: cons(x, x), Fun(Atom, Pair(Atom, Atom)))
+    # the two ways to create lambdas should be equivalent
+    assert same(
+        Fun(Atom(), Pair(Atom(), Atom())),
+        Lambda(["x"], Cons(Ref("x"), Ref("x"))),
+        lambda x: Cons(x, x),
+    )
 
 
 def test_016_functions_types_can_be_computed():

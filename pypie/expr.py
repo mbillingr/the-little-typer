@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
 from pypie import value as v, Ctx, Env, Expr
+from pypie.closure import FirstOrderClosure
+from pypie.env import fresh_binder, bind_free
 
 
 zero = 0
@@ -24,6 +26,9 @@ class The(Expr):
         t_val = val_in_ctx(ctx, t_out)
         return check(ctx, renaming, self.exp, t_val)
 
+    def occurring_names(self):
+        return self.typ.occurring_names() | self.exp.occurring_names()
+
 
 
 @dataclass
@@ -31,13 +36,20 @@ class Ref(Expr):
     name: str
 
     def synth(self, ctx: Ctx, renaming):
-        binder = ctx.get(self.name)
+        real_x = renaming.get(self.name, self.name)
+        binder = ctx.get(real_x)
         t = binder.type.read_back_type(ctx)
-        e = binder.type.read_back(binder.value, ctx)
+        try:
+            e = binder.type.read_back(binder.value, ctx)
+        except AttributeError:
+            e = real_x
         return The(t, e)
 
     def eval(self, env: Env) -> v.Value:
         return env[self.name]
+
+    def occurring_names(self):
+        return {self.name}
 
 
 @dataclass
@@ -47,6 +59,9 @@ class U(Expr):
 
     def eval(self, env: Env) -> v.Value:
         return v.Universe()
+
+    def occurring_names(self):
+        return set()
 
 
 @dataclass
@@ -60,6 +75,9 @@ class Nat(Expr):
     def eval(self, env: Env) -> v.Value:
         return v.Nat()
 
+    def occurring_names(self):
+        return set()
+
 
 @dataclass
 class Add1(Expr):
@@ -70,6 +88,9 @@ class Add1(Expr):
 
     def eval(self, env: Env) -> v.Value:
         return v.Add1(v.later(env, self.n))
+
+    def occurring_names(self):
+        return self.n.occurring_names()
 
 
 @dataclass
@@ -82,6 +103,53 @@ class Atom(Expr):
 
     def eval(self, env: Env) -> v.Value:
         return v.Atom()
+
+    def occurring_names(self):
+        return set()
+
+
+@dataclass(init=False)
+class Fun(Expr):
+    ParamTypes: [Expr]
+    Body: Expr
+
+    def __init__(self, *types):
+        self.ParamTypes = types[:-1]
+        self.Body = types[-1]
+
+    def as_type(self, ctx: Ctx, renaming):
+        if len(self.ParamTypes) == 1:
+            return self.unary_as_type(ctx, renaming)
+        else:
+            raise NotImplementedError()
+
+    def unary_as_type(self, ctx: Ctx, renaming):
+        x = fresh_binder(ctx, self.Body, "x")
+        A_out = self.ParamTypes[0].as_type(ctx, renaming)
+        B_out = self.Body.as_type(bind_free(ctx, x, val_in_ctx(ctx, A_out)), renaming)
+        return Pi(x, A_out, B_out)
+
+
+@dataclass
+class Pi(Expr):
+    param_name: str
+    ParamType: Expr
+    Body: Expr
+
+    def eval(self, env: Env) -> v.Value:
+        Av = v.later(env, self.ParamType)
+        return v.Pi(self.param_name, Av, FirstOrderClosure(env, self.param_name, self.Body))
+
+
+@dataclass
+class Lambda(Expr):
+    param_names: [str]
+    body: Expr
+
+    def eval(self, env: Env) -> v.Value:
+        assert len(self.param_names) == 1
+        arg_name = self.param_names[0]
+        return v.Lambda(arg_name, v.later(env, self.body))
 
 
 @dataclass
@@ -104,6 +172,9 @@ class Pair(Expr):
 
     def eval(self, env: Env) -> v.Value:
         return v.Pair(v.later(env, self.A), v.later(env, self.D))
+
+    def occurring_names(self):
+        return self.A.occurring_names() | self.D.occurring_names()
 
 
 @dataclass

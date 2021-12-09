@@ -1,9 +1,11 @@
 from dataclasses import dataclass
+import typing
 from pypie.alpha import is_alpha_equivalent
-from pypie.env import Ctx, val_in_ctx
+from pypie.env import Ctx, val_in_ctx, bind_free
 from pypie.value import Value
-from pypie.expr import Cons, Expr, The, synth, as_type
-from pypie import value, Binder
+from pypie.expr import Cons, Expr, Lambda, Pi, The, synth, as_type
+from pypie.fresh import fresh
+from pypie import value, Binder, neutral as neu
 
 
 class ConversionError(Exception):
@@ -46,6 +48,28 @@ def check(ctx: Ctx, renaming, exp: Expr, tv: Value) -> Expr:
                     return Cons(check(ctx, renaming, a, A), check(ctx, renaming, d, D))
                 case non_sigma:
                     raise TypeCheckError(f"cons requires a Pair or Σ type, but was used as a {non_sigma.read_back_type(ctx)}")
+        case Lambda([x], b):
+            match tv.now():
+                case value.Pi(y, A, c):
+                    x_hat = fresh(ctx, x)
+                    b_out = check(bind_free(ctx, x_hat, A),
+                                  renaming | {x: x_hat},
+                                  b,
+                                  c.value_of(value.Neutral(A, neu.NVar(x_hat))))
+                    return Lambda([x_hat], b_out)
+                case non_pi:
+                    raise TypeCheckError(f"not a function type: {non_pi.read_back_type(ctx)}")
+        case _ if callable(exp):
+            match tv.now():
+                case value.Pi(y, A, c):
+                    x_hat = fresh(ctx, "x")
+                    b_out = check(ctx,
+                                  renaming,
+                                  exp(x_hat),
+                                  c.value_of(value.Neutral(A, neu.NVar(x_hat))))
+                    return Lambda([x_hat], b_out)
+                case non_pi:
+                    raise TypeCheckError(f"not a function type: {non_pi.read_back_type(ctx)}")
 
     match synth(ctx, renaming, exp):
         case The(t_out, e_out):

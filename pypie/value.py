@@ -1,7 +1,10 @@
 from dataclasses import dataclass
 import typing
 
-from pypie import Ctx, Expr, Env, expr, Value
+from pypie import Ctx, Expr, Env, expr, Value, neutral as neu
+from pypie.closure import Closure
+from pypie.env import bind_free
+from pypie.fresh import fresh
 
 
 @dataclass
@@ -59,6 +62,39 @@ class Add1(Value):
 
 
 @dataclass
+class Pi(Value):
+    arg_name: str
+    arg_type: Value
+    result_type: Closure
+
+    def read_back_type(self, ctx: Ctx) -> Expr:
+        Ae = self.arg_type.read_back_type(ctx)
+        x_hat = fresh(ctx, self.arg_name)
+        extctx = bind_free(ctx, x_hat, self.arg_type)
+        rtv = self.result_type.value_of(Neutral(self.arg_type, neu.NVar(x_hat)))
+        Body = rtv.read_back_type(extctx)
+        return expr.Pi(x_hat, Ae, Body)
+
+    def read_back(self, val: Value, ctx: Ctx) -> Expr:
+        pv = val.now()
+
+        x_hat = fresh(ctx, self.arg_name)
+        extctx = bind_free(ctx, x_hat, self.arg_type)
+        rtv = self.result_type.value_of(Neutral(self.arg_type, neu.NVar(x_hat)))
+        Body = rtv.read_back_type(extctx)
+
+        body = Body.read_back(pv.body)
+
+        return expr.Lambda([self.arg_name], body)
+
+
+@dataclass
+class Lambda(Value):
+    arg_name: str
+    body: Closure
+
+
+@dataclass
 class Quote(Value):
     name: str
 
@@ -95,6 +131,13 @@ class Pair(Value):
 class Cons(Value):
     car: Delay
     cdr: Delay
+
+
+@dataclass
+class Neutral:
+    type: Value
+    neutral: neu.Neutral
+
 
 
 def later(env, expr):

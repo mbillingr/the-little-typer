@@ -1,5 +1,8 @@
-from pypie import Ctx, Env, Expr, Value
-from pypie.expr import value_of
+from dataclasses import dataclass
+from pypie import Binder, Ctx, Env, Expr, Value
+from pypie.fresh import freshen
+from pypie import neutral as neu
+import pypie
 
 
 def ctx_to_env(ctx: Ctx) -> Env:
@@ -19,4 +22,21 @@ def ctx_to_env(ctx: Ctx) -> Env:
 
 
 def val_in_ctx(ctx: Ctx, expr: Expr) -> Value:
-    return value_of(ctx_to_env(ctx), expr)
+    return pypie.expr.value_of(ctx_to_env(ctx), expr)
+
+
+def fresh_binder(ctx: Ctx, expr: Expr, name: str) -> str:
+    return freshen(set(ctx.keys()) | expr.occurring_names(), name)
+
+
+@dataclass
+class Free(Binder):
+    type: Value
+
+    def to_env_entry(self, name):
+        return pypie.value.Neutral(self.type, neu.NVar(name))
+
+
+def bind_free(ctx: Ctx, name: str, tv: "Value") -> Ctx:
+    assert name not in ctx
+    return ctx | {name: Free(tv)}

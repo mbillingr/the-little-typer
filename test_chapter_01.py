@@ -1,32 +1,11 @@
 import pytest
 
 from pypie.expr import Add1, Atom, Car, Cdr, Cons, Nat, Pair, Ref, The, U, zero
-from pypie import typechecker as tc
-from pypie.typechecker import Claim, ConversionError, TypeMismatch, NotATypeError, define, claim
+from pypie.typechecker import NotATypeError, define, claim
+from test_utils import is_a, is_type, same, same_type
 
 
 # tests are numbered according to the frames in the book
-
-
-def same(t, a, b, ctx={}):
-    try:
-        tc.check_same(ctx, t, a, b)
-    except ConversionError:
-        return False
-    return True
-
-
-def same_type(a, b, ctx={}):
-    return same(U(), a, b, ctx)
-
-
-def is_a(t, v, ctx={}):
-    return tc.is_a(ctx, t, v)
-
-
-def is_type(t, ctx={}):
-    renaming = {}
-    return t.as_type(ctx, renaming)
 
 
 def test_002_a_quote_is_an_atom():
