@@ -71,7 +71,7 @@ fn subscript_to_digit(ch: char) -> Option<u32> {
         '₇' => 7,
         '₈' => 8,
         '₉' => 9,
-        _ => return None
+        _ => return None,
     })
 }
 

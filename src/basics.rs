@@ -15,6 +15,12 @@ pub enum Core {
     Quote(Symbol),
 }
 
+impl Core {
+    pub fn the(t: impl Into<R<Core>>, e: impl Into<R<Core>>) -> Self {
+        Core::The(t.into(), e.into())
+    }
+}
+
 pub enum Value {
     Universe,
     Nat,
@@ -38,4 +44,18 @@ pub enum Closure {
     HigherOrder(R<dyn Fn(Value) -> Value>),
 }
 
+pub struct Ctx {}
+
 pub struct Env {}
+
+pub struct Renaming {}
+
+impl Renaming {
+    pub fn new() -> Self {
+        Renaming {}
+    }
+}
+
+pub fn ctx_to_env(ctx: &Ctx) -> Env {
+    unimplemented!()
+}
