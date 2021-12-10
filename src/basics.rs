@@ -1,7 +1,12 @@
+use crate::errors::{Error, Result};
+use crate::fresh::freshen;
+use crate::normalize::val_of;
 use crate::symbol::Symbol;
-use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Formatter;
-use std::rc::Rc as R;
+use std::ops::Deref;
+use std::sync::MutexGuard;
+pub use std::sync::{Arc as R, Mutex, RwLock};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Core {
@@ -11,6 +16,7 @@ pub enum Core {
     Zero,
     Symbol(Symbol),
     Add1(R<Core>),
+    Fun(R<Vec<Core>>),
     Pi(Symbol, R<Core>, R<Core>),
     Lambda(Symbol, R<Core>),
     Atom,
@@ -20,6 +26,17 @@ pub enum Core {
 impl Core {
     pub fn the(t: impl Into<R<Core>>, e: impl Into<R<Core>>) -> Self {
         Core::The(t.into(), e.into())
+    }
+
+    pub fn fun(arg_types: Vec<Core>, ret_type: Core) -> Self {
+        assert!(arg_types.len() > 0);
+        let mut types = arg_types;
+        types.push(ret_type);
+        Core::Fun(R::new(types))
+    }
+
+    pub fn pi(x: impl Into<Symbol>, xt: impl Into<R<Core>>, rt: impl Into<R<Core>>) -> Self {
+        Self::Pi(x.into(), xt.into(), rt.into())
     }
 
     pub fn quote(s: impl Into<Symbol>) -> Self {
@@ -44,7 +61,22 @@ pub enum Value {
         arg_name: Symbol,
         result_type: R<Closure>,
     },
-    Delay(R<RefCell<Delayed>>),
+    Neu(R<Value>, N),
+    Delay(SharedBox<Delayed>),
+}
+
+impl Value {
+    pub fn pi(
+        arg_name: Symbol,
+        arg_type: impl Into<R<Value>>,
+        result_type: impl Into<R<Closure>>,
+    ) -> Self {
+        Value::Pi {
+            arg_name,
+            arg_type: arg_type.into(),
+            result_type: result_type.into(),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -55,12 +87,21 @@ pub enum Delayed {
 
 pub enum Closure {
     FirstOrder { env: Env, var: Symbol, expr: Core },
-    HigherOrder(R<dyn Fn(Value) -> Value>),
+    HigherOrder(R<dyn Sync + Send + Fn(Value) -> Value>),
+}
+
+impl Closure {
+    pub fn val_of(&self, v: Value) -> Value {
+        match self {
+            Closure::FirstOrder { env, var, expr } => val_of(&env.extend(var.clone(), v), expr),
+            Closure::HigherOrder(fun) => fun(v),
+        }
+    }
 }
 
 impl std::fmt::Debug for Closure {
-    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
-        todo!()
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "<CLOSURE>")
     }
 }
 
@@ -70,28 +111,78 @@ impl std::cmp::PartialEq for Closure {
     }
 }
 
-pub enum Ctx {
+#[derive(Debug, Clone, PartialEq)]
+pub enum N {
+    Var(Symbol),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Ctx(R<CtxImpl>);
+
+#[derive(Debug, PartialEq)]
+pub enum CtxImpl {
     Nil,
-    Entry(Symbol, Binder),
+    Entry(Symbol, Binder, Ctx),
 }
 
 impl Ctx {
-    pub const fn new() -> Self {
-        Ctx::Nil
+    pub fn new() -> Self {
+        Ctx(R::new(CtxImpl::Nil))
+    }
+
+    pub fn bind_free(&self, x: Symbol, tv: Value) -> Result<Self> {
+        if self.0.assv(&x).is_some() {
+            Err(Error::AlreadyBound(x.clone(), self.clone()))
+        } else {
+            Ok(Ctx(R::new(CtxImpl::Entry(
+                x,
+                Binder::Free(tv),
+                self.clone(),
+            ))))
+        }
+    }
+
+    pub fn names_only(&self) -> HashSet<Symbol> {
+        match &*self.0 {
+            CtxImpl::Nil => HashSet::new(),
+            CtxImpl::Entry(name, _, next) => {
+                let mut names = next.names_only();
+                names.insert(name.clone());
+                names
+            }
+        }
     }
 }
 
-pub enum Binder {}
-
-#[derive(Debug, PartialEq)]
-pub enum Env {
-    Nil,
-    Entry(Symbol, Value),
+impl CtxImpl {
+    fn assv(&self, x: &Symbol) -> Option<(&Symbol, &Binder)> {
+        match self {
+            CtxImpl::Nil => None,
+            CtxImpl::Entry(s, b, _) if s == x => Some((s, b)),
+            CtxImpl::Entry(_, _, next) => next.0.assv(x),
+        }
+    }
 }
 
+#[derive(Debug, PartialEq)]
+pub enum Binder {
+    Claim(Value),
+    Def(Value, Value),
+    Free(Value),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Env(HashMap<Symbol, Value>);
+
 impl Env {
-    pub const fn new() -> Self {
-        Env::Nil
+    pub fn new() -> Self {
+        Env(HashMap::new())
+    }
+
+    pub fn extend(&self, x: Symbol, v: Value) -> Self {
+        let mut m = self.0.clone();
+        m.insert(x, v);
+        Env(m)
     }
 }
 
@@ -104,8 +195,80 @@ impl Renaming {
 }
 
 pub fn ctx_to_env(ctx: &Ctx) -> Env {
-    match ctx {
-        Ctx::Nil => Env::Nil,
-        _ => todo!(),
+    match &*ctx.0 {
+        CtxImpl::Nil => Env::new(),
+        CtxImpl::Entry(x, Binder::Def(_, v), next) => {
+            let mut env = ctx_to_env(next);
+            env.0.insert(x.clone(), v.clone());
+            env
+        }
+        CtxImpl::Entry(x, Binder::Free(tv), next) => {
+            let mut env = ctx_to_env(next);
+            env.0
+                .insert(x.clone(), Value::Neu(R::new(tv.clone()), N::Var(x.clone())));
+            env
+        }
+        CtxImpl::Entry(_, Binder::Claim(_), next) => ctx_to_env(next),
+    }
+}
+
+pub fn fresh(ctx: &Ctx, x: &Symbol) -> Symbol {
+    freshen(&ctx.names_only(), x)
+}
+
+pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
+    freshen(&(&ctx.names_only() | &occurring_names(expr)), x)
+}
+
+pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
+    match expr {
+        Core::Atom => HashSet::new(),
+        _ => todo!("{:?}", expr),
+    }
+}
+
+#[derive(Debug)]
+pub struct SharedBox<T>(R<Mutex<T>>);
+
+pub struct SharedBoxGuard<'a, T: 'a>(MutexGuard<'a, T>);
+
+impl<T> Clone for SharedBox<T> {
+    fn clone(&self) -> Self {
+        SharedBox(self.0.clone())
+    }
+}
+
+impl<T> SharedBox<T> {
+    pub fn new(inner: T) -> Self {
+        SharedBox(R::new(Mutex::new(inner)))
+    }
+
+    pub fn write_lock(&self) -> SharedBoxGuard<T> {
+        SharedBoxGuard(self.0.lock().unwrap())
+    }
+
+    pub fn read_lock(&self) -> SharedBoxGuard<T> {
+        self.write_lock()
+    }
+}
+
+impl<T: PartialEq> std::cmp::PartialEq for SharedBox<T> {
+    fn eq(&self, other: &Self) -> bool {
+        let a = self.read_lock();
+        let b = other.read_lock();
+        *a == *b
+    }
+}
+
+impl<'a, T: 'a> Deref for SharedBoxGuard<'a, T> {
+    type Target = T;
+    fn deref(&self) -> &Self::Target {
+        &*self.0
+    }
+}
+
+impl<'a, T: 'a> SharedBoxGuard<'a, T> {
+    pub fn replace(&mut self, value: T) -> T {
+        std::mem::replace(&mut *self.0, value)
     }
 }

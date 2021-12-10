@@ -1,14 +1,14 @@
-use crate::basics::{ctx_to_env, Core, Ctx, Delayed, Env, Value};
+use crate::basics::{
+    ctx_to_env, fresh, Closure, Core, Ctx, Delayed, Env, SharedBox, SharedBoxGuard, Value, N, R,
+};
 use std::borrow::Cow;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 fn later(env: Env, exp: Core) -> Value {
-    Value::Delay(Rc::new(RefCell::new(Delayed::Later(env, exp))))
+    Value::Delay(SharedBox::new(Delayed::Later(env, exp)))
 }
 
-fn undelay(c: &Rc<RefCell<Delayed>>) -> Value {
-    match &*c.borrow() {
+fn undelay(c: &SharedBoxGuard<Delayed>) -> Value {
+    match &**c {
         Delayed::Later(env, exp) => now(&val_of(env, exp)).into_owned(),
         _ => unreachable!(),
     }
@@ -17,29 +17,57 @@ fn undelay(c: &Rc<RefCell<Delayed>>) -> Value {
 fn now(v: &Value) -> Cow<Value> {
     match v {
         Value::Delay(delayed) => {
-            if let Delayed::Value(x) = &*delayed.borrow() {
-                return Cow::Owned(x.clone())
+            let mut dv = delayed.write_lock();
+            if let Delayed::Value(x) = &*dv {
+                return Cow::Owned(x.clone());
             }
-            let the_value = undelay(delayed);
-            delayed.replace(Delayed::Value(the_value.clone()));
+            let the_value = undelay(&dv);
+            dv.replace(Delayed::Value(the_value.clone()));
             Cow::Owned(the_value)
         }
         other => Cow::Borrowed(other),
     }
 }
 
-pub fn val_of(_env: &Env, e: &Core) -> Value {
+pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
         Core::U => Value::Universe,
+        Core::Pi(x, a, b) => {
+            let av = later(env.clone(), (**a).clone());
+            Value::pi(
+                x.clone(),
+                av,
+                Closure::FirstOrder {
+                    env: env.clone(),
+                    var: x.clone(),
+                    expr: (**b).clone(),
+                },
+            )
+        }
         Core::Atom => Value::Atom,
         Core::Quote(a) => Value::Quote(a.clone()),
         _ => todo!("{:?}", e),
     }
 }
 
-pub fn read_back_type(_ctx: &Ctx, tv: &Value) -> Core {
-    match *now(tv) {
+pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
+    match &*now(tv) {
         Value::Universe => Core::U,
+        Value::Pi {
+            arg_name: x,
+            arg_type: a,
+            result_type: c,
+        } => {
+            let ae = read_back_type(ctx, a);
+            let x_hat = fresh(ctx, x);
+
+            let ctx_hat = ctx.bind_free(x_hat.clone(), (**a).clone()).unwrap();
+            let r = read_back_type(
+                &ctx_hat,
+                &c.val_of(Value::Neu(a.clone(), N::Var(x_hat.clone()))),
+            );
+            Core::Pi(x_hat, R::new(ae), R::new(r))
+        }
         Value::Atom => Core::Atom,
         _ => todo!("{:?}", tv),
     }
