@@ -3,7 +3,7 @@ use crate::errors::{Error, Result};
 use crate::symbol::Symbol;
 
 pub fn is_type(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
-    unimplemented!()
+    todo!()
 }
 
 pub fn synth(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
@@ -16,7 +16,7 @@ pub fn synth(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
                 Err(Error::InvalidAtom(a.clone()))
             }
         }
-        _ => unimplemented!("{:?}", inp),
+        _ => todo!("{:?}", inp),
     }
 }
 

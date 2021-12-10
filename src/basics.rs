@@ -94,6 +94,6 @@ impl Renaming {
 pub fn ctx_to_env(ctx: &Ctx) -> Env {
     match ctx {
         Ctx::Nil => Env::Nil,
-        _ => unimplemented!(),
+        _ => todo!(),
     }
 }
