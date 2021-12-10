@@ -20,36 +20,21 @@ fn freshen_aux(used: &HashSet<Symbol>, split: (&str, u32)) -> Symbol {
 }
 
 fn split_name(x: &str) -> (&str, u32) {
-    let mut n = 0;
-    let mut multiplier = 1;
-
     let mut chi: Vec<_> = x.char_indices().collect();
 
     let mut name = x;
+    let mut n = 0;
+    let mut multiplier = 1;
 
-    loop {
-        let (i, ch) = *chi.last().unwrap();
-        if ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'].contains(&ch) {
-            match ch {
-                '₀' => {}
-                '₁' => n += 1 * multiplier,
-                '₂' => n += 2 * multiplier,
-                '₃' => n += 3 * multiplier,
-                '₄' => n += 4 * multiplier,
-                '₅' => n += 5 * multiplier,
-                '₆' => n += 6 * multiplier,
-                '₇' => n += 7 * multiplier,
-                '₈' => n += 8 * multiplier,
-                '₉' => n += 9 * multiplier,
-                _ => unreachable!(),
-            }
-            multiplier *= 10;
-            chi.pop();
-            name = &x[..i]
-        } else {
-            return (name, 1 + n);
+    while let Some((i, ch)) = chi.pop() {
+        match subscript_to_digit(ch) {
+            None => return (name, 1 + n),
+            Some(d) => n += d * multiplier,
         }
+        multiplier *= 10;
+        name = &x[..i];
     }
+    ("x", n)
 }
 
 fn unsplit_name((name, num): (&str, u32)) -> String {
@@ -74,11 +59,29 @@ fn number_to_subscript(n: u32) -> String {
         .replace('9', "₉")
 }
 
+fn subscript_to_digit(ch: char) -> Option<u32> {
+    Some(match ch {
+        '₀' => 0,
+        '₁' => 1,
+        '₂' => 2,
+        '₃' => 3,
+        '₄' => 4,
+        '₅' => 5,
+        '₆' => 6,
+        '₇' => 7,
+        '₈' => 8,
+        '₉' => 9,
+        _ => return None
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     macro_rules! set {
+        ( ) => { HashSet::new() };
+
         ( $( $x:expr ),* ) => {
             {
                 let mut temp_set = HashSet::new();
