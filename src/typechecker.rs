@@ -9,6 +9,7 @@ pub fn is_type(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
 pub fn synth(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
     use Core::*;
     match inp {
+        Atom => Ok(Core::the(U, Atom)),
         Quote(a) => {
             if atom_is_ok(a) {
                 Ok(Core::the(Atom, Core::quote(a.clone())))

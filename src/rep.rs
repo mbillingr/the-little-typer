@@ -24,7 +24,15 @@ mod tests {
     fn just_an_atom() {
         assert_eq!(
             rep(&CTX, &Core::quote("atom")),
-            Ok(Core::the(Core::Atom, Core::quote("atom")))
+            Ok(Core::the(Atom, Core::quote("atom")))
+        );
+    }
+
+    #[test]
+    fn just_a_type() {
+        assert_eq!(
+            rep(&CTX, &Atom),
+            Ok(Core::the(U, Atom))
         );
     }
 }
