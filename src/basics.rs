@@ -27,7 +27,7 @@ impl Core {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Universe,
     Nat,
@@ -47,7 +47,7 @@ pub enum Value {
     Delay(R<RefCell<Delayed>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Delayed {
     Value(Value),
     Later(Env, Core),
@@ -59,7 +59,13 @@ pub enum Closure {
 }
 
 impl std::fmt::Debug for Closure {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, _f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl std::cmp::PartialEq for Closure {
+    fn eq(&self, _other: &Self) -> bool {
         todo!()
     }
 }
@@ -77,10 +83,16 @@ impl Ctx {
 
 pub enum Binder {}
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Env {
     Nil,
     Entry(Symbol, Value),
+}
+
+impl Env {
+    pub const fn new() -> Self {
+        Env::Nil
+    }
 }
 
 pub struct Renaming {}

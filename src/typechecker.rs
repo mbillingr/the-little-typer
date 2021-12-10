@@ -2,11 +2,11 @@ use crate::basics::{Core, Ctx, Renaming};
 use crate::errors::{Error, Result};
 use crate::symbol::Symbol;
 
-pub fn is_type(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
+pub fn is_type(_ctx: &Ctx, _renaming: &Renaming, _inp: &Core) -> Result<Core> {
     todo!()
 }
 
-pub fn synth(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
+pub fn synth(_ctx: &Ctx, _renaming: &Renaming, inp: &Core) -> Result<Core> {
     use Core::*;
     match inp {
         Atom => Ok(Core::the(U, Atom)),

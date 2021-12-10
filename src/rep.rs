@@ -30,9 +30,6 @@ mod tests {
 
     #[test]
     fn just_a_type() {
-        assert_eq!(
-            rep(&CTX, &Atom),
-            Ok(Core::the(U, Atom))
-        );
+        assert_eq!(rep(&CTX, &Atom), Ok(Core::the(U, Atom)));
     }
 }
