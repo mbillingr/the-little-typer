@@ -1,9 +1,9 @@
 use std::borrow::Borrow;
 use std::ops::Deref;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
-pub struct Symbol(Rc<str>);
+pub struct Symbol(Arc<str>);
 
 impl Symbol {
     pub fn new(s: &str) -> Self {
@@ -11,12 +11,18 @@ impl Symbol {
     }
 
     pub fn ptr_eq(&self, other: &Self) -> bool {
-        Rc::ptr_eq(&self.0, &other.0)
+        Arc::ptr_eq(&self.0, &other.0)
     }
 }
 
 impl From<String> for Symbol {
     fn from(s: String) -> Self {
+        Symbol(s.into())
+    }
+}
+
+impl From<&str> for Symbol {
+    fn from(s: &str) -> Self {
         Symbol(s.into())
     }
 }

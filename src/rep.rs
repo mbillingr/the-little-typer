@@ -12,3 +12,19 @@ pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
         unreachable!()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use Core::*;
+
+    static CTX: Ctx = Ctx::new();
+
+    #[test]
+    fn just_an_atom() {
+        assert_eq!(
+            rep(&CTX, &Core::quote("atom")),
+            Ok(Core::the(Core::Atom, Core::quote("atom")))
+        );
+    }
+}

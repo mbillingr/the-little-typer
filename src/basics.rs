@@ -1,7 +1,9 @@
 use crate::symbol::Symbol;
+use std::cell::RefCell;
+use std::fmt::Formatter;
 use std::rc::Rc as R;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Core {
     The(R<Core>, R<Core>),
     U,
@@ -19,8 +21,13 @@ impl Core {
     pub fn the(t: impl Into<R<Core>>, e: impl Into<R<Core>>) -> Self {
         Core::The(t.into(), e.into())
     }
+
+    pub fn quote(s: impl Into<Symbol>) -> Self {
+        Core::Quote(s.into())
+    }
 }
 
+#[derive(Debug)]
 pub enum Value {
     Universe,
     Nat,
@@ -31,12 +38,19 @@ pub enum Value {
     Pi {
         arg_name: Symbol,
         arg_type: R<Value>,
-        result_type: Closure,
+        result_type: R<Closure>,
     },
     Lam {
         arg_name: Symbol,
-        result_type: Closure,
+        result_type: R<Closure>,
     },
+    Delay(R<RefCell<Delayed>>),
+}
+
+#[derive(Debug)]
+pub enum Delayed {
+    Value(Value),
+    Later(Env, Core),
 }
 
 pub enum Closure {
@@ -44,18 +58,42 @@ pub enum Closure {
     HigherOrder(R<dyn Fn(Value) -> Value>),
 }
 
-pub struct Ctx {}
+impl std::fmt::Debug for Closure {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
 
-pub struct Env {}
+pub enum Ctx {
+    Nil,
+    Entry(Symbol, Binder),
+}
+
+impl Ctx {
+    pub const fn new() -> Self {
+        Ctx::Nil
+    }
+}
+
+pub enum Binder {}
+
+#[derive(Debug)]
+pub enum Env {
+    Nil,
+    Entry(Symbol, Value),
+}
 
 pub struct Renaming {}
 
 impl Renaming {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Renaming {}
     }
 }
 
 pub fn ctx_to_env(ctx: &Ctx) -> Env {
-    unimplemented!()
+    match ctx {
+        Ctx::Nil => Env::Nil,
+        _ => unimplemented!(),
+    }
 }

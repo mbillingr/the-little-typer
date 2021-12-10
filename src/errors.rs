@@ -1,3 +1,8 @@
+use crate::symbol::Symbol;
+
 pub type Result<T> = std::result::Result<T, Error>;
 
-pub enum Error {}
+#[derive(Debug, PartialEq)]
+pub enum Error {
+    InvalidAtom(Symbol),
+}
