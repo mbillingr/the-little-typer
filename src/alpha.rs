@@ -9,7 +9,7 @@ type Bindings = Vec<()>;
 pub fn alpha_equiv_aux(_lvl: usize, _b1: Bindings, _b2: Bindings, e1: &Core, e2: &Core) -> bool {
     use Core::*;
     match (e1, e2) {
-        (U, U) => true,
+        (U, U) | (Atom, Atom) => true,
         _ => todo!("{:?} ?= {:?}", e1, e2),
     }
 }

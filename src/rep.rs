@@ -46,4 +46,12 @@ mod tests {
             Ok(Core::the(U, Core::pi("x", Atom, Atom)))
         )
     }
+
+    #[test]
+    fn type_annotation() {
+        assert_eq!(
+            rep(&CTX, &Core::the(Atom, Core::quote("atom"))),
+            Ok(Core::the(Atom, Core::quote("atom")))
+        );
+    }
 }

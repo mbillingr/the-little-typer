@@ -4,8 +4,12 @@ use crate::errors::{Error, Result};
 use crate::normalize::{read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
 
-pub fn is_type(_ctx: &Ctx, _renaming: &Renaming, _inp: &Core) -> Result<Core> {
-    todo!()
+pub fn is_type(_ctx: &Ctx, _renaming: &Renaming, inp: &Core) -> Result<Core> {
+    use Core::*;
+    match inp {
+        Atom => Ok(Atom),
+        _ => todo!("{:?}", inp),
+    }
 }
 
 pub fn synth(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
@@ -36,13 +40,18 @@ pub fn synth(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
                 Err(Error::InvalidAtom(a.clone()))
             }
         }
+        The(t, e) => {
+            let t_out = is_type(ctx, renaming, t)?;
+            let e_out = check(ctx, renaming, e, &val_in_ctx(ctx, &t_out))?;
+            Ok(Core::the(t_out, e_out))
+        }
         _ => todo!("{:?}", inp),
     }
 }
 
 pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
     match e {
-        Core::Atom => {
+        Core::Atom | Core::Quote(_) => {
             if let Core::The(t_out, e_out) = synth(ctx, r, e)? {
                 same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
                 Ok((*e_out).clone())
