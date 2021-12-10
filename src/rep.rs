@@ -21,6 +21,7 @@ mod tests {
     use Core::*;
 
     use lazy_static::lazy_static;
+    use crate::errors::Error::UnexpectedType;
 
     lazy_static! {
         static ref CTX: Ctx = Ctx::new();
@@ -52,6 +53,14 @@ mod tests {
         assert_eq!(
             rep(&CTX, &Core::the(Atom, Core::quote("atom"))),
             Ok(Core::the(Atom, Core::quote("atom")))
+        );
+    }
+
+    #[test]
+    fn type_annotation_mismatch() {
+        assert_eq!(
+            rep(&CTX, &Core::the(Nat, Core::quote("atom"))),
+            Err(UnexpectedType(Atom, Nat))
         );
     }
 }

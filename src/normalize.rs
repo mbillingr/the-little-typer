@@ -32,6 +32,7 @@ fn now(v: &Value) -> Cow<Value> {
 pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
         Core::U => Value::Universe,
+        Core::Nat => Value::Nat,
         Core::Pi(x, a, b) => {
             let av = later(env.clone(), (**a).clone());
             Value::pi(
@@ -53,6 +54,7 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
 pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
     match &*now(tv) {
         Value::Universe => Core::U,
+        Value::Nat => Core::Nat,
         Value::Pi {
             arg_name: x,
             arg_type: a,

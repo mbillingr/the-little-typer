@@ -7,6 +7,7 @@ use crate::symbol::{Symbol as S, Symbol};
 pub fn is_type(_ctx: &Ctx, _renaming: &Renaming, inp: &Core) -> Result<Core> {
     use Core::*;
     match inp {
+        Nat => Ok(Nat),
         Atom => Ok(Atom),
         _ => todo!("{:?}", inp),
     }
