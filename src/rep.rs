@@ -20,8 +20,8 @@ mod tests {
     use super::*;
     use Core::*;
 
+    use crate::errors::Error;
     use lazy_static::lazy_static;
-    use crate::errors::Error::UnexpectedType;
 
     lazy_static! {
         static ref CTX: Ctx = Ctx::new();
@@ -45,13 +45,17 @@ mod tests {
         assert_eq!(
             rep(&CTX, &Core::fun(vec![Atom], Atom)),
             Ok(Core::the(U, Core::pi("x", Atom, Atom)))
-        )
+        );
+        assert_eq!(
+            rep(&CTX, &"(-> Atom Atom)".parse().unwrap()),
+            Ok(Core::the(U, Core::pi("x", Atom, Atom)))
+        );
     }
 
     #[test]
     fn type_annotation() {
         assert_eq!(
-            rep(&CTX, &Core::the(Atom, Core::quote("atom"))),
+            rep(&CTX, &"(the Atom 'atom)".parse().unwrap()),
             Ok(Core::the(Atom, Core::quote("atom")))
         );
     }
@@ -59,8 +63,8 @@ mod tests {
     #[test]
     fn type_annotation_mismatch() {
         assert_eq!(
-            rep(&CTX, &Core::the(Nat, Core::quote("atom"))),
-            Err(UnexpectedType(Atom, Nat))
+            rep(&CTX, &"(the Nat 'atom)".parse().unwrap()),
+            Err(Error::UnexpectedType(Atom, Nat))
         );
     }
 }

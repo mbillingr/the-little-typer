@@ -4,6 +4,7 @@ pub mod errors;
 mod fresh;
 pub mod normalize;
 pub mod rep;
+mod sexpr;
 mod symbol;
 pub mod typechecker;
 

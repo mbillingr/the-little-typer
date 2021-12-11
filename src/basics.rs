@@ -1,10 +1,13 @@
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
 use crate::normalize::val_of;
+use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
+use sexpr_parser::parse;
 use std::collections::{HashMap, HashSet};
 use std::fmt::Formatter;
 use std::ops::Deref;
+use std::str::FromStr;
 use std::sync::MutexGuard;
 pub use std::sync::{Arc as R, Mutex, RwLock};
 
@@ -41,6 +44,38 @@ impl Core {
 
     pub fn quote(s: impl Into<Symbol>) -> Self {
         Core::Quote(s.into())
+    }
+}
+
+impl FromStr for Core {
+    type Err = String;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let sexpr = parse::<Sexpr>(s).map_err(|e| format!("{:?}", e))?;
+        Ok((&sexpr).into())
+    }
+}
+
+impl From<&Sexpr> for Core {
+    fn from(sexpr: &Sexpr) -> Self {
+        match sexpr {
+            Sexpr::Symbol(s) => match s.name() {
+                "U" => Core::U,
+                "Nat" => Core::Nat,
+                "Atom" => Core::Atom,
+                name => todo!("{}", name),
+            },
+            Sexpr::List(list) => match &list[..] {
+                [Sexpr::Symbol(s), args @ ..] => match (s.name(), args) {
+                    ("the", [t, v]) => Core::the(Core::from(t), Core::from(v)),
+                    ("quote", [Sexpr::Symbol(s)]) => Core::quote(s.clone()),
+                    ("->", [ts @ .., rt]) => {
+                        Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
+                    }
+                    (key, _) => todo!("{}", key),
+                },
+                _ => unimplemented!("{:?}", list),
+            },
+        }
     }
 }
 
