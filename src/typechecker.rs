@@ -19,7 +19,7 @@ pub fn synth(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
         Fun(types) if types.len() == 2 => {
             // A -> B
             let a = &types[0];
-            let b = &types[0];
+            let b = &types[1];
             let z = fresh_binder(ctx, b, &S::new("x"));
             let a_out = check(ctx, renaming, a, &Value::Universe)?;
             let b_out = check(
