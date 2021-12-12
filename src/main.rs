@@ -5,6 +5,7 @@ use std::io::Write;
 use tlt::{
     basics::{Core, Ctx},
     rep::rep,
+    resugar::resugar,
 };
 
 fn main() -> io::Result<()> {
@@ -14,7 +15,7 @@ fn main() -> io::Result<()> {
         let core: Core = src.parse().unwrap();
 
         match rep(&ctx, &core) {
-            Ok(out) => println!("{}", out),
+            Ok(out) => println!("{}", resugar(&out)),
             Err(e) => eprintln!("{}", e),
         }
     }

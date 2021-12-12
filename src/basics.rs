@@ -19,7 +19,7 @@ pub enum Core {
     Zero,
     Symbol(Symbol),
     Add1(R<Core>),
-    Fun(R<Vec<Core>>),
+    Fun(Vec<Core>),
     Pi(Symbol, R<Core>, R<Core>),
     Lambda(Symbol, R<Core>),
     Atom,
@@ -35,7 +35,7 @@ impl Core {
         assert!(arg_types.len() > 0);
         let mut types = arg_types;
         types.push(ret_type);
-        Core::Fun(R::new(types))
+        Core::Fun(types)
     }
 
     pub fn pi(x: impl Into<Symbol>, xt: impl Into<R<Core>>, rt: impl Into<R<Core>>) -> Self {
