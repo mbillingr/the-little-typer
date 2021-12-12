@@ -1,5 +1,6 @@
 use crate::symbol::Symbol;
 use sexpr_parser::SexprFactory;
+use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum Sexpr {
@@ -34,5 +35,23 @@ impl SexprFactory for Sexpr {
 
     fn pair(_: Self::Sexpr, _: Self::Sexpr) -> Self::Sexpr {
         unimplemented!()
+    }
+}
+
+impl Display for Sexpr {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Sexpr::Symbol(s) => write!(f, "{}", s.name()),
+            Sexpr::List(l) => {
+                write!(f, "(")?;
+                if !l.is_empty() {
+                    write!(f, "{}", l[0])?;
+                    for x in &l[1..] {
+                        write!(f, " {}", x)?;
+                    }
+                }
+                write!(f, ")")
+            }
+        }
     }
 }

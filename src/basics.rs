@@ -5,7 +5,7 @@ use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
 use sexpr_parser::parse;
 use std::collections::{HashMap, HashSet};
-use std::fmt::Formatter;
+use std::fmt::{Display, Formatter};
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::MutexGuard;
@@ -44,6 +44,31 @@ impl Core {
 
     pub fn quote(s: impl Into<Symbol>) -> Self {
         Core::Quote(s.into())
+    }
+}
+
+impl Display for Core {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use Core::*;
+        match self {
+            The(t, v) => write!(f, "(the {} {})", t, v),
+            U => write!(f, "U"),
+            Nat => write!(f, "Nat"),
+            Zero => write!(f, "Zero"),
+            Symbol(s) => write!(f, "{}", s.name()),
+            Add1(n) => write!(f, "(add1 {})", n),
+            Fun(ts) => {
+                write!(f, "(->")?;
+                for t in &**ts {
+                    write!(f, " {}", t)?;
+                }
+                write!(f, ")")
+            }
+            Pi(param, pt, rt) => write!(f, "(Π (({} {})) {})", param.name(), pt, rt),
+            Lambda(param, body) => write!(f, "(λ ({}) {})", param.name(), body),
+            Atom => write!(f, "Atom"),
+            Quote(s) => write!(f, "'{}", s.name()),
+        }
     }
 }
 
