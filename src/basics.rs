@@ -282,6 +282,13 @@ pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
 
 pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
     match expr {
+        Core::Fun(types) => {
+            let mut names = HashSet::new();
+            for t in types {
+                names = &names | &occurring_names(t)
+            }
+            names
+        }
         Core::Atom => HashSet::new(),
         _ => todo!("{:?}", expr),
     }

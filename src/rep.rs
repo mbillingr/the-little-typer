@@ -72,7 +72,10 @@ mod tests {
     fn a_curried_function_type() {
         assert_eq!(
             rep(&CTX, &"(-> Atom (-> Atom Atom))".parse().unwrap()),
-            Ok(Core::the(U, Core::pi("x", Atom, Core::pi("x", Atom, Atom))))
+            Ok(Core::the(
+                U,
+                Core::pi("x", Atom, Core::pi("x₁", Atom, Atom))
+            ))
         );
     }
 }

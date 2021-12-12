@@ -52,7 +52,7 @@ pub fn synth(ctx: &Ctx, renaming: &Renaming, inp: &Core) -> Result<Core> {
 
 pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
     match e {
-        Core::Atom | Core::Quote(_) => {
+        Core::Atom | Core::Quote(_) | Core::Fun(_) => {
             if let Core::The(t_out, e_out) = synth(ctx, r, e)? {
                 same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
                 Ok((*e_out).clone())
