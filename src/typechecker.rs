@@ -1,7 +1,7 @@
 use crate::alpha::is_alpha_equiv;
 use crate::basics::{fresh, fresh_binder, is_var_name, Core, Ctx, Renaming, Value, N};
 use crate::errors::{Error, Result};
-use crate::normalize::{now, read_back_type, val_in_ctx};
+use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
 
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
@@ -107,6 +107,16 @@ pub fn same_type(ctx: &Ctx, given: &Value, expected: &Value) -> Result<()> {
         Ok(())
     } else {
         Err(Error::UnexpectedType(given_e, expected_e))
+    }
+}
+
+pub fn convert(ctx: &Ctx, tv: &Value, av: &Value, bv: &Value) -> Result<()> {
+    let a = read_back(ctx, tv, av);
+    let b = read_back(ctx, tv, bv);
+    if is_alpha_equiv(&a, &b) {
+        Ok(())
+    } else {
+        Err(Error::NotTheSame(read_back_type(ctx, tv), a, b))
     }
 }
 

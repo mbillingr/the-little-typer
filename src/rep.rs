@@ -1,7 +1,7 @@
 use crate::basics::{Core, Ctx, Renaming};
 use crate::errors::Result;
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
-use crate::typechecker::synth;
+use crate::typechecker::{check, convert, is_type, synth};
 
 pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
     if let Core::The(t_out, e_out) = synth(ctx, &Renaming::new(), e)? {
@@ -13,6 +13,16 @@ pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
     } else {
         unreachable!()
     }
+}
+
+pub fn check_same(ctx: &Ctx, t: &Core, a: &Core, b: &Core) -> Result<()> {
+    let t_out = is_type(ctx, &Renaming::new(), t)?;
+    let tv = val_in_ctx(ctx, &t_out);
+    let a_out = check(ctx, &Renaming::new(), a, &tv)?;
+    let b_out = check(ctx, &Renaming::new(), b, &tv)?;
+    let av = val_in_ctx(ctx, &a_out);
+    let bv = val_in_ctx(ctx, &b_out);
+    convert(ctx, &tv, &av, &bv)
 }
 
 #[cfg(test)]
@@ -149,6 +159,26 @@ mod tests {
         assert_eq!(
             rep(&CTX, &"2".parse().unwrap()),
             Ok(Core::the(Nat, Core::nat(2)))
+        );
+    }
+
+    #[test]
+    fn same_atoms() {
+        assert_eq!(
+            check_same(&CTX, &Atom, &Core::quote("apple"), &Core::quote("apple")),
+            Ok(())
+        );
+    }
+
+    #[test]
+    fn different_atoms() {
+        assert_eq!(
+            check_same(&CTX, &Atom, &Core::quote("apple"), &Core::quote("pear")),
+            Err(Error::NotTheSame(
+                Atom,
+                Core::quote("apple"),
+                Core::quote("pear")
+            ))
         );
     }
 }

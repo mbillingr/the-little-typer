@@ -12,6 +12,7 @@ pub enum Error {
     UhasNoType,
     NotAFunctionType(Core),
     UnknownVariable(Symbol),
+    NotTheSame(Core, Core, Core),
 }
 
 impl Display for Error {
@@ -27,6 +28,9 @@ impl Display for Error {
             Error::UhasNoType => write!(f, "U is a type, but does not have a type."),
             Error::NotAFunctionType(t) => write!(f, "Not a function type: {}", t),
             Error::UnknownVariable(name) => write!(f, "Unknown variable {}", name.name()),
+            Error::NotTheSame(t, a, b) => {
+                write!(f, "The expressions {} and {} are not the same {}", a, b, t)
+            }
         }
     }
 }
