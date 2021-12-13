@@ -122,4 +122,17 @@ mod tests {
             Ok(Core::the(Nat, Zero,))
         );
     }
+
+    #[test]
+    fn one_more() {
+        assert_eq!(
+            rep(&CTX, &"(add1 0)".parse().unwrap()),
+            Ok(Core::the(Nat, Core::add1(Zero),))
+        );
+
+        assert_eq!(
+            rep(&CTX, &"1".parse().unwrap()),
+            Ok(Core::the(Nat, Core::add1(Zero),))
+        );
+    }
 }

@@ -41,6 +41,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             Ok(Core::the(Core::U, Core::pi(z, a_out, b_out)))
         }
         Zero => Ok(Core::the(Nat, Zero)),
+        Add1(n) => check(ctx, r, n, &Value::Nat).map(|n_out| Core::the(Nat, Core::add1(n_out))),
         Atom => Ok(Core::the(U, Atom)),
         Quote(a) => {
             if atom_is_ok(a) {
@@ -82,7 +83,7 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             }
             non_pi => Err(Error::NotAFunctionType(read_back_type(ctx, non_pi))),
         },
-        Core::Atom | Core::Quote(_) | Core::Fun(_) | Core::Symbol(_) => {
+        Core::Atom | Core::Quote(_) | Core::Fun(_) | Core::Symbol(_) | Core::Zero => {
             if let Core::The(t_out, e_out) = synth(ctx, r, e)? {
                 same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
                 Ok((*e_out).clone())

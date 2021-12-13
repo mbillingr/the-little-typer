@@ -35,6 +35,7 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
         Core::U => Value::Universe,
         Core::Nat => Value::Nat,
         Core::Zero => Value::Zero,
+        Core::Add1(n) => Value::add1(later(env.clone(), (**n).clone())),
         Core::Pi(x, a, b) => {
             let av = later(env.clone(), (**a).clone());
             Value::pi(
@@ -95,18 +96,19 @@ pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
 
 pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
     use Value::*;
-    let tv = now(tv);
-    let v = now(v);
+    let ntv = now(tv);
+    let nv = now(v);
 
     // first try combinations where we don't need to own v
-    match (&*tv, &*v) {
+    match (&*ntv, &*nv) {
         (Universe, v) => return read_back_type(ctx, &v),
         (Nat, Value::Zero) => return Core::Zero,
+        (Nat, Value::Add1(n_minus_one)) => return Core::add1(read_back(ctx, tv, n_minus_one)),
         _ => {}
     }
 
     // the remaining combinations need to take ownership of v
-    match (&*tv, v.into_owned()) {
+    match (&*ntv, nv.into_owned()) {
         (Atom, Quote(a)) => Core::Quote(a),
         (
             Pi {

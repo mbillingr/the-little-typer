@@ -58,9 +58,13 @@ impl Core {
         let mut n = Core::Zero;
         while x > 0 {
             x -= 1;
-            n = Core::Add1(R::new(n))
+            n = Core::add1(n)
         }
         n
+    }
+
+    pub fn add1(n: Core) -> Self {
+        Core::Add1(R::new(n))
     }
 }
 
@@ -113,6 +117,7 @@ impl From<&Sexpr> for Core {
             Sexpr::List(list) => match &list[..] {
                 [Sexpr::Symbol(s), args @ ..] => match (s.name(), args) {
                     ("the", [t, v]) => Core::the(Core::from(t), Core::from(v)),
+                    ("add1", [n]) => Core::add1(Core::from(n)),
                     ("quote", [Sexpr::Symbol(s)]) => Core::quote(s.clone()),
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
@@ -151,6 +156,10 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn add1(n: impl Into<R<Value>>) -> Self {
+        Value::Add1(n.into())
+    }
+
     pub fn pi(
         arg_name: Symbol,
         arg_type: impl Into<R<Value>>,
