@@ -83,7 +83,7 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             }
             non_pi => Err(Error::NotAFunctionType(read_back_type(ctx, non_pi))),
         },
-        Core::Atom | Core::Quote(_) | Core::Fun(_) | Core::Symbol(_) | Core::Zero => {
+        Core::Atom | Core::Quote(_) | Core::Fun(_) | Core::Symbol(_) | Core::Zero | Core::Add1(_) => {
             if let Core::The(t_out, e_out) = synth(ctx, r, e)? {
                 same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
                 Ok((*e_out).clone())
