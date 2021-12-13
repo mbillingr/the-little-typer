@@ -16,7 +16,19 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
                 let b_out = is_type(&ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?, r, b)?;
                 Ok(Core::pi(x, a_out, b_out))
             }
-            _ => todo!("{:?}", inp),
+            [a, b, cs @ ..] => {
+                let x = fresh_binder(ctx, &make_app(b, cs), &S::new("x"));
+                let a_out = is_type(ctx, r, a)?;
+                let mut rest = vec![b.clone()];
+                rest.extend(cs.iter().cloned());
+                let t_out = is_type(
+                    &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?,
+                    r,
+                    &Core::Fun(rest),
+                )?;
+                Ok(Core::pi(x, a_out, t_out))
+            }
+            _ => panic!("invalid fun types {:?}", params),
         },
         Pi(x, a, b) => {
             let y = fresh(ctx, x);
@@ -131,7 +143,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             },
             [_rand0, _rands @ ..] => todo!(),
         },
-        App(_, _) => todo!(),
+        App(_, _) => panic!("use AppStar for synthesis"),
         Symbol(x) if is_var_name(x) => {
             let real_x = r.rename(x);
             let xtv = ctx.var_type(&real_x)?;
