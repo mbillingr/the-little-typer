@@ -10,6 +10,9 @@ pub mod symbol;
 pub mod typechecker;
 
 #[cfg(test)]
+mod book;
+
+#[cfg(test)]
 mod tests {
     #[test]
     fn it_works() {
