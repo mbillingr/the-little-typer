@@ -6,6 +6,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
+    CantDetermineType(Core),
     InvalidAtom(Symbol),
     WrongType(Core, Core),
     AlreadyBound(Symbol, Ctx),
@@ -19,6 +20,7 @@ pub enum Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Error::CantDetermineType(e) => write!(f, "Can't determine type of {}", e),
             Error::InvalidAtom(s) => write!(f, "Invalid atom: {}", s.name()),
             Error::WrongType(actual, expected) => {
                 write!(f, "Expected type {} but got {}", expected, actual)

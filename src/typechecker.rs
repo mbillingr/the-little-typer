@@ -32,7 +32,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         PiStar(_, _) => todo!(),
         Atom => Ok(Atom),
 
-        The(_, _) => match check(ctx, r, inp, &Value::Universe) {
+        The(_, _) | App(_, _) | AppStar(_, _) => match check(ctx, r, inp, &Value::Universe) {
             Ok(t_out) => Ok(t_out),
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
@@ -47,7 +47,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
 
         Zero | Add1(_) | Quote(_) | LambdaStar(_, _) | Lambda(_, _) => {
             Err(Error::NotAType(inp.clone()))
-        } //_ => todo!("{:?}", inp),
+        }
     }
 }
 
@@ -67,6 +67,19 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
                 )?;
                 Ok(Core::the(U, Core::pi(z, a_out, b_out)))
             }
+            [a, b, cs @ ..] => {
+                let z = fresh_binder(ctx, &make_app(b, cs), &S::new("x"));
+                let a_out = check(ctx, r, a, &Value::Universe)?;
+                let mut out_args = vec![b.clone()];
+                out_args.extend(cs.iter().cloned());
+                let t_out = check(
+                    &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
+                    r,
+                    &Core::Fun(out_args),
+                    &Value::Universe,
+                )?;
+                Ok(Core::the(U, Core::pi(z, a_out, t_out)))
+            }
             _ => todo!(),
         },
         Pi(x, a, b) => {
@@ -80,6 +93,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             )?;
             Ok(Core::the(U, Core::pi(x_hat, a_out, b_out)))
         }
+        PiStar(_, _) => todo!(),
         Nat => Ok(Core::the(U, Nat)),
         Zero => Ok(Core::the(Nat, Zero)),
         Add1(n) => check(ctx, r, n, &Value::Nat).map(|n_out| Core::the(Nat, Core::add1(n_out))),
@@ -96,12 +110,34 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             let e_out = check(ctx, r, e, &val_in_ctx(ctx, &t_out))?;
             Ok(Core::the(t_out, e_out))
         }
+        AppStar(rator, args) => match &args[..] {
+            [] => panic!("nullary application"),
+            [rand] => match synth(ctx, r, rator)? {
+                The(rator_t, rator_out) => match val_in_ctx(ctx, &rator_t) {
+                    Value::Pi {
+                        arg_type: a,
+                        result_type: c,
+                        ..
+                    } => {
+                        let rand_out = check(ctx, r, rand, &a)?;
+                        Ok(Core::the(
+                            read_back_type(ctx, &c.val_of(val_in_ctx(ctx, &rand_out))),
+                            Core::App(rator_out, rand_out.into()),
+                        ))
+                    }
+                    non_pi => Err(Error::NotAFunctionType(read_back_type(ctx, &non_pi))),
+                },
+                _ => unreachable!(),
+            },
+            [_rand0, _rands @ ..] => todo!(),
+        },
+        App(_, _) => todo!(),
         Symbol(x) if is_var_name(x) => {
             let real_x = r.rename(x);
             let xtv = ctx.var_type(&real_x)?;
             Ok(Core::the(read_back_type(ctx, &xtv), inp.clone()))
         }
-        _ => todo!("{:?}", inp),
+        Symbol(_) | Lambda(_, _) | LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
     }
 }
 
@@ -124,10 +160,25 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             }
             non_pi => Err(Error::NotAFunctionType(read_back_type(ctx, non_pi))),
         },
-        Core::Atom
+        Core::LambdaStar(params, b) => match &params[..] {
+            [] => panic!("nullary lambda"),
+            [x] => check(ctx, r, &Core::lambda(x.clone(), b.clone()), tv),
+            [x, xs @ ..] => check(
+                ctx,
+                r,
+                &Core::lambda(x.clone(), Core::LambdaStar(xs.to_vec(), b.clone())),
+                tv,
+            ),
+        },
+        Core::The(_, _)
+        | Core::U
+        | Core::Atom
         | Core::Quote(_)
         | Core::Fun(_)
         | Core::Pi(_, _, _)
+        | Core::PiStar(_, _)
+        | Core::App(_, _)
+        | Core::AppStar(_, _)
         | Core::Symbol(_)
         | Core::Nat
         | Core::Zero
@@ -139,7 +190,6 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
                 unreachable!()
             }
         }
-        _ => todo!("{:?}", e),
     }
 }
 
@@ -165,6 +215,10 @@ pub fn convert(ctx: &Ctx, tv: &Value, av: &Value, bv: &Value) -> Result<()> {
 
 pub fn atom_is_ok(_: &Symbol) -> bool {
     true
+}
+
+fn make_app(a: &Core, cs: &[Core]) -> Core {
+    Core::app_star(a.clone(), cs)
 }
 
 #[cfg(test)]

@@ -60,13 +60,18 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
         ),
         Core::Atom => Value::Atom,
         Core::Quote(a) => Value::Quote(a.clone()),
+        Core::App(rator, rand) => do_ap(
+            later(env.clone(), (**rator).clone()),
+            later(env.clone(), (**rand).clone()),
+        ),
         Core::Symbol(x) if is_var_name(x) => env.var_val(x).unwrap(),
+
         _ => todo!("{:?}", e),
     }
 }
 
 fn do_ap(rator: Value, rand: Value) -> Value {
-    match rator {
+    match &*now(&rator) {
         Value::Lam { body, .. } => body.val_of(rand),
         _ => todo!("{:?}", rator),
     }

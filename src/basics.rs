@@ -25,6 +25,8 @@ pub enum Core {
     Pi(Symbol, R<Core>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
     Lambda(Symbol, R<Core>),
+    AppStar(R<Core>, Vec<Core>),
+    App(R<Core>, R<Core>),
     Atom,
     Quote(Symbol),
 }
@@ -47,6 +49,14 @@ impl Core {
 
     pub fn lambda(x: impl Into<Symbol>, body: impl Into<R<Core>>) -> Self {
         Self::Lambda(x.into(), body.into())
+    }
+
+    pub fn app(f: impl Into<R<Core>>, a: impl Into<R<Core>>) -> Self {
+        Core::App(f.into(), a.into())
+    }
+
+    pub fn app_star(f: impl Into<R<Core>>, args: impl Into<Vec<Core>>) -> Self {
+        Core::AppStar(f.into(), args.into())
     }
 
     pub fn symbol(s: impl Into<Symbol>) -> Self {
@@ -107,6 +117,16 @@ impl Display for Core {
                 body
             ),
             Lambda(param, body) => write!(f, "(λ ({}) {})", param.name(), body),
+            AppStar(func, args) => write!(
+                f,
+                "({} {})",
+                func,
+                args.iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            ),
+            App(func, arg) => write!(f, "({} {})", func, arg),
             Atom => write!(f, "Atom"),
             Quote(s) => write!(f, "'{}", s.name()),
         }
@@ -148,6 +168,9 @@ impl From<&Sexpr> for Core {
                     },
                     (key, _) => todo!("{}", key),
                 },
+                [f, args @ ..] => {
+                    Core::AppStar(R::new(Core::from(f)), args.iter().map(Core::from).collect())
+                }
                 _ => unimplemented!("{:?}", list),
             },
         }
@@ -412,6 +435,10 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
             &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
         }
         U | Nat | Zero | Atom | Quote(_) => hashset! {},
+        AppStar(f, args) => args
+            .iter()
+            .fold(occurring_names(f), |a, b| &a | &occurring_names(b)),
+        App(f, a) => &occurring_names(f) | &occurring_names(a),
         Symbol(x) if is_var_name(x) => hashset! {x.clone()},
         Symbol(_) => hashset! {},
     }
