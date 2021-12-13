@@ -34,6 +34,7 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
         Core::U => Value::Universe,
         Core::Nat => Value::Nat,
+        Core::Zero => Value::Zero,
         Core::Pi(x, a, b) => {
             let av = later(env.clone(), (**a).clone());
             Value::pi(
@@ -100,6 +101,7 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
     // first try combinations where we don't need to own v
     match (&*tv, &*v) {
         (Universe, v) => return read_back_type(ctx, &v),
+        (Nat, Value::Zero) => return Core::Zero,
         _ => {}
     }
 

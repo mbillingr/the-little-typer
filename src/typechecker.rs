@@ -40,6 +40,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             )?;
             Ok(Core::the(Core::U, Core::pi(z, a_out, b_out)))
         }
+        Zero => Ok(Core::the(Nat, Zero)),
         Atom => Ok(Core::the(U, Atom)),
         Quote(a) => {
             if atom_is_ok(a) {

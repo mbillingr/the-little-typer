@@ -53,6 +53,15 @@ impl Core {
     pub fn quote(s: impl Into<Symbol>) -> Self {
         Core::Quote(s.into())
     }
+
+    pub fn nat(mut x: u64) -> Self {
+        let mut n = Core::Zero;
+        while x > 0 {
+            x -= 1;
+            n = Core::Add1(R::new(n))
+        }
+        n
+    }
 }
 
 impl Display for Core {
@@ -99,6 +108,7 @@ impl From<&Sexpr> for Core {
                 "x" | "y" | "z" => Core::Symbol(s.clone()),
                 name => todo!("{}", name),
             },
+            Sexpr::SmallNat(x) => Core::nat(*x),
             Sexpr::List(list) => match &list[..] {
                 [Sexpr::Symbol(s), args @ ..] => match (s.name(), args) {
                     ("the", [t, v]) => Core::the(Core::from(t), Core::from(v)),

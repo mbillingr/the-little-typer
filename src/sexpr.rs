@@ -4,17 +4,18 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum Sexpr {
+    SmallNat(u64),
     Symbol(Symbol),
     List(Vec<Sexpr>),
 }
 
 impl SexprFactory for Sexpr {
     type Sexpr = Sexpr;
-    type Integer = i64;
+    type Integer = u64;
     type Float = f64;
 
-    fn int(_: i64) -> Self::Sexpr {
-        unimplemented!()
+    fn int(x: u64) -> Self::Sexpr {
+        Sexpr::SmallNat(x)
     }
 
     fn float(_: f64) -> Self::Sexpr {
@@ -41,6 +42,7 @@ impl SexprFactory for Sexpr {
 impl Display for Sexpr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Sexpr::SmallNat(x) => write!(f, "{}", x),
             Sexpr::Symbol(s) => write!(f, "{}", s.name()),
             Sexpr::List(l) => {
                 write!(f, "(")?;
