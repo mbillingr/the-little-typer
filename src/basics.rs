@@ -216,6 +216,10 @@ pub enum Closure {
 }
 
 impl Closure {
+    pub fn higher(f: impl 'static + Sync + Send + Fn(Value) -> Value) -> Self {
+        Closure::HigherOrder(R::new(f))
+    }
+
     pub fn val_of(&self, v: Value) -> Value {
         match self {
             Closure::FirstOrder { env, var, expr } => val_of(&env.extend(var.clone(), v), expr),

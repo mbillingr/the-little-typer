@@ -79,7 +79,7 @@ mod tests {
     fn type_annotation_mismatch() {
         assert_eq!(
             rep(&CTX, &"(the Nat 'atom)".parse().unwrap()),
-            Err(Error::UnexpectedType(Atom, Nat))
+            Err(Error::WrongType(Atom, Nat))
         );
     }
 

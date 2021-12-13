@@ -19,6 +19,7 @@ fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: &Cor
 
         // these should go into a general false case, but i don't want to miss anything important now
         (Atom, Nat) => false,
+        (Nat, U) => false,
 
         _ => todo!("{:?} ?= {:?}", e1, e2),
     }

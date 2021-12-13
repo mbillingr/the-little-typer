@@ -7,6 +7,7 @@ use crate::symbol::{Symbol as S, Symbol};
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use Core::*;
     match inp {
+        U => Ok(U),
         Nat => Ok(Nat),
         Fun(params) => match &params[..] {
             [a, b] => {
@@ -17,8 +18,36 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             }
             _ => todo!("{:?}", inp),
         },
+        Pi(x, a, b) => {
+            let y = fresh(ctx, x);
+            let a_out = is_type(ctx, r, a)?;
+            let a_outv = val_in_ctx(ctx, &a_out);
+            let b_out = is_type(
+                &ctx.bind_free(y.clone(), a_outv)?,
+                &r.extend(x.clone(), y.clone()),
+                b,
+            )?;
+            Ok(Core::pi(y, a_out, b_out))
+        }
+        PiStar(_, _) => todo!(),
         Atom => Ok(Atom),
-        _ => todo!("{:?}", inp),
+
+        The(_, _) => match check(ctx, r, inp, &Value::Universe) {
+            Ok(t_out) => Ok(t_out),
+            Err(_) => Err(Error::NotAType(inp.clone())),
+        },
+
+        Symbol(s) => match check(ctx, r, inp, &Value::Universe) {
+            Ok(t_out) => Ok(t_out),
+            Err(_) if is_var_name(s) => ctx.var_type(s).and_then(|other_tv| {
+                Err(Error::WrongType(read_back_type(ctx, &other_tv), Core::U))
+            }),
+            Err(_) => Err(Error::NotAType(inp.clone())),
+        },
+
+        Zero | Add1(_) | Quote(_) | LambdaStar(_, _) | Lambda(_, _) => {
+            Err(Error::NotAType(inp.clone()))
+        } //_ => todo!("{:?}", inp),
     }
 }
 
@@ -26,19 +55,30 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use Core::*;
     match inp {
         U => Err(Error::UhasNoType),
-        Fun(types) if types.len() == 2 => {
-            // A -> B
-            let a = &types[0];
-            let b = &types[1];
-            let z = fresh_binder(ctx, b, &S::new("x"));
+        Fun(types) => match &types[..] {
+            [a, b] => {
+                let z = fresh_binder(ctx, b, &S::new("x"));
+                let a_out = check(ctx, r, a, &Value::Universe)?;
+                let b_out = check(
+                    &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
+                    r,
+                    b,
+                    &Value::Universe,
+                )?;
+                Ok(Core::the(U, Core::pi(z, a_out, b_out)))
+            }
+            _ => todo!(),
+        },
+        Pi(x, a, b) => {
+            let x_hat = fresh(ctx, x);
             let a_out = check(ctx, r, a, &Value::Universe)?;
             let b_out = check(
-                &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
-                r,
+                &ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?,
+                &r.extend(x.clone(), x_hat.clone()),
                 b,
                 &Value::Universe,
             )?;
-            Ok(Core::the(Core::U, Core::pi(z, a_out, b_out)))
+            Ok(Core::the(U, Core::pi(x_hat, a_out, b_out)))
         }
         Nat => Ok(Core::the(U, Nat)),
         Zero => Ok(Core::the(Nat, Zero)),
@@ -87,6 +127,7 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
         Core::Atom
         | Core::Quote(_)
         | Core::Fun(_)
+        | Core::Pi(_, _, _)
         | Core::Symbol(_)
         | Core::Nat
         | Core::Zero
@@ -108,7 +149,7 @@ pub fn same_type(ctx: &Ctx, given: &Value, expected: &Value) -> Result<()> {
     if is_alpha_equiv(&given_e, &expected_e) {
         Ok(())
     } else {
-        Err(Error::UnexpectedType(given_e, expected_e))
+        Err(Error::WrongType(given_e, expected_e))
     }
 }
 
@@ -124,4 +165,20 @@ pub fn convert(ctx: &Ctx, tv: &Value, av: &Value, bv: &Value) -> Result<()> {
 
 pub fn atom_is_ok(_: &Symbol) -> bool {
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pi_is_a_type() {
+        assert!(check(
+            &Ctx::new(),
+            &Renaming::new(),
+            &Core::pi(Symbol::new("x"), Core::Nat, Core::Nat),
+            &Value::Universe
+        )
+        .is_ok());
+    }
 }
