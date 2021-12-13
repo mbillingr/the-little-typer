@@ -15,6 +15,11 @@ fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
             let v = resugar_(v);
             (&t.0 | &v.0, Core::the(t.1, v.1))
         }
+        Lambda(x, result) => {
+            let (mut names, r) = resugar_(result);
+            names.remove(x);
+            (names, add_lambda(x.clone(), r))
+        }
         PiStar(bindings, result_type) => match &bindings[..] {
             [(x, arg_type)] => resugar_unary_pi(x, arg_type, result_type),
             _ => todo!(),
@@ -35,6 +40,17 @@ fn resugar_unary_pi(
         todo!()
     } else {
         (&arg.0 | &res.0, add_fun(arg.1, res.1))
+    }
+}
+
+fn add_lambda(x: Symbol, term: Core) -> Core {
+    match term {
+        Core::Lambda(y, result) => Core::LambdaStar(vec![x, y], result),
+        Core::LambdaStar(mut xs, result) => {
+            xs.insert(0, x);
+            Core::LambdaStar(xs, result)
+        }
+        _ => Core::lambda(x, term),
     }
 }
 

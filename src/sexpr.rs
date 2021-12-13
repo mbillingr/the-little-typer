@@ -9,6 +9,15 @@ pub enum Sexpr {
     List(Vec<Sexpr>),
 }
 
+impl Sexpr {
+    pub fn as_symbol(&self) -> Option<&Symbol> {
+        match self {
+            Sexpr::Symbol(s) => Some(s),
+            _ => None,
+        }
+    }
+}
+
 impl SexprFactory for Sexpr {
     type Sexpr = Sexpr;
     type Integer = u64;

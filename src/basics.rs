@@ -51,6 +51,10 @@ impl Core {
         Self::Lambda(x.into(), body.into())
     }
 
+    pub fn lambda_star(params: impl Into<Vec<Symbol>>, body: impl Into<R<Core>>) -> Self {
+        Self::LambdaStar(params.into(), body.into())
+    }
+
     pub fn app(f: impl Into<R<Core>>, a: impl Into<R<Core>>) -> Self {
         Core::App(f.into(), a.into())
     }
@@ -149,8 +153,7 @@ impl From<&Sexpr> for Core {
                 "Nat" => Core::Nat,
                 "zero" => Core::Zero,
                 "Atom" => Core::Atom,
-
-                "x" | "y" | "z" => Core::Symbol(s.clone()),
+                _ if is_var_name(s) => Core::Symbol(s.clone()),
                 name => todo!("{}", name),
             },
             Sexpr::SmallNat(x) => Core::nat(*x),
@@ -162,11 +165,14 @@ impl From<&Sexpr> for Core {
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
                     }
-                    ("lambda", [Sexpr::List(params), body]) => match &params[..] {
-                        [Sexpr::Symbol(x)] => Core::lambda(x.clone(), Core::from(body)),
-                        _ => todo!(),
-                    },
-                    (key, _) => todo!("{}", key),
+                    ("lambda", [Sexpr::List(params), body]) => Core::LambdaStar(
+                        params
+                            .iter()
+                            .map(|x| x.as_symbol().cloned().unwrap())
+                            .collect(),
+                        Core::from(body).into(),
+                    ),
+                    (key, _) => todo!("({} ...)", key),
                 },
                 [f, args @ ..] => {
                     Core::AppStar(R::new(Core::from(f)), args.iter().map(Core::from).collect())
