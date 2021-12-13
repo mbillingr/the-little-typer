@@ -32,11 +32,13 @@ pub fn now(v: &Value) -> Cow<Value> {
 
 pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
+        Core::The(_, expr) => val_of(env, expr),
         Core::U => Value::Universe,
         Core::Nat => Value::Nat,
         Core::Zero => Value::Zero,
         Core::Add1(n) => Value::add1(later(env.clone(), (**n).clone())),
-        Core::PiStar(_, _) => panic!("Attempt to evaluate sugared Pi"),
+        Core::Fun(_) => panic!("Attempt to evaluate -> (should have been converted to Pi)"),
+        Core::PiStar(_, _) => panic!("Attempt to evaluate Pi* (should have been converted to Pi)"),
         Core::Pi(x, a, b) => {
             let av = later(env.clone(), (**a).clone());
             Value::pi(
@@ -60,13 +62,13 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
         ),
         Core::Atom => Value::Atom,
         Core::Quote(a) => Value::Quote(a.clone()),
+        Core::AppStar(_, _) => panic!("Attempt to evaluate n-ary application (should have been converted to sequence of unary applications)"),
         Core::App(rator, rand) => do_ap(
             later(env.clone(), (**rator).clone()),
             later(env.clone(), (**rand).clone()),
         ),
         Core::Symbol(x) if is_var_name(x) => env.var_val(x).unwrap(),
-
-        _ => todo!("{:?}", e),
+        Core::Symbol(x) => panic!("No evaluator for {}", x.name()),
     }
 }
 
