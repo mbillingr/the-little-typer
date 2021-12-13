@@ -1,5 +1,6 @@
 use crate::basics::{
-    ctx_to_env, fresh, Closure, Core, Ctx, Delayed, Env, SharedBox, SharedBoxGuard, Value, N, R,
+    ctx_to_env, fresh, is_var_name, Closure, Core, Ctx, Delayed, Env, SharedBox, SharedBoxGuard,
+    Value, N, R,
 };
 use std::borrow::Cow;
 
@@ -14,7 +15,7 @@ fn undelay(c: &SharedBoxGuard<Delayed>) -> Value {
     }
 }
 
-fn now(v: &Value) -> Cow<Value> {
+pub fn now(v: &Value) -> Cow<Value> {
     match v {
         Value::Delay(delayed) => {
             let mut dv = delayed.write_lock();
@@ -45,9 +46,25 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
                 },
             )
         }
+        Core::Lambda(x, b) => Value::lam(
+            x.clone(),
+            Closure::FirstOrder {
+                env: env.clone(),
+                var: x.clone(),
+                expr: (**b).clone(),
+            },
+        ),
         Core::Atom => Value::Atom,
         Core::Quote(a) => Value::Quote(a.clone()),
+        Core::Symbol(x) if is_var_name(x) => env.var_val(x).unwrap(),
         _ => todo!("{:?}", e),
+    }
+}
+
+fn do_ap(rator: Value, rand: Value) -> Value {
+    match rator {
+        Value::Lam { body, .. } => body.val_of(rand),
+        _ => todo!("{:?}", rator),
     }
 }
 
@@ -89,7 +106,36 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
     // the remaining combinations need to take ownership of v
     match (&*tv, v.into_owned()) {
         (Atom, Quote(a)) => Core::Quote(a),
+        (
+            Pi {
+                arg_name: x,
+                arg_type: a,
+                result_type: c,
+            },
+            f,
+        ) => {
+            let y = match &f {
+                Value::Lam { arg_name, .. } => arg_name,
+                _ => x,
+            };
+            let x_hat = fresh(ctx, y);
+            return Core::lambda(
+                x_hat.clone(),
+                read_back(
+                    &ctx.bind_free(x_hat.clone(), (**a).clone()).unwrap(),
+                    &c.val_of(Value::neu(a.clone(), N::Var(x_hat.clone()))),
+                    &do_ap(f, Value::neu(a.clone(), N::Var(x_hat))),
+                ),
+            );
+        }
+        (_, Value::Neu(_, ne)) => read_back_neutral(ctx, ne),
         (ntv, nv) => todo!("{:?} {:?}", ntv, nv),
+    }
+}
+
+fn read_back_neutral(_ctx: &Ctx, ne: N) -> Core {
+    match ne {
+        N::Var(x) => Core::Symbol(x),
     }
 }
 

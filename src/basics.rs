@@ -42,6 +42,14 @@ impl Core {
         Self::Pi(x.into(), xt.into(), rt.into())
     }
 
+    pub fn lambda(x: impl Into<Symbol>, body: impl Into<R<Core>>) -> Self {
+        Self::Lambda(x.into(), body.into())
+    }
+
+    pub fn symbol(s: impl Into<Symbol>) -> Self {
+        Core::Symbol(s.into())
+    }
+
     pub fn quote(s: impl Into<Symbol>) -> Self {
         Core::Quote(s.into())
     }
@@ -87,6 +95,8 @@ impl From<&Sexpr> for Core {
                 "U" => Core::U,
                 "Nat" => Core::Nat,
                 "Atom" => Core::Atom,
+
+                "x" | "y" | "z" => Core::Symbol(s.clone()),
                 name => todo!("{}", name),
             },
             Sexpr::List(list) => match &list[..] {
@@ -96,6 +106,10 @@ impl From<&Sexpr> for Core {
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
                     }
+                    ("lambda", [Sexpr::List(params), body]) => match &params[..] {
+                        [Sexpr::Symbol(x)] => Core::lambda(x.clone(), Core::from(body)),
+                        _ => todo!(),
+                    },
                     (key, _) => todo!("{}", key),
                 },
                 _ => unimplemented!("{:?}", list),
@@ -119,7 +133,7 @@ pub enum Value {
     },
     Lam {
         arg_name: Symbol,
-        result_type: R<Closure>,
+        body: R<Closure>,
     },
     Neu(R<Value>, N),
     Delay(SharedBox<Delayed>),
@@ -136,6 +150,17 @@ impl Value {
             arg_type: arg_type.into(),
             result_type: result_type.into(),
         }
+    }
+
+    pub fn lam(arg_name: Symbol, body: impl Into<R<Closure>>) -> Self {
+        Value::Lam {
+            arg_name,
+            body: body.into(),
+        }
+    }
+
+    pub fn neu(t: impl Into<R<Value>>, neutral: N) -> Self {
+        Value::Neu(t.into(), neutral)
     }
 }
 
@@ -212,6 +237,15 @@ impl Ctx {
             }
         }
     }
+
+    pub fn var_type(&self, x: &Symbol) -> Result<Value> {
+        match &*self.0 {
+            CtxImpl::Nil => Err(Error::UnknownVariable(x.clone())),
+            CtxImpl::Entry(_, Binder::Claim(_), next) => next.var_type(x),
+            CtxImpl::Entry(y, b, _) if x == y => Ok(b.get_type()),
+            CtxImpl::Entry(_, _, next) => next.var_type(x),
+        }
+    }
 }
 
 impl CtxImpl {
@@ -231,6 +265,14 @@ pub enum Binder {
     Free(Value),
 }
 
+impl Binder {
+    pub fn get_type(&self) -> Value {
+        match self {
+            Binder::Claim(tv) | Binder::Def(tv, _) | Binder::Free(tv) => tv.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Env(HashMap<Symbol, Value>);
 
@@ -244,13 +286,37 @@ impl Env {
         m.insert(x, v);
         Env(m)
     }
+
+    pub fn var_val(&self, x: &Symbol) -> Result<Value> {
+        match self.0.get(x) {
+            None => Err(Error::UnknownVariable(x.clone())),
+            Some(v) => Ok(v.clone()),
+        }
+    }
 }
 
-pub struct Renaming {}
+pub struct Renaming {
+    map: HashMap<Symbol, Symbol>,
+}
 
 impl Renaming {
-    pub const fn new() -> Self {
-        Renaming {}
+    pub fn new() -> Self {
+        Renaming {
+            map: HashMap::new(),
+        }
+    }
+
+    pub fn extend(&self, from: Symbol, to: Symbol) -> Self {
+        let mut map = self.map.clone();
+        map.insert(from, to);
+        Renaming { map }
+    }
+
+    pub fn rename(&self, x: &Symbol) -> Symbol {
+        match self.map.get(x) {
+            None => x.clone(),
+            Some(y) => y.clone(),
+        }
     }
 }
 
@@ -337,5 +403,17 @@ impl<'a, T: 'a> Deref for SharedBoxGuard<'a, T> {
 impl<'a, T: 'a> SharedBoxGuard<'a, T> {
     pub fn replace(&mut self, value: T) -> T {
         std::mem::replace(&mut *self.0, value)
+    }
+}
+
+pub fn is_var_name(x: &Symbol) -> bool {
+    match x.name() {
+        "U" | "Nat" | "zero" | "add1" | "which-Nat" | "ind-Nat" | "rec-Nat" | "iter-Nat" | "->"
+        | "→" | "Π" | "Pi" | "∏" | "λ" | "lambda" | "quote" | "Atom" | "Σ" | "Sigma" | "Pair"
+        | "cons" | "car" | "cdr" | "Trivial" | "sole" | "::" | "nil" | "List" | "rec-List"
+        | "ind-List" | "Absurd" | "ind-Absurd" | "=" | "same" | "replace" | "symm" | "trans"
+        | "cong" | "ind-=" | "Vec" | "vec::" | "vecnil" | "head" | "tail" | "ind-Vec"
+        | "Either" | "left" | "right" | "ind-Either" | "the" | "TODO" => false,
+        _ => true,
     }
 }

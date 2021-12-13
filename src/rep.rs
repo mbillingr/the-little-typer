@@ -41,6 +41,11 @@ mod tests {
     }
 
     #[test]
+    fn u_does_not_have_a_type() {
+        assert_eq!(rep(&CTX, &U), Err(Error::UhasNoType));
+    }
+
+    #[test]
     fn a_function_type() {
         assert_eq!(
             rep(&CTX, &Core::fun(vec![Atom], Atom)),
@@ -75,6 +80,36 @@ mod tests {
             Ok(Core::the(
                 U,
                 Core::pi("x", Atom, Core::pi("x₁", Atom, Atom))
+            ))
+        );
+    }
+
+    #[test]
+    fn a_function_type_and_various_implementations() {
+        // A function that takes an Atom and returns an Atom
+        let expected_type = Core::pi("x", Atom, Atom);
+
+        // The identity function satisfies that type.
+        assert_eq!(
+            rep(
+                &CTX,
+                &"(the (-> Atom Atom) (lambda (x) x))".parse().unwrap()
+            ),
+            Ok(Core::the(
+                expected_type.clone(),
+                Core::lambda("x", Core::symbol("x"))
+            ))
+        );
+
+        // A function that ignores its argument and always returns a constant Atom satisfies that type too.
+        assert_eq!(
+            rep(
+                &CTX,
+                &"(the (-> Atom Atom) (lambda (x) 'y))".parse().unwrap()
+            ),
+            Ok(Core::the(
+                expected_type.clone(),
+                Core::lambda("x", Core::quote("y"))
             ))
         );
     }

@@ -9,6 +9,9 @@ pub enum Error {
     InvalidAtom(Symbol),
     UnexpectedType(Core, Core),
     AlreadyBound(Symbol, Ctx),
+    UhasNoType,
+    NotAFunctionType(Core),
+    UnknownVariable(Symbol),
 }
 
 impl Display for Error {
@@ -21,6 +24,9 @@ impl Display for Error {
             Error::AlreadyBound(s, ctx) => {
                 write!(f, "Name {} is already bound in context {:?}", s.name(), ctx)
             }
+            Error::UhasNoType => write!(f, "U is a type, but does not have a type."),
+            Error::NotAFunctionType(t) => write!(f, "Not a function type: {}", t),
+            Error::UnknownVariable(name) => write!(f, "Unknown variable {}", name.name()),
         }
     }
 }
