@@ -4,18 +4,20 @@ use crate::typechecker::{check, is_type};
 
 mod chapter_01;
 
-
 fn in_context(ctx: &Ctx) -> Checker {
     Checker { ctx }
 }
 
 struct Checker<'a> {
-    ctx: &'a Ctx
+    ctx: &'a Ctx,
 }
 
 impl<'a> Checker<'a> {
     fn core(self, s: &'static str) -> CoreChecker<'a> {
-        CoreChecker {ctx: self.ctx, expr: s.parse().unwrap()}
+        CoreChecker {
+            ctx: self.ctx,
+            expr: s.parse().unwrap(),
+        }
     }
 }
 

@@ -41,8 +41,8 @@ impl Core {
         Core::Fun(types)
     }
 
-    pub fn pi(x: impl Into<Symbol>, xt: impl Into<Core>, rt: impl Into<R<Core>>) -> Self {
-        Self::PiStar(vec![(x.into(), xt.into())], rt.into())
+    pub fn pi(x: impl Into<Symbol>, xt: impl Into<R<Core>>, rt: impl Into<R<Core>>) -> Self {
+        Self::Pi(x.into(), xt.into(), rt.into())
     }
 
     pub fn lambda(x: impl Into<Symbol>, body: impl Into<R<Core>>) -> Self {
