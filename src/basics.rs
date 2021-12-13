@@ -103,6 +103,7 @@ impl From<&Sexpr> for Core {
             Sexpr::Symbol(s) => match s.name() {
                 "U" => Core::U,
                 "Nat" => Core::Nat,
+                "zero" => Core::Zero,
                 "Atom" => Core::Atom,
 
                 "x" | "y" | "z" => Core::Symbol(s.clone()),
