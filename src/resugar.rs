@@ -14,15 +14,18 @@ fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
             let v = resugar_(v);
             (&t.0 | &v.0, Core::the(t.1, v.1))
         }
-        Pi(x, arg_type, result_type) => {
-            let arg = resugar_(arg_type);
-            let res = resugar_(result_type);
-            if res.0.contains(x) {
-                todo!()
-            } else {
-                (&arg.0 | &res.0, add_fun(arg.1, res.1))
+        PiStar(bindings, result_type) => match &bindings[..] {
+            [(x, arg_type)] => {
+                let arg = resugar_(arg_type);
+                let res = resugar_(result_type);
+                if res.0.contains(x) {
+                    todo!()
+                } else {
+                    (&arg.0 | &res.0, add_fun(arg.1, res.1))
+                }
             }
-        }
+            _ => todo!(),
+        },
         any_term => (HashSet::new(), any_term.clone()),
     }
 }

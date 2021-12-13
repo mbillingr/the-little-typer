@@ -3,6 +3,7 @@ use crate::fresh::freshen;
 use crate::normalize::val_of;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
+use maplit::hashset;
 use sexpr_parser::parse;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Display, Formatter};
@@ -20,7 +21,9 @@ pub enum Core {
     Symbol(Symbol),
     Add1(R<Core>),
     Fun(Vec<Core>),
+    PiStar(Vec<(Symbol, Core)>, R<Core>),
     Pi(Symbol, R<Core>, R<Core>),
+    LambdaStar(Vec<Symbol>, R<Core>),
     Lambda(Symbol, R<Core>),
     Atom,
     Quote(Symbol),
@@ -38,8 +41,8 @@ impl Core {
         Core::Fun(types)
     }
 
-    pub fn pi(x: impl Into<Symbol>, xt: impl Into<R<Core>>, rt: impl Into<R<Core>>) -> Self {
-        Self::Pi(x.into(), xt.into(), rt.into())
+    pub fn pi(x: impl Into<Symbol>, xt: impl Into<Core>, rt: impl Into<R<Core>>) -> Self {
+        Self::PiStar(vec![(x.into(), xt.into())], rt.into())
     }
 
     pub fn lambda(x: impl Into<Symbol>, body: impl Into<R<Core>>) -> Self {
@@ -85,7 +88,24 @@ impl Display for Core {
                 }
                 write!(f, ")")
             }
-            Pi(param, pt, rt) => write!(f, "(Π (({} {})) {})", param.name(), pt, rt),
+            PiStar(bindings, rt) => {
+                let b: Vec<_> = bindings
+                    .iter()
+                    .map(|(x, t)| format!("({} {})", x.name(), t))
+                    .collect();
+                write!(f, "(Π ({}) {})", b.join(" "), rt)
+            }
+            Pi(x, t, rt) => write!(f, "(Π (({} {})) {})", x.name(), t, rt),
+            LambdaStar(params, body) => write!(
+                f,
+                "(λ ({}) {})",
+                params
+                    .iter()
+                    .map(|x| x.name())
+                    .collect::<Vec<_>>()
+                    .join(" "),
+                body
+            ),
             Lambda(param, body) => write!(f, "(λ ({}) {})", param.name(), body),
             Atom => write!(f, "Atom"),
             Quote(s) => write!(f, "'{}", s.name()),
@@ -367,17 +387,36 @@ pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
 }
 
 pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
+    use Core::*;
     match expr {
-        Core::Fun(types) => {
-            let mut names = HashSet::new();
+        The(t, e) => &occurring_names(t) | &occurring_names(e),
+        Add1(n) => occurring_names(n),
+        Fun(types) => {
+            let mut names = hashset! {};
             for t in types {
                 names = &names | &occurring_names(t)
             }
             names
         }
-        Core::Atom => HashSet::new(),
-        _ => todo!("{:?}", expr),
+        PiStar(bindings, t) => bindings
+            .iter()
+            .map(|(x, t)| occurring_binder_names(x, t))
+            .fold(occurring_names(t), |a, b| &a | &b),
+        Pi(x, t, r) => &occurring_binder_names(x, t) | &occurring_names(r),
+        Lambda(x, body) => occurring_binder_names(x, body),
+        LambdaStar(params, body) => {
+            &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
+        }
+        U | Nat | Zero | Atom | Quote(_) => hashset! {},
+        Symbol(x) if is_var_name(x) => hashset! {x.clone()},
+        Symbol(_) => hashset! {},
     }
+}
+
+pub fn occurring_binder_names(name: &Symbol, t: &Core) -> HashSet<Symbol> {
+    let mut names = occurring_names(t);
+    names.insert(name.clone());
+    names
 }
 
 #[derive(Debug)]

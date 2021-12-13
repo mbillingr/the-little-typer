@@ -36,18 +36,21 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
         Core::Nat => Value::Nat,
         Core::Zero => Value::Zero,
         Core::Add1(n) => Value::add1(later(env.clone(), (**n).clone())),
-        Core::Pi(x, a, b) => {
-            let av = later(env.clone(), (**a).clone());
-            Value::pi(
-                x.clone(),
-                av,
-                Closure::FirstOrder {
-                    env: env.clone(),
-                    var: x.clone(),
-                    expr: (**b).clone(),
-                },
-            )
-        }
+        Core::PiStar(bindings, b) => match &bindings[..] {
+            [(x, a)] => {
+                let av = later(env.clone(), a.clone());
+                Value::pi(
+                    x.clone(),
+                    av,
+                    Closure::FirstOrder {
+                        env: env.clone(),
+                        var: x.clone(),
+                        expr: (**b).clone(),
+                    },
+                )
+            }
+            _ => todo!(),
+        },
         Core::Lambda(x, b) => Value::lam(
             x.clone(),
             Closure::FirstOrder {
@@ -87,7 +90,7 @@ pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
                 &ctx_hat,
                 &c.val_of(Value::Neu(a.clone(), N::Var(x_hat.clone()))),
             );
-            Core::Pi(x_hat, R::new(ae), R::new(r))
+            Core::PiStar(vec![(x_hat, ae)], R::new(r))
         }
         Value::Atom => Core::Atom,
         _ => todo!("{:?}", tv),

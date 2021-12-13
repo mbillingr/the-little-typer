@@ -116,7 +116,10 @@ mod tests {
 
     #[test]
     fn the_number_zero() {
-        assert_eq!(rep(&CTX, &"0".parse().unwrap()), Ok(Core::the(Nat, Core::nat(0),)));
+        assert_eq!(
+            rep(&CTX, &"0".parse().unwrap()),
+            Ok(Core::the(Nat, Core::nat(0),))
+        );
         assert_eq!(
             rep(&CTX, &"zero".parse().unwrap()),
             Ok(Core::the(Nat, Core::nat(0)))
