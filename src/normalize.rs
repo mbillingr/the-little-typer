@@ -69,6 +69,10 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
     let ntv = now(tv);
     let nv = now(v);
 
+    if let Some((_, ne)) = nv.as_neutral() {
+        return read_back_neutral(ctx, ne);
+    }
+
     // first try combinations where we don't need to own v
     match (&*ntv, &*nv) {
         (Obj(obj), v) => return obj.read_back(ctx, tv, v).unwrap(),
@@ -78,14 +82,13 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
     // the remaining combinations need to take ownership of v
     match (&*ntv, nv.into_owned()) {
         (Atom, Quote(a)) => Core::Quote(a),
-        (_, Value::Neu(_, ne)) => read_back_neutral(ctx, ne),
         (ntv, nv) => todo!("{:?} {:?}", ntv, nv),
     }
 }
 
-fn read_back_neutral(_ctx: &Ctx, ne: N) -> Core {
+pub fn read_back_neutral(_ctx: &Ctx, ne: &N) -> Core {
     match ne {
-        N::Var(x) => Core::Symbol(x),
+        N::Var(x) => Core::Symbol(x.clone()),
     }
 }
 

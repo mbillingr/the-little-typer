@@ -3,6 +3,7 @@ use crate::fresh::freshen;
 use crate::normalize::val_of;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
+use crate::values;
 use maplit::hashset;
 use sexpr_parser::parse;
 use std::any::Any;
@@ -203,6 +204,10 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
     fn now<'a>(&self, v: &'a Value) -> Cow<'a, Value> {
         Cow::Borrowed(v)
     }
+
+    fn as_neutral(&self) -> Option<(&Value, &N)> {
+        None
+    }
 }
 
 impl PartialEq for dyn ValueInterface {
@@ -215,7 +220,6 @@ impl PartialEq for dyn ValueInterface {
 pub enum Value {
     Quote(Symbol),
     Atom,
-    Neu(R<Value>, N),
     Obj(R<dyn ValueInterface>),
 }
 
@@ -237,8 +241,15 @@ impl Value {
         }
     }
 
-    pub fn neu(t: impl Into<R<Value>>, neutral: N) -> Self {
-        Value::Neu(t.into(), neutral)
+    pub fn neu(t: Value, neutral: N) -> Self {
+        values::neutral(t, neutral)
+    }
+
+    pub fn as_neutral(&self) -> Option<(&Value, &N)> {
+        match self {
+            Value::Obj(obj) => obj.as_neutral(),
+            _ => None,
+        }
     }
 }
 
@@ -408,7 +419,7 @@ pub fn ctx_to_env(ctx: &Ctx) -> Env {
         CtxImpl::Entry(x, Binder::Free(tv), next) => {
             let mut env = ctx_to_env(next);
             env.0
-                .insert(x.clone(), Value::Neu(R::new(tv.clone()), N::Var(x.clone())));
+                .insert(x.clone(), values::neutral(tv.clone(), N::Var(x.clone())));
             env
         }
         CtxImpl::Entry(_, Binder::Claim(_), next) => ctx_to_env(next),

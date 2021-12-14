@@ -3,12 +3,14 @@ use crate::basics::{Closure, Core, Env, Value, R};
 mod delay;
 pub mod functions;
 mod natural;
+mod neutral;
 mod universe;
 
 use crate::symbol::Symbol;
 use delay::Delay;
 use functions::{Lambda, Pi};
 use natural::{Add1, Nat, Zero};
+pub use neutral::neutral;
 use universe::Universe;
 
 pub fn later(env: Env, exp: Core) -> Value {

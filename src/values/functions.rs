@@ -3,6 +3,7 @@ use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::typechecker::check;
+use crate::values;
 use crate::values::lambda;
 use std::any::Any;
 
@@ -37,8 +38,8 @@ impl ValueInterface for Pi {
         let ctx_hat = ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap();
         let r = read_back_type(
             &ctx_hat,
-            &self.res_type.val_of(Value::Neu(
-                R::new(self.arg_type.clone()),
+            &self.res_type.val_of(values::neutral(
+                self.arg_type.clone(),
                 N::Var(x_hat.clone()),
             )),
         );
@@ -56,11 +57,11 @@ impl ValueInterface for Pi {
             x_hat.clone(),
             read_back(
                 &ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap(),
-                &self.res_type.val_of(Value::neu(
-                    R::new(self.arg_type.clone()),
+                &self.res_type.val_of(values::neutral(
+                    self.arg_type.clone(),
                     N::Var(x_hat.clone()),
                 )),
-                &do_ap(f, Value::neu(R::new(self.arg_type.clone()), N::Var(x_hat))),
+                &do_ap(f, values::neutral(self.arg_type.clone(), N::Var(x_hat))),
             ),
         ))
     }
@@ -81,8 +82,8 @@ impl ValueInterface for Pi {
                     &ctx.bind_free(x_hat.clone(), self.arg_type.clone())?,
                     &r.extend(x.clone(), x_hat.clone()),
                     b,
-                    &self.res_type.val_of(Value::neu(
-                        R::new(self.arg_type.clone()),
+                    &self.res_type.val_of(values::neutral(
+                        self.arg_type.clone(),
                         N::Var(x_hat.clone()),
                     )),
                 )?;
