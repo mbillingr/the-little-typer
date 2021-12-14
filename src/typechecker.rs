@@ -32,7 +32,6 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             _ => panic!("invalid fun types {:?}", params),
         },
         PiStar(_, _) => todo!(),
-        Atom => Ok(Atom),
 
         The(_, _) | AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
             Ok(t_out) => Ok(t_out),
@@ -50,7 +49,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
 
-        Zero | Add1(_) | Quote(_) | LambdaStar(_, _) => Err(Error::NotAType(inp.clone())),
+        Zero | Add1(_) | LambdaStar(_, _) => Err(Error::NotAType(inp.clone())),
 
         Object(obj) => obj.is_type(ctx, r),
     }
@@ -91,14 +90,6 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         Nat => Ok(Core::the(cores::universe(), Nat)),
         Zero => Ok(Core::the(Nat, Zero)),
         Add1(n) => check(ctx, r, n, &values::nat()).map(|n_out| Core::the(Nat, Core::add1(n_out))),
-        Atom => Ok(Core::the(cores::universe(), Atom)),
-        Quote(a) => {
-            if atom_is_ok(a) {
-                Ok(Core::the(Atom, Core::quote(a.clone())))
-            } else {
-                Err(Error::InvalidAtom(a.clone()))
-            }
-        }
         The(t, e) => {
             let t_out = is_type(ctx, r, t)?;
             let e_out = check(ctx, r, e, &val_in_ctx(ctx, &t_out))?;
@@ -139,8 +130,6 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
         },
 
         Core::The(_, _)
-        | Core::Atom
-        | Core::Quote(_)
         | Core::Fun(_)
         | Core::PiStar(_, _)
         | Core::AppStar(_, _)

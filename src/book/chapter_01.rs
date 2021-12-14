@@ -1,8 +1,7 @@
-use crate::basics::{Core, Ctx};
+use crate::basics::Ctx;
 use crate::book::in_context;
 
-use Core::*;
-
+use crate::types::cores;
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -11,7 +10,7 @@ lazy_static! {
 
 #[test]
 fn test_002_a_quote_is_an_atom() {
-    assert!(in_context(&CTX).core("'atom").is_a(&Atom));
+    assert!(in_context(&CTX).core("'atom").is_a(&cores::atom()));
 }
 
 /*#[test]

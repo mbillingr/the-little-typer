@@ -8,7 +8,7 @@ pub fn is_alpha_equiv(e1: &Core, e2: &Core) -> bool {
 pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: &Core) -> bool {
     use Core::*;
     match (e1, e2) {
-        (Nat, Nat) | (Zero, Zero) | (Atom, Atom) => true,
+        (Nat, Nat) | (Zero, Zero) => true,
 
         (Symbol(x), Symbol(y)) if is_var_name(x) && is_var_name(y) => {
             let x_binding = b1.assv(x);
@@ -31,12 +31,8 @@ pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: 
 
         (Add1(a), Add1(b)) => alpha_equiv_aux(lvl, b1, b2, a, b),
 
-        (Quote(a), Quote(b)) => a == b,
-
-        // these should go into a general false case, but i don't want to miss anything important now
-        (Atom, Nat) | (Nat, Atom) => false,
-
         (Object(a), Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),
+        (Object(_), _) | (_, Object(_)) => false,
 
         _ => todo!("{:?} ?= {:?}", e1, e2),
     }

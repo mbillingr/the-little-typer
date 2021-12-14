@@ -70,7 +70,7 @@ impl CoreInterface for Universe {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        (HashSet::new(), Core::new(self.clone()))
+        (HashSet::new(), Core::new(*self))
     }
 }
 

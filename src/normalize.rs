@@ -19,8 +19,6 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
         Core::Fun(_) => panic!("Attempt to evaluate -> (should have been converted to Pi)"),
         Core::PiStar(_, _) => panic!("Attempt to evaluate Pi* (should have been converted to Pi)"),
         Core::LambdaStar(_, _) => panic!("Attempt to evaluate sugared lambda"),
-        Core::Atom => values::atom(),
-        Core::Quote(a) => values::quote(a.clone()),
         Core::AppStar(_, _) => panic!("Attempt to evaluate n-ary application (should have been converted to sequence of unary applications)"),
         Core::Symbol(x) if is_var_name(x) => env.var_val(x).unwrap(),
         Core::Symbol(x) => panic!("No evaluator for {}", x.name()),

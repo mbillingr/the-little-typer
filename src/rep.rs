@@ -42,13 +42,16 @@ mod tests {
     fn just_an_atom() {
         assert_eq!(
             rep(&CTX, &Core::quote("atom")),
-            Ok(Core::the(Atom, Core::quote("atom")))
+            Ok(Core::the(cores::atom(), cores::quote("atom")))
         );
     }
 
     #[test]
     fn just_a_type() {
-        assert_eq!(rep(&CTX, &Atom), Ok(Core::the(cores::universe(), Atom)));
+        assert_eq!(
+            rep(&CTX, &cores::atom()),
+            Ok(Core::the(cores::universe(), cores::atom()))
+        );
     }
 
     #[test]
@@ -59,12 +62,18 @@ mod tests {
     #[test]
     fn a_function_type() {
         assert_eq!(
-            rep(&CTX, &Core::fun(vec![Atom], Atom)),
-            Ok(Core::the(cores::universe(), Core::pi("x", Atom, Atom)))
+            rep(&CTX, &Core::fun(vec![cores::atom()], cores::atom())),
+            Ok(Core::the(
+                cores::universe(),
+                Core::pi("x", cores::atom(), cores::atom())
+            ))
         );
         assert_eq!(
             rep(&CTX, &"(-> Atom Atom)".parse().unwrap()),
-            Ok(Core::the(cores::universe(), Core::pi("x", Atom, Atom)))
+            Ok(Core::the(
+                cores::universe(),
+                Core::pi("x", cores::atom(), cores::atom())
+            ))
         );
     }
 
@@ -72,7 +81,7 @@ mod tests {
     fn type_annotation() {
         assert_eq!(
             rep(&CTX, &"(the Atom 'atom)".parse().unwrap()),
-            Ok(Core::the(Atom, Core::quote("atom")))
+            Ok(Core::the(cores::atom(), Core::quote("atom")))
         );
     }
 
@@ -80,7 +89,7 @@ mod tests {
     fn type_annotation_mismatch() {
         assert_eq!(
             rep(&CTX, &"(the Nat 'atom)".parse().unwrap()),
-            Err(Error::WrongType(Atom, Nat))
+            Err(Error::WrongType(cores::atom(), Nat))
         );
     }
 
@@ -90,7 +99,11 @@ mod tests {
             rep(&CTX, &"(-> Atom (-> Atom Atom))".parse().unwrap()),
             Ok(Core::the(
                 cores::universe(),
-                Core::pi("x", Atom, Core::pi("x₁", Atom, Atom))
+                Core::pi(
+                    "x",
+                    cores::atom(),
+                    Core::pi("x₁", cores::atom(), cores::atom())
+                )
             ))
         );
     }
@@ -98,7 +111,7 @@ mod tests {
     #[test]
     fn a_function_type_and_various_implementations() {
         // A function that takes an Atom and returns an Atom
-        let expected_type = Core::pi("x", Atom, Atom);
+        let expected_type = Core::pi("x", cores::atom(), cores::atom());
 
         // The identity function satisfies that type.
         assert_eq!(
@@ -166,7 +179,12 @@ mod tests {
     #[test]
     fn same_atoms() {
         assert_eq!(
-            check_same(&CTX, &Atom, &Core::quote("apple"), &Core::quote("apple")),
+            check_same(
+                &CTX,
+                &cores::atom(),
+                &Core::quote("apple"),
+                &Core::quote("apple")
+            ),
             Ok(())
         );
     }
@@ -174,9 +192,14 @@ mod tests {
     #[test]
     fn different_atoms() {
         assert_eq!(
-            check_same(&CTX, &Atom, &Core::quote("apple"), &Core::quote("pear")),
+            check_same(
+                &CTX,
+                &cores::atom(),
+                &Core::quote("apple"),
+                &Core::quote("pear")
+            ),
             Err(Error::NotTheSame(
-                Atom,
+                cores::atom(),
                 Core::quote("apple"),
                 Core::quote("pear")
             ))
@@ -192,7 +215,7 @@ mod tests {
                     .parse()
                     .unwrap()
             ),
-            Ok(Core::the(Atom, Core::quote("foo")))
+            Ok(Core::the(cores::atom(), Core::quote("foo")))
         );
     }
 

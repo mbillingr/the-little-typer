@@ -51,8 +51,6 @@ pub enum Core {
     PiStar(Vec<(Symbol, Core)>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
     AppStar(R<Core>, Vec<Core>),
-    Atom,
-    Quote(Symbol),
     Object(R<dyn CoreInterface>),
 }
 
@@ -103,7 +101,7 @@ impl Core {
     }
 
     pub fn quote(s: impl Into<Symbol>) -> Self {
-        Core::Quote(s.into())
+        cores::quote(s)
     }
 
     pub fn nat(mut x: u64) -> Self {
@@ -162,8 +160,6 @@ impl Display for Core {
                     .collect::<Vec<_>>()
                     .join(" ")
             ),
-            Atom => write!(f, "Atom"),
-            Quote(s) => write!(f, "'{}", s.name()),
             Object(obj) => write!(f, "{}", obj),
         }
     }
@@ -184,7 +180,7 @@ impl From<&Sexpr> for Core {
                 "U" => cores::universe(),
                 "Nat" => Core::Nat,
                 "zero" => Core::Zero,
-                "Atom" => Core::Atom,
+                "Atom" => cores::atom(),
                 _ if is_var_name(s) => Core::Symbol(s.clone()),
                 name => todo!("{}", name),
             },
@@ -508,7 +504,7 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
         LambdaStar(params, body) => {
             &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
         }
-        Nat | Zero | Atom | Quote(_) => hashset! {},
+        Nat | Zero => hashset! {},
         AppStar(f, args) => args
             .iter()
             .fold(occurring_names(f), |a, b| &a | &occurring_names(b)),
