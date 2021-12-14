@@ -2,8 +2,8 @@ use crate::basics::{
     ctx_to_env, fresh, is_var_name, Closure, Core, Ctx, Delayed, Env, SharedBox, SharedBoxGuard,
     Value, N, R,
 };
-use std::borrow::Cow;
 use crate::values;
+use std::borrow::Cow;
 
 fn later(env: Env, exp: Core) -> Value {
     Value::Delay(SharedBox::new(Delayed::Later(env, exp)))
@@ -35,9 +35,9 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
         Core::The(_, expr) => val_of(env, expr),
         Core::U => values::universe(),
-        Core::Nat => Value::Nat,
-        Core::Zero => Value::Zero,
-        Core::Add1(n) => Value::add1(later(env.clone(), (**n).clone())),
+        Core::Nat => values::nat(),
+        Core::Zero => values::zero(),
+        Core::Add1(n) => values::add1(later(env.clone(), (**n).clone())),
         Core::Fun(_) => panic!("Attempt to evaluate -> (should have been converted to Pi)"),
         Core::PiStar(_, _) => panic!("Attempt to evaluate Pi* (should have been converted to Pi)"),
         Core::Pi(x, a, b) => {
@@ -82,7 +82,6 @@ fn do_ap(rator: Value, rand: Value) -> Value {
 
 pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
     match &*now(tv) {
-        Value::Nat => Core::Nat,
         Value::Pi {
             arg_name: x,
             arg_type: a,
@@ -111,9 +110,7 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
 
     // first try combinations where we don't need to own v
     match (&*ntv, &*nv) {
-        (Obj(obj), v) => return obj.read_back(ctx, v).unwrap(),
-        (Nat, Value::Zero) => return Core::Zero,
-        (Nat, Value::Add1(n_minus_one)) => return Core::add1(read_back(ctx, tv, n_minus_one)),
+        (Obj(obj), v) => return obj.read_back(ctx, tv, v).unwrap(),
         _ => {}
     }
 

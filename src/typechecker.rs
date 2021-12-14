@@ -109,7 +109,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         PiStar(_, _) => todo!(),
         Nat => Ok(Core::the(U, Nat)),
         Zero => Ok(Core::the(Nat, Zero)),
-        Add1(n) => check(ctx, r, n, &Value::Nat).map(|n_out| Core::the(Nat, Core::add1(n_out))),
+        Add1(n) => check(ctx, r, n, &values::nat()).map(|n_out| Core::the(Nat, Core::add1(n_out))),
         Atom => Ok(Core::the(U, Atom)),
         Quote(a) => {
             if atom_is_ok(a) {

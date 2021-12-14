@@ -1,4 +1,3 @@
-use std::any::Any;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
 use crate::normalize::val_of;
@@ -6,6 +5,7 @@ use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
 use maplit::hashset;
 use sexpr_parser::parse;
+use std::any::Any;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
@@ -188,7 +188,10 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
     fn as_any(&self) -> &dyn Any;
     fn same(&self, other: &dyn ValueInterface) -> bool;
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core>;
-    fn read_back(&self, ctx: &Ctx, v: &Value) -> Result<Core>;
+
+    fn read_back(&self, _ctx: &Ctx, _tv: &Value, _v: &Value) -> Result<Core> {
+        unimplemented!("{:?}", self)
+    }
 }
 
 impl PartialEq for dyn ValueInterface {
@@ -199,9 +202,6 @@ impl PartialEq for dyn ValueInterface {
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    Nat,
-    Zero,
-    Add1(R<Value>),
     Quote(Symbol),
     Atom,
     Pi {
@@ -223,14 +223,17 @@ impl PartialEq for Value {
         use Value::*;
         match (self, other) {
             (Obj(a), Obj(b)) => a == b,
-            _ => todo!("{:?} ?= {:?}", self, other)
+            _ => todo!("{:?} ?= {:?}", self, other),
         }
     }
 }
 
 impl Value {
-    pub fn add1(n: impl Into<R<Value>>) -> Self {
-        Value::Add1(n.into())
+    pub fn as_any(&self) -> &dyn Any {
+        match self {
+            Value::Obj(obj) => obj.as_any(),
+            _ => unimplemented!("{:?}", self),
+        }
     }
 
     pub fn pi(

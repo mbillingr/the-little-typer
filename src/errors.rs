@@ -1,4 +1,4 @@
-use crate::basics::{Core, Ctx};
+use crate::basics::{Core, Ctx, Value};
 use crate::symbol::Symbol;
 use std::fmt::{Display, Formatter};
 
@@ -15,6 +15,9 @@ pub enum Error {
     NotAFunctionType(Core),
     UnknownVariable(Symbol),
     NotTheSame(Core, Core, Core),
+
+    TypeMismatchVar(Value, Value),
+    NotATypeVar(Value),
 }
 
 impl Display for Error {
@@ -35,6 +38,10 @@ impl Display for Error {
             Error::NotTheSame(t, a, b) => {
                 write!(f, "The expressions {} and {} are not the same {}", a, b, t)
             }
+            Error::TypeMismatchVar(v, t) => {
+                write!(f, "The value {:?} is not a {:?}", v, t)
+            }
+            Error::NotATypeVar(tv) => write!(f, "Not a type: {:?}", tv),
         }
     }
 }
