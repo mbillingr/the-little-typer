@@ -1,3 +1,4 @@
+use crate::alpha::is_alpha_equiv;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
 use crate::normalize::val_of;
@@ -13,12 +14,20 @@ use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 pub use std::sync::{Arc as R, Mutex, RwLock};
 
-pub trait CoreInterface: Any + Debug + Sync + Send {
+pub trait CoreInterface: Any + Debug + Display + Sync + Send {
     fn as_any(&self) -> &dyn Any;
     fn same(&self, other: &dyn ValueInterface) -> bool;
+
+    fn occurring_names(&self) -> HashSet<Symbol>;
+
+    fn val_of(&self, env: &Env) -> Value;
+
+    fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core>;
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<Core>;
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Core {
     The(R<Core>, R<Core>),
     U,
@@ -35,6 +44,13 @@ pub enum Core {
     App(R<Core>, R<Core>),
     Atom,
     Quote(Symbol),
+    Object(R<dyn CoreInterface>),
+}
+
+impl PartialEq for Core {
+    fn eq(&self, other: &Self) -> bool {
+        is_alpha_equiv(self, other)
+    }
 }
 
 impl Core {
@@ -139,6 +155,7 @@ impl Display for Core {
             App(func, arg) => write!(f, "({} {})", func, arg),
             Atom => write!(f, "Atom"),
             Quote(s) => write!(f, "'{}", s.name()),
+            Object(obj) => write!(f, "{}", obj),
         }
     }
 }
@@ -480,6 +497,7 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
         App(f, a) => &occurring_names(f) | &occurring_names(a),
         Symbol(x) if is_var_name(x) => hashset! {x.clone()},
         Symbol(_) => hashset! {},
+        Object(obj) => obj.occurring_names(),
     }
 }
 

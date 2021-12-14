@@ -61,6 +61,8 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         Zero | Add1(_) | Quote(_) | LambdaStar(_, _) | Lambda(_, _) => {
             Err(Error::NotAType(inp.clone()))
         }
+
+        Object(obj) => obj.is_type(ctx, r),
     }
 }
 
@@ -141,6 +143,8 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             Ok(Core::the(read_back_type(ctx, &xtv), inp.clone()))
         }
         Symbol(_) | Lambda(_, _) | LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
+
+        Object(obj) => obj.synth(ctx, r),
     }
 }
 
@@ -179,6 +183,8 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
                 unreachable!()
             }
         }
+
+        Core::Object(_) => unimplemented!(),
     }
 }
 

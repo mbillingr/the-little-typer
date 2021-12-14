@@ -50,6 +50,7 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
         ),
         Core::Symbol(x) if is_var_name(x) => env.var_val(x).unwrap(),
         Core::Symbol(x) => panic!("No evaluator for {}", x.name()),
+        Core::Object(obj) => obj.val_of(env),
     }
 }
 
