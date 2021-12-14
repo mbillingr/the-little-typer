@@ -1,13 +1,14 @@
-use crate::basics::Core;
+use crate::basics::{Core, R};
 use crate::symbol::Symbol;
 use std::collections::HashSet;
 use std::sync::Arc;
+use crate::types::functions::Lambda;
 
 pub fn resugar(term: &Core) -> Core {
     resugar_(term).1
 }
 
-fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
+pub fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
     use Core::*;
     match term {
         The(t, v) => {
@@ -15,16 +16,10 @@ fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
             let v = resugar_(v);
             (&t.0 | &v.0, Core::the(t.1, v.1))
         }
-        Lambda(x, result) => {
-            let (mut names, r) = resugar_(result);
-            names.remove(x);
-            (names, add_lambda(x.clone(), r))
-        }
         PiStar(bindings, result_type) => match &bindings[..] {
             [(x, arg_type)] => resugar_unary_pi(x, arg_type, result_type),
             _ => todo!(),
         },
-        Pi(x, arg_type, result_type) => resugar_unary_pi(x, arg_type, result_type),
         any_term => (HashSet::new(), any_term.clone()),
     }
 }
@@ -43,9 +38,15 @@ fn resugar_unary_pi(
     }
 }
 
-fn add_lambda(x: Symbol, term: Core) -> Core {
+pub fn add_lambda(x: Symbol, term: Core) -> Core {
     match term {
-        Core::Lambda(y, result) => Core::LambdaStar(vec![x, y], result),
+        Core::Object(obj) => {
+            if let Some(l) = obj.as_any().downcast_ref::<Lambda<Core>>() {
+                Core::LambdaStar(vec![x, l.arg_name.clone()], R::new(l.body.clone()))
+            } else {
+                Core::lambda(x, Core::Object(obj))
+            }
+        }
         Core::LambdaStar(mut xs, result) => {
             xs.insert(0, x);
             Core::LambdaStar(xs, result)
@@ -54,7 +55,7 @@ fn add_lambda(x: Symbol, term: Core) -> Core {
     }
 }
 
-fn add_fun(arg_type: Core, term: Core) -> Core {
+pub fn add_fun(arg_type: Core, term: Core) -> Core {
     match term {
         Core::Fun(mut types) => {
             types.insert(0, arg_type);

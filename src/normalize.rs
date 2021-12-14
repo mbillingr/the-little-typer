@@ -1,4 +1,4 @@
-use crate::basics::{ctx_to_env, is_var_name, Closure, Core, Ctx, Env, Value, ValueInterface, N};
+use crate::basics::{ctx_to_env, is_var_name, Core, Ctx, Env, Value, ValueInterface, N};
 use crate::types::functions::do_ap;
 use crate::types::values;
 use std::borrow::Cow;
@@ -19,27 +19,7 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
         Core::Add1(n) => values::add1(later(env.clone(), (**n).clone())),
         Core::Fun(_) => panic!("Attempt to evaluate -> (should have been converted to Pi)"),
         Core::PiStar(_, _) => panic!("Attempt to evaluate Pi* (should have been converted to Pi)"),
-        Core::Pi(x, a, b) => {
-            let av = later(env.clone(), (**a).clone());
-            values::pi(
-                x.clone(),
-                av,
-                Closure::FirstOrder {
-                    env: env.clone(),
-                    var: x.clone(),
-                    expr: (**b).clone(),
-                },
-            )
-        }
         Core::LambdaStar(_, _) => panic!("Attempt to evaluate sugared lambda"),
-        Core::Lambda(x, b) => values::lambda(
-            x.clone(),
-            Closure::FirstOrder {
-                env: env.clone(),
-                var: x.clone(),
-                expr: (**b).clone(),
-            },
-        ),
         Core::Atom => values::atom(),
         Core::Quote(a) => values::quote(a.clone()),
         Core::AppStar(_, _) => panic!("Attempt to evaluate n-ary application (should have been converted to sequence of unary applications)"),

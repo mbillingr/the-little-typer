@@ -27,6 +27,8 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<Core>;
 
+    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core>;
+
     fn alpha_equiv_aux(
         &self,
         other: &dyn CoreInterface,
@@ -34,6 +36,8 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
         b1: &alpha::Bindings,
         b2: &alpha::Bindings,
     ) -> bool;
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core);
 }
 
 #[derive(Debug, Clone)]
@@ -45,9 +49,7 @@ pub enum Core {
     Add1(R<Core>),
     Fun(Vec<Core>),
     PiStar(Vec<(Symbol, Core)>, R<Core>),
-    Pi(Symbol, R<Core>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
-    Lambda(Symbol, R<Core>),
     AppStar(R<Core>, Vec<Core>),
     App(R<Core>, R<Core>),
     Atom,
@@ -77,12 +79,12 @@ impl Core {
         Core::Fun(types)
     }
 
-    pub fn pi(x: impl Into<Symbol>, xt: impl Into<R<Core>>, rt: impl Into<R<Core>>) -> Self {
-        Self::Pi(x.into(), xt.into(), rt.into())
+    pub fn pi(x: impl Into<Symbol>, xt: Core, rt: Core) -> Self {
+        cores::pi(x, xt, rt)
     }
 
-    pub fn lambda(x: impl Into<Symbol>, body: impl Into<R<Core>>) -> Self {
-        Self::Lambda(x.into(), body.into())
+    pub fn lambda(x: impl Into<Symbol>, body:Core) -> Self {
+        cores::lambda(x, body)
     }
 
     pub fn lambda_star(params: impl Into<Vec<Symbol>>, body: impl Into<R<Core>>) -> Self {
@@ -142,7 +144,6 @@ impl Display for Core {
                     .collect();
                 write!(f, "(Π ({}) {})", b.join(" "), rt)
             }
-            Pi(x, t, rt) => write!(f, "(Π (({} {})) {})", x.name(), t, rt),
             LambdaStar(params, body) => write!(
                 f,
                 "(λ ({}) {})",
@@ -153,7 +154,6 @@ impl Display for Core {
                     .join(" "),
                 body
             ),
-            Lambda(param, body) => write!(f, "(λ ({}) {})", param.name(), body),
             AppStar(func, args) => write!(
                 f,
                 "({} {})",
@@ -496,8 +496,6 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
             .iter()
             .map(|(x, t)| occurring_binder_names(x, t))
             .fold(occurring_names(t), |a, b| &a | &b),
-        Pi(x, t, r) => &occurring_binder_names(x, t) | &occurring_names(r),
-        Lambda(x, body) => occurring_binder_names(x, body),
         LambdaStar(params, body) => {
             &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
         }

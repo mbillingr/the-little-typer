@@ -1,7 +1,7 @@
 use crate::alpha;
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::read_back_type;
+use crate::normalize::{read_back_type};
 use crate::symbol::Symbol;
 use crate::types::{cores, values};
 use std::any::Any;
@@ -9,7 +9,7 @@ use std::collections::HashSet;
 use std::fmt::Formatter;
 
 /// The type of all types
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Universe;
 
 impl ValueInterface for Universe {
@@ -55,6 +55,10 @@ impl CoreInterface for Universe {
         Err(Error::UhasNoType)
     }
 
+    fn check(&self, _ctx: &Ctx, _r: &Renaming, _tv: &Value) -> Result<Core> {
+        Err(Error::UhasNoType)
+    }
+
     fn alpha_equiv_aux(
         &self,
         other: &dyn CoreInterface,
@@ -63,6 +67,10 @@ impl CoreInterface for Universe {
         _b2: &alpha::Bindings,
     ) -> bool {
         CoreInterface::same(self, other)
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        (HashSet::new(), Core::new(self.clone()))
     }
 }
 

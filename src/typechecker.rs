@@ -1,7 +1,7 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{fresh, fresh_binder, is_var_name, Core, Ctx, Renaming, Value, ValueInterface};
+use crate::basics::{fresh_binder, is_var_name, Core, Ctx, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
+use crate::normalize::{read_back, read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
 use crate::types::cores;
 
@@ -31,17 +31,6 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             }
             _ => panic!("invalid fun types {:?}", params),
         },
-        Pi(x, a, b) => {
-            let y = fresh(ctx, x);
-            let a_out = is_type(ctx, r, a)?;
-            let a_outv = val_in_ctx(ctx, &a_out);
-            let b_out = is_type(
-                &ctx.bind_free(y.clone(), a_outv)?,
-                &r.extend(x.clone(), y.clone()),
-                b,
-            )?;
-            Ok(Core::pi(y, a_out, b_out))
-        }
         PiStar(_, _) => todo!(),
         Atom => Ok(Atom),
 
@@ -61,7 +50,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
 
-        Zero | Add1(_) | Quote(_) | LambdaStar(_, _) | Lambda(_, _) => {
+        Zero | Add1(_) | Quote(_) | LambdaStar(_, _)  => {
             Err(Error::NotAType(inp.clone()))
         }
 
@@ -100,17 +89,6 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             }
             _ => todo!(),
         },
-        Pi(x, a, b) => {
-            let x_hat = fresh(ctx, x);
-            let a_out = check(ctx, r, a, &values::universe())?;
-            let b_out = check(
-                &ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?,
-                &r.extend(x.clone(), x_hat.clone()),
-                b,
-                &values::universe(),
-            )?;
-            Ok(Core::the(cores::universe(), Core::pi(x_hat, a_out, b_out)))
-        }
         PiStar(_, _) => todo!(),
         Nat => Ok(Core::the(cores::universe(), Nat)),
         Zero => Ok(Core::the(Nat, Zero)),
@@ -144,7 +122,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             let xtv = ctx.var_type(&real_x)?;
             Ok(Core::the(read_back_type(ctx, &xtv), inp.clone()))
         }
-        Symbol(_) | Lambda(_, _) | LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
+        Symbol(_) | LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
 
         Object(obj) => obj.synth(ctx, r),
     }
@@ -152,11 +130,9 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
 
 pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
     match e {
-        Core::Lambda(_, _) => now(tv).check(ctx, r, e, tv),
-
         Core::LambdaStar(params, b) => match &params[..] {
             [] => panic!("nullary lambda"),
-            [x] => check(ctx, r, &Core::lambda(x.clone(), b.clone()), tv),
+            [x] => check(ctx, r, &Core::lambda(x.clone(), (**b).clone()), tv),
             [x, xs @ ..] => check(
                 ctx,
                 r,
@@ -169,7 +145,6 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
         | Core::Atom
         | Core::Quote(_)
         | Core::Fun(_)
-        | Core::Pi(_, _, _)
         | Core::PiStar(_, _)
         | Core::App(_, _)
         | Core::AppStar(_, _)
@@ -185,7 +160,7 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             }
         }
 
-        Core::Object(_) => unimplemented!(),
+        Core::Object(obj) => obj.check(ctx, r, tv),
     }
 }
 

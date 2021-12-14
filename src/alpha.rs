@@ -5,7 +5,7 @@ pub fn is_alpha_equiv(e1: &Core, e2: &Core) -> bool {
     alpha_equiv_aux(0, &Bindings::new(), &Bindings::new(), e1, e2)
 }
 
-fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: &Core) -> bool {
+pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: &Core) -> bool {
     use Core::*;
     match (e1, e2) {
         (Nat, Nat) | (Zero, Zero) | (Atom, Atom) => true,
@@ -32,15 +32,6 @@ fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: &Cor
         (Add1(a), Add1(b)) => alpha_equiv_aux(lvl, b1, b2, a, b),
 
         (Quote(a), Quote(b)) => a == b,
-
-        (Pi(x, a1, r1), Pi(y, a2, r2)) => {
-            alpha_equiv_aux(lvl, b1, b2, a1, a2)
-                && alpha_equiv_aux(1 + lvl, &b1.bind(x, lvl), &b2.bind(y, lvl), r1, r2)
-        }
-
-        (Lambda(x, body1), Lambda(y, body2)) => {
-            alpha_equiv_aux(1 + lvl, &b1.bind(x, lvl), &b2.bind(y, lvl), body1, body2)
-        }
 
         // these should go into a general false case, but i don't want to miss anything important now
         (Atom, Nat) => false,
