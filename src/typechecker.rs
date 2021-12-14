@@ -3,6 +3,7 @@ use crate::basics::{fresh, fresh_binder, is_var_name, Core, Ctx, Renaming, Value
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
+use crate::values;
 
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use Core::*;
@@ -44,12 +45,12 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         PiStar(_, _) => todo!(),
         Atom => Ok(Atom),
 
-        The(_, _) | App(_, _) | AppStar(_, _) => match check(ctx, r, inp, &Value::Universe) {
+        The(_, _) | App(_, _) | AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
             Ok(t_out) => Ok(t_out),
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
 
-        Symbol(s) => match check(ctx, r, inp, &Value::Universe) {
+        Symbol(s) => match check(ctx, r, inp, &values::universe()) {
             Ok(t_out) => Ok(t_out),
             Err(_) if is_var_name(s) => ctx.var_type(s).and_then(|other_tv| {
                 Err(Error::WrongType(read_back_type(ctx, &other_tv), Core::U))
@@ -70,25 +71,25 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         Fun(types) => match &types[..] {
             [a, b] => {
                 let z = fresh_binder(ctx, b, &S::new("x"));
-                let a_out = check(ctx, r, a, &Value::Universe)?;
+                let a_out = check(ctx, r, a, &values::universe())?;
                 let b_out = check(
                     &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
                     r,
                     b,
-                    &Value::Universe,
+                    &values::universe(),
                 )?;
                 Ok(Core::the(U, Core::pi(z, a_out, b_out)))
             }
             [a, b, cs @ ..] => {
                 let z = fresh_binder(ctx, &make_app(b, cs), &S::new("x"));
-                let a_out = check(ctx, r, a, &Value::Universe)?;
+                let a_out = check(ctx, r, a, &values::universe())?;
                 let mut out_args = vec![b.clone()];
                 out_args.extend(cs.iter().cloned());
                 let t_out = check(
                     &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
                     r,
                     &Core::Fun(out_args),
-                    &Value::Universe,
+                    &values::universe(),
                 )?;
                 Ok(Core::the(U, Core::pi(z, a_out, t_out)))
             }
@@ -96,12 +97,12 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         },
         Pi(x, a, b) => {
             let x_hat = fresh(ctx, x);
-            let a_out = check(ctx, r, a, &Value::Universe)?;
+            let a_out = check(ctx, r, a, &values::universe())?;
             let b_out = check(
                 &ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?,
                 &r.extend(x.clone(), x_hat.clone()),
                 b,
-                &Value::Universe,
+                &values::universe(),
             )?;
             Ok(Core::the(U, Core::pi(x_hat, a_out, b_out)))
         }
@@ -243,7 +244,7 @@ mod tests {
             &Ctx::new(),
             &Renaming::new(),
             &Core::pi(Symbol::new("x"), Core::Nat, Core::Nat),
-            &Value::Universe
+            &values::universe()
         )
         .is_ok());
     }

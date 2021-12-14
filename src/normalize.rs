@@ -3,6 +3,7 @@ use crate::basics::{
     Value, N, R,
 };
 use std::borrow::Cow;
+use crate::values;
 
 fn later(env: Env, exp: Core) -> Value {
     Value::Delay(SharedBox::new(Delayed::Later(env, exp)))
@@ -33,7 +34,7 @@ pub fn now(v: &Value) -> Cow<Value> {
 pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
         Core::The(_, expr) => val_of(env, expr),
-        Core::U => Value::Universe,
+        Core::U => values::universe(),
         Core::Nat => Value::Nat,
         Core::Zero => Value::Zero,
         Core::Add1(n) => Value::add1(later(env.clone(), (**n).clone())),
@@ -81,7 +82,6 @@ fn do_ap(rator: Value, rand: Value) -> Value {
 
 pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
     match &*now(tv) {
-        Value::Universe => Core::U,
         Value::Nat => Core::Nat,
         Value::Pi {
             arg_name: x,
@@ -112,7 +112,6 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
     // first try combinations where we don't need to own v
     match (&*ntv, &*nv) {
         (Obj(obj), v) => return obj.read_back(ctx, v).unwrap(),
-        (Universe, v) => return read_back_type(ctx, &v),
         (Nat, Value::Zero) => return Core::Zero,
         (Nat, Value::Add1(n_minus_one)) => return Core::add1(read_back(ctx, tv, n_minus_one)),
         _ => {}
@@ -166,6 +165,6 @@ mod tests {
     fn test_delayed() {
         let env = Env::new();
         let delayed_value = later(env, Core::U);
-        assert_eq!(*now(&delayed_value), Value::Universe);
+        assert_eq!(*now(&delayed_value), values::universe());
     }
 }

@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
 use crate::normalize::val_of;
@@ -183,7 +184,8 @@ impl From<&Sexpr> for Core {
     }
 }
 
-pub trait ValueInterface: Debug + Sync + Send {
+pub trait ValueInterface: Any + Debug + Sync + Send {
+    fn as_any(&self) -> &dyn Any;
     fn same(&self, other: &dyn ValueInterface) -> bool;
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core>;
     fn read_back(&self, ctx: &Ctx, v: &Value) -> Result<Core>;
@@ -197,7 +199,6 @@ impl PartialEq for dyn ValueInterface {
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    Universe,
     Nat,
     Zero,
     Add1(R<Value>),
@@ -221,7 +222,6 @@ impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         use Value::*;
         match (self, other) {
-            (Universe, Universe) => true,
             (Obj(a), Obj(b)) => a == b,
             _ => todo!("{:?} ?= {:?}", self, other)
         }
