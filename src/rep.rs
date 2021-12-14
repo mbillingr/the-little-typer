@@ -196,6 +196,17 @@ mod tests {
         );
     }
 
+    #[test]
+    fn applying_a_variable_function() {
+        assert!(rep(
+            &CTX,
+            &"(the (-> (-> Atom Atom) Atom) (lambda (x) (x 'foo)))"
+                .parse()
+                .unwrap()
+        )
+        .is_ok());
+    }
+
     /*#[test]
     fn same_functions() {
         assert_eq!(

@@ -1,8 +1,8 @@
 use crate::basics::{Core, R};
 use crate::symbol::Symbol;
+use crate::types::functions::Lambda;
 use std::collections::HashSet;
 use std::sync::Arc;
-use crate::types::functions::Lambda;
 
 pub fn resugar(term: &Core) -> Core {
     resugar_(term).1

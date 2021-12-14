@@ -34,7 +34,7 @@ pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: 
         (Quote(a), Quote(b)) => a == b,
 
         // these should go into a general false case, but i don't want to miss anything important now
-        (Atom, Nat) => false,
+        (Atom, Nat) | (Nat, Atom) => false,
 
         (Object(a), Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),
 

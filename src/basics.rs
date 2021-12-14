@@ -51,7 +51,6 @@ pub enum Core {
     PiStar(Vec<(Symbol, Core)>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
     AppStar(R<Core>, Vec<Core>),
-    App(R<Core>, R<Core>),
     Atom,
     Quote(Symbol),
     Object(R<dyn CoreInterface>),
@@ -83,7 +82,7 @@ impl Core {
         cores::pi(x, xt, rt)
     }
 
-    pub fn lambda(x: impl Into<Symbol>, body:Core) -> Self {
+    pub fn lambda(x: impl Into<Symbol>, body: Core) -> Self {
         cores::lambda(x, body)
     }
 
@@ -91,8 +90,8 @@ impl Core {
         Self::LambdaStar(params.into(), body.into())
     }
 
-    pub fn app(f: impl Into<R<Core>>, a: impl Into<R<Core>>) -> Self {
-        Core::App(f.into(), a.into())
+    pub fn app(f: Core, a: Core) -> Self {
+        cores::app(f, a)
     }
 
     pub fn app_star(f: impl Into<R<Core>>, args: impl Into<Vec<Core>>) -> Self {
@@ -163,7 +162,6 @@ impl Display for Core {
                     .collect::<Vec<_>>()
                     .join(" ")
             ),
-            App(func, arg) => write!(f, "({} {})", func, arg),
             Atom => write!(f, "Atom"),
             Quote(s) => write!(f, "'{}", s.name()),
             Object(obj) => write!(f, "{}", obj),
@@ -192,7 +190,7 @@ impl From<&Sexpr> for Core {
             },
             Sexpr::SmallNat(x) => Core::nat(*x),
             Sexpr::List(list) => match &list[..] {
-                [Sexpr::Symbol(s), args @ ..] => match (s.name(), args) {
+                [Sexpr::Symbol(s), args @ ..] if !is_var_name(s) => match (s.name(), args) {
                     ("the", [t, v]) => Core::the(Core::from(t), Core::from(v)),
                     ("add1", [n]) => Core::add1(Core::from(n)),
                     ("quote", [Sexpr::Symbol(s)]) => Core::quote(s.clone()),
@@ -325,6 +323,25 @@ impl std::cmp::PartialEq for Closure {
 #[derive(Debug, Clone, PartialEq)]
 pub enum N {
     Var(Symbol),
+    App(R<N>, Norm),
+}
+
+impl N {
+    pub fn app(f: N, typ: Value, val: Value) -> Self {
+        N::App(R::new(f), Norm::the(typ, val))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Norm {
+    pub typ: Value,
+    pub val: Value,
+}
+
+impl Norm {
+    pub fn the(typ: Value, val: Value) -> Self {
+        Norm { typ, val }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -495,7 +512,6 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
         AppStar(f, args) => args
             .iter()
             .fold(occurring_names(f), |a, b| &a | &occurring_names(b)),
-        App(f, a) => &occurring_names(f) | &occurring_names(a),
         Symbol(x) if is_var_name(x) => hashset! {x.clone()},
         Symbol(_) => hashset! {},
         Object(obj) => obj.occurring_names(),
@@ -508,8 +524,8 @@ pub fn occurring_binder_names(name: &Symbol, t: &Core) -> HashSet<Symbol> {
     names
 }
 
-pub fn is_var_name(x: &Symbol) -> bool {
-    match x.name() {
+pub fn is_var_name(x: &str) -> bool {
+    match x {
         "U" | "Nat" | "zero" | "add1" | "which-Nat" | "ind-Nat" | "rec-Nat" | "iter-Nat" | "->"
         | "→" | "Π" | "Pi" | "∏" | "λ" | "lambda" | "quote" | "Atom" | "Σ" | "Sigma" | "Pair"
         | "cons" | "car" | "cdr" | "Trivial" | "sole" | "::" | "nil" | "List" | "rec-List"

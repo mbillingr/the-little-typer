@@ -1,5 +1,4 @@
-use crate::basics::{ctx_to_env, is_var_name, Core, Ctx, Env, Value, ValueInterface, N};
-use crate::types::functions::do_ap;
+use crate::basics::{ctx_to_env, is_var_name, Core, Ctx, Env, Norm, Value, ValueInterface, N};
 use crate::types::values;
 use std::borrow::Cow;
 
@@ -23,10 +22,6 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
         Core::Atom => values::atom(),
         Core::Quote(a) => values::quote(a.clone()),
         Core::AppStar(_, _) => panic!("Attempt to evaluate n-ary application (should have been converted to sequence of unary applications)"),
-        Core::App(rator, rand) => do_ap(
-            &later(env.clone(), (**rator).clone()),
-            later(env.clone(), (**rand).clone()),
-        ),
         Core::Symbol(x) if is_var_name(x) => env.var_val(x).unwrap(),
         Core::Symbol(x) => panic!("No evaluator for {}", x.name()),
         Core::Object(obj) => obj.val_of(env),
@@ -48,9 +43,12 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
     }
 }
 
-pub fn read_back_neutral(_ctx: &Ctx, ne: &N) -> Core {
+pub fn read_back_neutral(ctx: &Ctx, ne: &N) -> Core {
     match ne {
         N::Var(x) => Core::Symbol(x.clone()),
+        N::App(tgt, Norm { typ, val }) => {
+            Core::app(read_back_neutral(ctx, tgt), read_back(ctx, typ, val))
+        }
     }
 }
 

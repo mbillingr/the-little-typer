@@ -34,7 +34,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         PiStar(_, _) => todo!(),
         Atom => Ok(Atom),
 
-        The(_, _) | App(_, _) | AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
+        The(_, _) | AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
             Ok(t_out) => Ok(t_out),
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
@@ -50,9 +50,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
 
-        Zero | Add1(_) | Quote(_) | LambdaStar(_, _)  => {
-            Err(Error::NotAType(inp.clone()))
-        }
+        Zero | Add1(_) | Quote(_) | LambdaStar(_, _) => Err(Error::NotAType(inp.clone())),
 
         Object(obj) => obj.is_type(ctx, r),
     }
@@ -116,7 +114,6 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             },
             [_rand0, _rands @ ..] => todo!(),
         },
-        App(_, _) => panic!("use AppStar for synthesis"),
         Symbol(x) if is_var_name(x) => {
             let real_x = r.rename(x);
             let xtv = ctx.var_type(&real_x)?;
@@ -146,7 +143,6 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
         | Core::Quote(_)
         | Core::Fun(_)
         | Core::PiStar(_, _)
-        | Core::App(_, _)
         | Core::AppStar(_, _)
         | Core::Symbol(_)
         | Core::Nat

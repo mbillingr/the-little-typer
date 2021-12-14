@@ -8,9 +8,9 @@ pub fn neutral(type_value: Value, kind: N) -> Value {
 }
 
 #[derive(Debug)]
-struct Neutral {
-    type_value: Value,
-    kind: N,
+pub struct Neutral {
+    pub type_value: Value,
+    pub kind: N,
 }
 
 impl ValueInterface for Neutral {
