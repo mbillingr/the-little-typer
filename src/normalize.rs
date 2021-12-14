@@ -1,4 +1,4 @@
-use crate::basics::{ctx_to_env, is_var_name, Closure, Core, Ctx, Env, Value, N};
+use crate::basics::{ctx_to_env, is_var_name, Closure, Core, Ctx, Env, Value, N, ValueInterface};
 use crate::values;
 use crate::values::functions::do_ap;
 use std::borrow::Cow;
@@ -8,9 +8,7 @@ fn later(env: Env, exp: Core) -> Value {
 }
 
 pub fn now(v: &Value) -> Cow<Value> {
-    match v {
-        Value::Obj(obj) => obj.now(v),
-    }
+    v.now(v)
 }
 
 pub fn val_of(env: &Env, e: &Core) -> Value {
@@ -56,23 +54,17 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
 }
 
 pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
-    match &*now(tv) {
-        Value::Obj(obj) => obj.read_back_type(ctx).unwrap(),
-    }
+    now(tv).read_back_type(ctx).unwrap()
 }
 
 pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
-    use Value::*;
     let ntv = now(tv);
     let nv = now(v);
 
     if let Some((_, ne)) = nv.as_neutral() {
-        return read_back_neutral(ctx, ne);
-    }
-
-    // first try combinations where we don't need to own v
-    match (&*ntv, &*nv) {
-        (Obj(obj), v) => return obj.read_back(ctx, tv, v).unwrap(),
+        read_back_neutral(ctx, ne)
+    } else {
+        ntv.read_back(ctx, tv, &nv).unwrap()
     }
 }
 

@@ -1,10 +1,10 @@
-use crate::basics::{Core, Ctx, Value, ValueInterface, N, R};
+use crate::basics::{Core, Ctx, Value, ValueInterface, N};
 use crate::errors::Result;
 use crate::normalize::read_back_neutral;
 use std::any::Any;
 
 pub fn neutral(type_value: Value, kind: N) -> Value {
-    Value::Obj(R::new(Neutral { type_value, kind }))
+    Value::new(Neutral { type_value, kind })
 }
 
 #[derive(Debug)]

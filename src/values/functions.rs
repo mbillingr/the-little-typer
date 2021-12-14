@@ -1,4 +1,4 @@
-use crate::basics::{fresh, Closure, Core, Ctx, Renaming, Value, ValueInterface, N, R};
+use crate::basics::{fresh, Closure, Core, Ctx, Renaming, Value, ValueInterface, N};
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::Symbol;
@@ -66,11 +66,11 @@ impl ValueInterface for Pi {
         ))
     }
 
-    fn apply(&self, _ctx: &Ctx, _r: &Renaming, rator_out: R<Core>, _rand: &Core) -> Result<Core> {
+    fn apply(&self, _ctx: &Ctx, _r: &Renaming, rator_out: &Core, _rand: &Core) -> Result<Core> {
         let rand_out = check(_ctx, _r, _rand, &self.arg_type)?;
         Ok(Core::the(
             read_back_type(_ctx, &self.res_type.val_of(val_in_ctx(_ctx, &rand_out))),
-            Core::App(rator_out, rand_out.into()),
+            Core::app((*rator_out).clone(), rand_out),
         ))
     }
 
@@ -112,7 +112,7 @@ impl ValueInterface for Lambda {
 }
 
 pub fn do_ap(rator: &Value, rand: Value) -> Value {
-    match (*now(rator)).as_any().downcast_ref::<Lambda>() {
+    match now(rator).as_any().downcast_ref::<Lambda>() {
         Some(Lambda { body, .. }) => body.val_of(rand),
         None => todo!("{:?}", rator),
     }

@@ -1,4 +1,4 @@
-use crate::basics::{Closure, Core, Env, Value, R};
+use crate::basics::{Closure, Core, Env, Value};
 
 mod delay;
 pub mod functions;
@@ -16,42 +16,42 @@ pub use neutral::neutral;
 use universe::Universe;
 
 pub fn later(env: Env, exp: Core) -> Value {
-    Value::Obj(R::new(Delay::new(env, exp)))
+    Value::new(Delay::new(env, exp))
 }
 
 pub fn universe() -> Value {
-    Value::Obj(R::new(Universe))
+    Value::new(Universe)
 }
 
 pub fn nat() -> Value {
-    Value::Obj(R::new(Nat))
+    Value::new(Nat)
 }
 
 pub fn zero() -> Value {
-    Value::Obj(R::new(Zero))
+    Value::new(Zero)
 }
 
 pub fn add1(n: Value) -> Value {
-    Value::Obj(R::new(Add1(n)))
+    Value::new(Add1(n))
 }
 
 pub fn pi(arg_name: Symbol, arg_type: Value, res_type: Closure) -> Value {
-    Value::Obj(R::new(Pi {
+    Value::new(Pi {
         arg_name,
         arg_type,
         res_type,
-    }))
+    })
 }
 
 pub fn lambda(arg_name: Symbol, body: Closure) -> Value {
-    Value::Obj(R::new(Lambda { arg_name, body }))
+    Value::new(Lambda { arg_name, body })
 }
 
 
 pub fn atom() -> Value {
-    Value::Obj(R::new(Atom))
+    Value::new(Atom)
 }
 
 pub fn quote(s: impl Into<Symbol>) -> Value {
-    Value::Obj(R::new(Quote(s.into())))
+    Value::new(Quote(s.into()))
 }

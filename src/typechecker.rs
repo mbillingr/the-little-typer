@@ -1,5 +1,5 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{fresh, fresh_binder, is_var_name, Core, Ctx, Renaming, Value, R};
+use crate::basics::{fresh, fresh_binder, is_var_name, Core, Ctx, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
@@ -126,7 +126,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         AppStar(rator, args) => match &args[..] {
             [] => panic!("nullary application"),
             [rand] => match synth(ctx, r, rator)? {
-                The(rator_t, rator_out) => val_in_ctx(ctx, &rator_t).apply(ctx, r, rand, rator_out),
+                The(rator_t, rator_out) => val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand),
                 _ => unreachable!(),
             },
             [_rand0, _rands @ ..] => todo!(),
@@ -143,7 +143,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
 
 pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
     match e {
-        Core::Lambda(_, _) => (*now(tv)).check(ctx, r, e, tv),
+        Core::Lambda(_, _) => now(tv).check(ctx, r, e, tv),
 
         Core::LambdaStar(params, b) => match &params[..] {
             [] => panic!("nullary lambda"),
@@ -205,20 +205,6 @@ pub fn atom_is_ok(_: &Symbol) -> bool {
 
 fn make_app(a: &Core, cs: &[Core]) -> Core {
     Core::app_star(a.clone(), cs)
-}
-
-impl Value {
-    pub fn apply(&self, ctx: &Ctx, r: &Renaming, rand: &Core, rator_out: R<Core>) -> Result<Core> {
-        match self {
-            Value::Obj(obj) => obj.apply(ctx, r, rator_out, rand),
-        }
-    }
-
-    pub fn check(&self, ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
-        match self {
-            Value::Obj(obj) => obj.check(ctx, r, e, tv),
-        }
-    }
 }
 
 #[cfg(test)]

@@ -193,12 +193,12 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
         unimplemented!("{:?}", self)
     }
 
-    fn apply(&self, _ctx: &Ctx, _r: &Renaming, rator_out: R<Core>, _rand: &Core) -> Result<Core> {
+    fn apply(&self, _ctx: &Ctx, _r: &Renaming, rator_out: &Core, _rand: &Core) -> Result<Core> {
         Err(Error::NotAFunctionType((*rator_out).clone()))
     }
 
     fn check(&self, _ctx: &Ctx, _r: &Renaming, _e: &Core, tv: &Value) -> Result<Core> {
-        Err(Error::NotATypeVar(tv.clone()))
+        Err(Error::NotATypeVar(tv.now(tv).into_owned()))
     }
 
     fn now<'a>(&self, v: &'a Value) -> Cow<'a, Value> {
@@ -217,34 +217,52 @@ impl PartialEq for dyn ValueInterface {
 }
 
 #[derive(Debug, Clone)]
-pub enum Value {
-    Obj(R<dyn ValueInterface>),
+pub struct Value(R<dyn ValueInterface>);
+
+impl Value {
+    pub fn new(obj: impl ValueInterface) -> Self {
+        Value(R::new(obj))
+    }
 }
 
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
-        use Value::*;
-        match (self, other) {
-            (Obj(a), Obj(b)) => a == b,
-        }
+        &self.0 == &other.0
     }
 }
 
-impl Value {
-    pub fn as_any(&self) -> &dyn Any {
-        match self {
-            Value::Obj(obj) => obj.as_any(),
-        }
+impl ValueInterface for Value {
+    fn as_any(&self) -> &dyn Any {
+        self.0.as_any()
     }
 
-    pub fn neu(t: Value, neutral: N) -> Self {
-        values::neutral(t, neutral)
+    fn same(&self, other: &dyn ValueInterface) -> bool {
+        self.0.same(other)
     }
 
-    pub fn as_neutral(&self) -> Option<(&Value, &N)> {
-        match self {
-            Value::Obj(obj) => obj.as_neutral(),
-        }
+    fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
+        self.0.read_back_type(ctx)
+    }
+
+    fn read_back(&self, ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
+        self.0.read_back(ctx, tv, v)
+    }
+
+    fn apply(&self, ctx: &Ctx, r: &Renaming, rator_out: &Core, rand: &Core) -> Result<Core> {
+        self.0.apply(ctx, r, rator_out, rand)
+    }
+
+    fn check(&self, ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
+        self.0.check(ctx, r, e, tv)
+    }
+
+    fn now<'a>(&self, v: &'a Value) -> Cow<'a, Value> {
+        assert!(std::ptr::eq(self, v));
+        self.0.now(v)
+    }
+
+    fn as_neutral(&self) -> Option<(&Value, &N)> {
+        self.0.as_neutral()
     }
 }
 

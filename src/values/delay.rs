@@ -1,4 +1,4 @@
-use crate::basics::{Core, Ctx, Env, Value, ValueInterface};
+use crate::basics::{Core, Ctx, Env, N, Renaming, Value, ValueInterface};
 use crate::errors::Result;
 use crate::normalize::{now, val_of};
 use std::any::Any;
@@ -55,8 +55,16 @@ impl ValueInterface for Delay {
         unimplemented!()
     }
 
+    fn check(&self, _ctx: &Ctx, _r: &Renaming, _e: &Core, _tv: &Value) -> Result<Core> {
+        unimplemented!()
+    }
+
     fn now<'a>(&self, _v: &'a Value) -> Cow<'a, Value> {
         Cow::Owned(self.force())
+    }
+
+    fn as_neutral(&self) -> Option<(&Value, &N)> {
+        unimplemented!()
     }
 }
 
