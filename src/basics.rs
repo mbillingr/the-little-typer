@@ -6,7 +6,7 @@ use crate::symbol::Symbol;
 use maplit::hashset;
 use sexpr_parser::parse;
 use std::collections::{HashMap, HashSet};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::MutexGuard;
@@ -183,7 +183,19 @@ impl From<&Sexpr> for Core {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+pub trait ValueInterface: Debug + Sync + Send {
+    fn same(&self, other: &dyn ValueInterface) -> bool;
+    fn read_back_type(&self, ctx: &Ctx) -> Result<Core>;
+    fn read_back(&self, ctx: &Ctx, v: &Value) -> Result<Core>;
+}
+
+impl PartialEq for dyn ValueInterface {
+    fn eq(&self, other: &Self) -> bool {
+        self.same(other)
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum Value {
     Universe,
     Nat,
@@ -202,6 +214,18 @@ pub enum Value {
     },
     Neu(R<Value>, N),
     Delay(SharedBox<Delayed>),
+    Obj(R<dyn ValueInterface>),
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        use Value::*;
+        match (self, other) {
+            (Universe, Universe) => true,
+            (Obj(a), Obj(b)) => a == b,
+            _ => todo!("{:?} ?= {:?}", self, other)
+        }
+    }
 }
 
 impl Value {

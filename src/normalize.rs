@@ -99,6 +99,7 @@ pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
             Core::pi(x_hat, ae, R::new(r))
         }
         Value::Atom => Core::Atom,
+        Value::Obj(obj) => obj.read_back_type(ctx).unwrap(),
         _ => todo!("{:?}", tv),
     }
 }
@@ -110,6 +111,7 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
 
     // first try combinations where we don't need to own v
     match (&*ntv, &*nv) {
+        (Obj(obj), v) => return obj.read_back(ctx, v).unwrap(),
         (Universe, v) => return read_back_type(ctx, &v),
         (Nat, Value::Zero) => return Core::Zero,
         (Nat, Value::Add1(n_minus_one)) => return Core::add1(read_back(ctx, tv, n_minus_one)),
