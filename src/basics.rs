@@ -218,8 +218,6 @@ impl PartialEq for dyn ValueInterface {
 
 #[derive(Debug, Clone)]
 pub enum Value {
-    Quote(Symbol),
-    Atom,
     Obj(R<dyn ValueInterface>),
 }
 
@@ -228,7 +226,6 @@ impl PartialEq for Value {
         use Value::*;
         match (self, other) {
             (Obj(a), Obj(b)) => a == b,
-            _ => todo!("{:?} ?= {:?}", self, other),
         }
     }
 }
@@ -237,7 +234,6 @@ impl Value {
     pub fn as_any(&self) -> &dyn Any {
         match self {
             Value::Obj(obj) => obj.as_any(),
-            _ => unimplemented!("{:?}", self),
         }
     }
 
@@ -248,7 +244,6 @@ impl Value {
     pub fn as_neutral(&self) -> Option<(&Value, &N)> {
         match self {
             Value::Obj(obj) => obj.as_neutral(),
-            _ => None,
         }
     }
 }

@@ -211,14 +211,12 @@ impl Value {
     pub fn apply(&self, ctx: &Ctx, r: &Renaming, rand: &Core, rator_out: R<Core>) -> Result<Core> {
         match self {
             Value::Obj(obj) => obj.apply(ctx, r, rator_out, rand),
-            non_pi => Err(Error::NotAFunctionType(read_back_type(ctx, &non_pi))),
         }
     }
 
     pub fn check(&self, ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
         match self {
             Value::Obj(obj) => obj.check(ctx, r, e, tv),
-            non_pi => Err(Error::NotAFunctionType(read_back_type(ctx, non_pi))),
         }
     }
 }

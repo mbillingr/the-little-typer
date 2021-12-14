@@ -10,7 +10,6 @@ fn later(env: Env, exp: Core) -> Value {
 pub fn now(v: &Value) -> Cow<Value> {
     match v {
         Value::Obj(obj) => obj.now(v),
-        other => Cow::Borrowed(other),
     }
 }
 
@@ -44,8 +43,8 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
                 expr: (**b).clone(),
             },
         ),
-        Core::Atom => Value::Atom,
-        Core::Quote(a) => Value::Quote(a.clone()),
+        Core::Atom => values::atom(),
+        Core::Quote(a) => values::quote(a.clone()),
         Core::AppStar(_, _) => panic!("Attempt to evaluate n-ary application (should have been converted to sequence of unary applications)"),
         Core::App(rator, rand) => do_ap(
             &later(env.clone(), (**rator).clone()),
@@ -58,9 +57,7 @@ pub fn val_of(env: &Env, e: &Core) -> Value {
 
 pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
     match &*now(tv) {
-        Value::Atom => Core::Atom,
         Value::Obj(obj) => obj.read_back_type(ctx).unwrap(),
-        _ => todo!("{:?}", tv),
     }
 }
 
@@ -76,13 +73,6 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
     // first try combinations where we don't need to own v
     match (&*ntv, &*nv) {
         (Obj(obj), v) => return obj.read_back(ctx, tv, v).unwrap(),
-        _ => {}
-    }
-
-    // the remaining combinations need to take ownership of v
-    match (&*ntv, nv.into_owned()) {
-        (Atom, Quote(a)) => Core::Quote(a),
-        (ntv, nv) => todo!("{:?} {:?}", ntv, nv),
     }
 }
 
