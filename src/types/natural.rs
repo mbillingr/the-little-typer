@@ -1,7 +1,7 @@
 use crate::basics::{Core, Ctx, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::normalize::read_back;
-use crate::values::{add1, zero};
+use crate::types::values::{add1, zero};
 use std::any::Any;
 
 /// The type of all natural numbers

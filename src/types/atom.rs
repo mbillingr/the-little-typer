@@ -1,8 +1,8 @@
 use crate::basics::{Core, Ctx, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::values::{quote};
-use std::any::Any;
 use crate::symbol::Symbol;
+use crate::types::values::quote;
+use std::any::Any;
 
 /// The type of atoms
 #[derive(Debug)]
@@ -11,7 +11,6 @@ pub struct Atom;
 /// Quotations are atoms
 #[derive(Debug)]
 pub struct Quote(pub Symbol);
-
 
 impl ValueInterface for Atom {
     fn as_any(&self) -> &dyn Any {

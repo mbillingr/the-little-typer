@@ -11,7 +11,7 @@ pub mod typechecker;
 
 #[cfg(test)]
 mod book;
-mod values;
+mod types;
 
 #[cfg(test)]
 mod tests {

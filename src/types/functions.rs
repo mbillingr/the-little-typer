@@ -3,8 +3,8 @@ use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::typechecker::check;
-use crate::values;
-use crate::values::lambda;
+use crate::types::values;
+use crate::types::values::lambda;
 use std::any::Any;
 
 /// The dependent product type

@@ -3,7 +3,7 @@ use crate::fresh::freshen;
 use crate::normalize::val_of;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
-use crate::values;
+use crate::types::values;
 use maplit::hashset;
 use sexpr_parser::parse;
 use std::any::Any;
@@ -12,6 +12,11 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 pub use std::sync::{Arc as R, Mutex, RwLock};
+
+pub trait CoreInterface: Any + Debug + Sync + Send {
+    fn as_any(&self) -> &dyn Any;
+    fn same(&self, other: &dyn ValueInterface) -> bool;
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Core {

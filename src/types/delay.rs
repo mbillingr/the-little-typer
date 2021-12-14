@@ -1,4 +1,4 @@
-use crate::basics::{Core, Ctx, Env, N, Renaming, Value, ValueInterface};
+use crate::basics::{Core, Ctx, Env, Renaming, Value, ValueInterface, N};
 use crate::errors::Result;
 use crate::normalize::{now, val_of};
 use std::any::Any;

@@ -3,9 +3,9 @@ use crate::basics::{fresh, fresh_binder, is_var_name, Core, Ctx, Renaming, Value
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
-use crate::values;
 
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
+    use crate::types::values;
     use Core::*;
     match inp {
         U => Ok(U),
@@ -65,6 +65,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
 }
 
 pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
+    use crate::types::values;
     use Core::*;
     match inp {
         U => Err(Error::UhasNoType),
@@ -126,7 +127,9 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         AppStar(rator, args) => match &args[..] {
             [] => panic!("nullary application"),
             [rand] => match synth(ctx, r, rator)? {
-                The(rator_t, rator_out) => val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand),
+                The(rator_t, rator_out) => {
+                    val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand)
+                }
                 _ => unreachable!(),
             },
             [_rand0, _rands @ ..] => todo!(),
@@ -210,6 +213,7 @@ fn make_app(a: &Core, cs: &[Core]) -> Core {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::values;
 
     #[test]
     fn pi_is_a_type() {

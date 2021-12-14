@@ -1,6 +1,6 @@
-use crate::basics::{ctx_to_env, is_var_name, Closure, Core, Ctx, Env, Value, N, ValueInterface};
-use crate::values;
-use crate::values::functions::do_ap;
+use crate::basics::{ctx_to_env, is_var_name, Closure, Core, Ctx, Env, Value, ValueInterface, N};
+use crate::types::functions::do_ap;
+use crate::types::values;
 use std::borrow::Cow;
 
 fn later(env: Env, exp: Core) -> Value {
@@ -81,6 +81,7 @@ pub fn val_in_ctx(ctx: &Ctx, e: &Core) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::types::values;
 
     #[test]
     fn test_delayed() {
