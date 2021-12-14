@@ -31,6 +31,7 @@ mod tests {
     use Core::*;
 
     use crate::errors::Error;
+    use crate::types::cores;
     use lazy_static::lazy_static;
 
     lazy_static! {
@@ -47,23 +48,23 @@ mod tests {
 
     #[test]
     fn just_a_type() {
-        assert_eq!(rep(&CTX, &Atom), Ok(Core::the(U, Atom)));
+        assert_eq!(rep(&CTX, &Atom), Ok(Core::the(cores::universe(), Atom)));
     }
 
     #[test]
     fn u_does_not_have_a_type() {
-        assert_eq!(rep(&CTX, &U), Err(Error::UhasNoType));
+        assert_eq!(rep(&CTX, &cores::universe()), Err(Error::UhasNoType));
     }
 
     #[test]
     fn a_function_type() {
         assert_eq!(
             rep(&CTX, &Core::fun(vec![Atom], Atom)),
-            Ok(Core::the(U, Core::pi("x", Atom, Atom)))
+            Ok(Core::the(cores::universe(), Core::pi("x", Atom, Atom)))
         );
         assert_eq!(
             rep(&CTX, &"(-> Atom Atom)".parse().unwrap()),
-            Ok(Core::the(U, Core::pi("x", Atom, Atom)))
+            Ok(Core::the(cores::universe(), Core::pi("x", Atom, Atom)))
         );
     }
 
@@ -88,7 +89,7 @@ mod tests {
         assert_eq!(
             rep(&CTX, &"(-> Atom (-> Atom Atom))".parse().unwrap()),
             Ok(Core::the(
-                U,
+                cores::universe(),
                 Core::pi("x", Atom, Core::pi("x₁", Atom, Atom))
             ))
         );

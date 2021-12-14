@@ -3,12 +3,12 @@ use crate::basics::{fresh, fresh_binder, is_var_name, Core, Ctx, Renaming, Value
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
+use crate::types::cores;
 
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use crate::types::values;
     use Core::*;
     match inp {
-        U => Ok(U),
         Nat => Ok(Nat),
         Fun(params) => match &params[..] {
             [a, b] => {
@@ -53,7 +53,10 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         Symbol(s) => match check(ctx, r, inp, &values::universe()) {
             Ok(t_out) => Ok(t_out),
             Err(_) if is_var_name(s) => ctx.var_type(s).and_then(|other_tv| {
-                Err(Error::WrongType(read_back_type(ctx, &other_tv), Core::U))
+                Err(Error::WrongType(
+                    read_back_type(ctx, &other_tv),
+                    cores::universe(),
+                ))
             }),
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
@@ -70,7 +73,6 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use crate::types::values;
     use Core::*;
     match inp {
-        U => Err(Error::UhasNoType),
         Fun(types) => match &types[..] {
             [a, b] => {
                 let z = fresh_binder(ctx, b, &S::new("x"));
@@ -81,7 +83,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
                     b,
                     &values::universe(),
                 )?;
-                Ok(Core::the(U, Core::pi(z, a_out, b_out)))
+                Ok(Core::the(cores::universe(), Core::pi(z, a_out, b_out)))
             }
             [a, b, cs @ ..] => {
                 let z = fresh_binder(ctx, &make_app(b, cs), &S::new("x"));
@@ -94,7 +96,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
                     &Core::Fun(out_args),
                     &values::universe(),
                 )?;
-                Ok(Core::the(U, Core::pi(z, a_out, t_out)))
+                Ok(Core::the(cores::universe(), Core::pi(z, a_out, t_out)))
             }
             _ => todo!(),
         },
@@ -107,13 +109,13 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
                 b,
                 &values::universe(),
             )?;
-            Ok(Core::the(U, Core::pi(x_hat, a_out, b_out)))
+            Ok(Core::the(cores::universe(), Core::pi(x_hat, a_out, b_out)))
         }
         PiStar(_, _) => todo!(),
-        Nat => Ok(Core::the(U, Nat)),
+        Nat => Ok(Core::the(cores::universe(), Nat)),
         Zero => Ok(Core::the(Nat, Zero)),
         Add1(n) => check(ctx, r, n, &values::nat()).map(|n_out| Core::the(Nat, Core::add1(n_out))),
-        Atom => Ok(Core::the(U, Atom)),
+        Atom => Ok(Core::the(cores::universe(), Atom)),
         Quote(a) => {
             if atom_is_ok(a) {
                 Ok(Core::the(Atom, Core::quote(a.clone())))
@@ -164,7 +166,6 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
         },
 
         Core::The(_, _)
-        | Core::U
         | Core::Atom
         | Core::Quote(_)
         | Core::Fun(_)

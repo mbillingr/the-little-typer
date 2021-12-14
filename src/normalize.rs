@@ -14,7 +14,6 @@ pub fn now(v: &Value) -> Cow<Value> {
 pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
         Core::The(_, expr) => val_of(env, expr),
-        Core::U => values::universe(),
         Core::Nat => values::nat(),
         Core::Zero => values::zero(),
         Core::Add1(n) => values::add1(later(env.clone(), (**n).clone())),
@@ -82,12 +81,12 @@ pub fn val_in_ctx(ctx: &Ctx, e: &Core) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::values;
+    use crate::types::{cores, values};
 
     #[test]
     fn test_delayed() {
         let env = Env::new();
-        let delayed_value = later(env, Core::U);
+        let delayed_value = later(env, cores::universe());
         assert_eq!(*now(&delayed_value), values::universe());
     }
 }

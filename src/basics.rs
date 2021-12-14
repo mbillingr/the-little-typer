@@ -1,10 +1,11 @@
+use crate::alpha;
 use crate::alpha::is_alpha_equiv;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
 use crate::normalize::val_of;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
-use crate::types::values;
+use crate::types::{cores, values};
 use maplit::hashset;
 use sexpr_parser::parse;
 use std::any::Any;
@@ -16,7 +17,7 @@ pub use std::sync::{Arc as R, Mutex, RwLock};
 
 pub trait CoreInterface: Any + Debug + Display + Sync + Send {
     fn as_any(&self) -> &dyn Any;
-    fn same(&self, other: &dyn ValueInterface) -> bool;
+    fn same(&self, other: &dyn CoreInterface) -> bool;
 
     fn occurring_names(&self) -> HashSet<Symbol>;
 
@@ -25,12 +26,19 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core>;
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<Core>;
+
+    fn alpha_equiv_aux(
+        &self,
+        other: &dyn CoreInterface,
+        lvl: usize,
+        b1: &alpha::Bindings,
+        b2: &alpha::Bindings,
+    ) -> bool;
 }
 
 #[derive(Debug, Clone)]
 pub enum Core {
     The(R<Core>, R<Core>),
-    U,
     Nat,
     Zero,
     Symbol(Symbol),
@@ -54,6 +62,10 @@ impl PartialEq for Core {
 }
 
 impl Core {
+    pub fn new(obj: impl CoreInterface) -> Self {
+        Core::Object(R::new(obj))
+    }
+
     pub fn the(t: impl Into<R<Core>>, e: impl Into<R<Core>>) -> Self {
         Core::The(t.into(), e.into())
     }
@@ -112,7 +124,6 @@ impl Display for Core {
         use Core::*;
         match self {
             The(t, v) => write!(f, "(the {} {})", t, v),
-            U => write!(f, "U"),
             Nat => write!(f, "Nat"),
             Zero => write!(f, "Zero"),
             Symbol(s) => write!(f, "{}", s.name()),
@@ -172,7 +183,7 @@ impl From<&Sexpr> for Core {
     fn from(sexpr: &Sexpr) -> Self {
         match sexpr {
             Sexpr::Symbol(s) => match s.name() {
-                "U" => Core::U,
+                "U" => cores::universe(),
                 "Nat" => Core::Nat,
                 "zero" => Core::Zero,
                 "Atom" => Core::Atom,
@@ -490,7 +501,7 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
         LambdaStar(params, body) => {
             &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
         }
-        U | Nat | Zero | Atom | Quote(_) => hashset! {},
+        Nat | Zero | Atom | Quote(_) => hashset! {},
         AppStar(f, args) => args
             .iter()
             .fold(occurring_names(f), |a, b| &a | &occurring_names(b)),
