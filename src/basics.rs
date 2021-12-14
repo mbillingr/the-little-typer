@@ -6,11 +6,10 @@ use crate::symbol::Symbol;
 use maplit::hashset;
 use sexpr_parser::parse;
 use std::any::Any;
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
-use std::ops::Deref;
 use std::str::FromStr;
-use std::sync::MutexGuard;
 pub use std::sync::{Arc as R, Mutex, RwLock};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -192,6 +191,18 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
     fn read_back(&self, _ctx: &Ctx, _tv: &Value, _v: &Value) -> Result<Core> {
         unimplemented!("{:?}", self)
     }
+
+    fn apply(&self, _ctx: &Ctx, _r: &Renaming, rator_out: R<Core>, _rand: &Core) -> Result<Core> {
+        Err(Error::NotAFunctionType((*rator_out).clone()))
+    }
+
+    fn check(&self, _ctx: &Ctx, _r: &Renaming, _e: &Core, tv: &Value) -> Result<Core> {
+        Err(Error::NotATypeVar(tv.clone()))
+    }
+
+    fn now<'a>(&self, v: &'a Value) -> Cow<'a, Value> {
+        Cow::Borrowed(v)
+    }
 }
 
 impl PartialEq for dyn ValueInterface {
@@ -204,17 +215,7 @@ impl PartialEq for dyn ValueInterface {
 pub enum Value {
     Quote(Symbol),
     Atom,
-    Pi {
-        arg_name: Symbol,
-        arg_type: R<Value>,
-        result_type: R<Closure>,
-    },
-    Lam {
-        arg_name: Symbol,
-        body: R<Closure>,
-    },
     Neu(R<Value>, N),
-    Delay(SharedBox<Delayed>),
     Obj(R<dyn ValueInterface>),
 }
 
@@ -236,36 +237,12 @@ impl Value {
         }
     }
 
-    pub fn pi(
-        arg_name: Symbol,
-        arg_type: impl Into<R<Value>>,
-        result_type: impl Into<R<Closure>>,
-    ) -> Self {
-        Value::Pi {
-            arg_name,
-            arg_type: arg_type.into(),
-            result_type: result_type.into(),
-        }
-    }
-
-    pub fn lam(arg_name: Symbol, body: impl Into<R<Closure>>) -> Self {
-        Value::Lam {
-            arg_name,
-            body: body.into(),
-        }
-    }
-
     pub fn neu(t: impl Into<R<Value>>, neutral: N) -> Self {
         Value::Neu(t.into(), neutral)
     }
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Delayed {
-    Value(Value),
-    Later(Env, Core),
-}
-
+#[derive(Clone)]
 pub enum Closure {
     FirstOrder { env: Env, var: Symbol, expr: Core },
     HigherOrder(R<dyn Sync + Send + Fn(Value) -> Value>),
@@ -481,52 +458,6 @@ pub fn occurring_binder_names(name: &Symbol, t: &Core) -> HashSet<Symbol> {
     let mut names = occurring_names(t);
     names.insert(name.clone());
     names
-}
-
-#[derive(Debug)]
-pub struct SharedBox<T>(R<Mutex<T>>);
-
-pub struct SharedBoxGuard<'a, T: 'a>(MutexGuard<'a, T>);
-
-impl<T> Clone for SharedBox<T> {
-    fn clone(&self) -> Self {
-        SharedBox(self.0.clone())
-    }
-}
-
-impl<T> SharedBox<T> {
-    pub fn new(inner: T) -> Self {
-        SharedBox(R::new(Mutex::new(inner)))
-    }
-
-    pub fn write_lock(&self) -> SharedBoxGuard<T> {
-        SharedBoxGuard(self.0.lock().unwrap())
-    }
-
-    pub fn read_lock(&self) -> SharedBoxGuard<T> {
-        self.write_lock()
-    }
-}
-
-impl<T: PartialEq> std::cmp::PartialEq for SharedBox<T> {
-    fn eq(&self, other: &Self) -> bool {
-        let a = self.read_lock();
-        let b = other.read_lock();
-        *a == *b
-    }
-}
-
-impl<'a, T: 'a> Deref for SharedBoxGuard<'a, T> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target {
-        &*self.0
-    }
-}
-
-impl<'a, T: 'a> SharedBoxGuard<'a, T> {
-    pub fn replace(&mut self, value: T) -> T {
-        std::mem::replace(&mut *self.0, value)
-    }
 }
 
 pub fn is_var_name(x: &Symbol) -> bool {

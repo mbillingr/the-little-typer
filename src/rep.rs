@@ -181,4 +181,28 @@ mod tests {
             ))
         );
     }
+
+    #[test]
+    fn function_application() {
+        assert_eq!(
+            rep(
+                &CTX,
+                &"((the (-> Atom Atom) (lambda (x) x)) 'foo)"
+                    .parse()
+                    .unwrap()
+            ),
+            Ok(Core::the(Atom, Core::quote("foo")))
+        );
+    }
+
+    /*#[test]
+    fn same_functions() {
+        assert_eq!(
+            check_same(&CTX,
+                       &"(-> Atom Atom)".parse().unwrap(),
+                       &"(lambda (x) x)".parse().unwrap(),
+                       &"(lambda (x) x)".parse().unwrap()),
+            Ok(())
+        );
+    }*/
 }
