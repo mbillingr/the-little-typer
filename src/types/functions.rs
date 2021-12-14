@@ -245,10 +245,6 @@ impl ValueInterface for Pi<Value, Closure> {
             Core::app((*rator_out).clone(), rand_out),
         ))
     }
-
-    fn check(&self, _ctx: &Ctx, _r: &Renaming, _e: &Core, _tv: &Value) -> Result<Core> {
-        todo!()
-    }
 }
 
 impl ValueInterface for Lambda<Closure> {

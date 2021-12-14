@@ -1,4 +1,4 @@
-use crate::basics::{Core, Ctx, Env, Renaming, Value, ValueInterface, N};
+use crate::basics::{Core, Ctx, Env, Value, ValueInterface, N};
 use crate::errors::Result;
 use crate::normalize::{now, val_of};
 use std::any::Any;
@@ -52,10 +52,6 @@ impl ValueInterface for Delay {
     }
 
     fn read_back(&self, _ctx: &Ctx, _tv: &Value, _v: &Value) -> Result<Core> {
-        unimplemented!()
-    }
-
-    fn check(&self, _ctx: &Ctx, _r: &Renaming, _e: &Core, _tv: &Value) -> Result<Core> {
         unimplemented!()
     }
 

@@ -230,10 +230,6 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
         Err(Error::NotAFunctionType((*rator_out).clone()))
     }
 
-    fn check(&self, _ctx: &Ctx, _r: &Renaming, _e: &Core, tv: &Value) -> Result<Core> {
-        Err(Error::NotATypeVar(tv.now(tv).into_owned()))
-    }
-
     fn now<'a>(&self, v: &'a Value) -> Cow<'a, Value> {
         Cow::Borrowed(v)
     }
@@ -283,10 +279,6 @@ impl ValueInterface for Value {
 
     fn apply(&self, ctx: &Ctx, r: &Renaming, rator_out: &Core, rand: &Core) -> Result<Core> {
         self.0.apply(ctx, r, rator_out, rand)
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
-        self.0.check(ctx, r, e, tv)
     }
 
     fn now<'a>(&self, v: &'a Value) -> Cow<'a, Value> {
