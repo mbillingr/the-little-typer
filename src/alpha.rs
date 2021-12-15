@@ -25,10 +25,6 @@ pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: 
 
         (Symbol(x), Symbol(y)) => x == y,
 
-        (The(t1, e1), The(t2, e2)) => {
-            alpha_equiv_aux(lvl, b1, b2, t1, t2) && alpha_equiv_aux(lvl, b1, b2, e1, e2)
-        }
-
         (Add1(a), Add1(b)) => alpha_equiv_aux(lvl, b1, b2, a, b),
 
         (Object(a), Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),

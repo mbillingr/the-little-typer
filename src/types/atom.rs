@@ -39,17 +39,14 @@ impl CoreInterface for Atom {
         Ok(cores::atom())
     }
 
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        Ok(Core::the(cores::universe(), cores::atom()))
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
+        Ok((cores::universe(), cores::atom()))
     }
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        if let Core::The(t_out, e_out) = self.synth(ctx, r)? {
-            same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
-            Ok((*e_out).clone())
-        } else {
-            unreachable!()
-        }
+        let (t_out, e_out) = self.synth(ctx, r)?;
+        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
+        Ok(e_out)
     }
 
     fn alpha_equiv_aux(
@@ -88,21 +85,18 @@ impl CoreInterface for Quote {
         Err(Error::NotAType(Core::new(self.clone())))
     }
 
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         if atom_is_ok(&self.0) {
-            Ok(Core::the(cores::atom(), cores::quote(self.0.clone())))
+            Ok((cores::atom(), cores::quote(self.0.clone())))
         } else {
             Err(Error::InvalidAtom(self.0.clone()))
         }
     }
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        if let Core::The(t_out, e_out) = self.synth(ctx, r)? {
-            same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
-            Ok((*e_out).clone())
-        } else {
-            unreachable!()
-        }
+        let (t_out, e_out) = self.synth(ctx, r)?;
+        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
+        Ok(e_out)
     }
 
     fn alpha_equiv_aux(

@@ -75,7 +75,7 @@ impl CoreInterface for Pi<Core, Core> {
         Ok(Core::pi(y, a_out, b_out))
     }
 
-    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
         let x_hat = fresh(ctx, &self.arg_name);
         let a_out = check(ctx, r, &self.arg_type, &values::universe())?;
         let b_out = check(
@@ -84,16 +84,13 @@ impl CoreInterface for Pi<Core, Core> {
             &self.res_type,
             &values::universe(),
         )?;
-        Ok(Core::the(cores::universe(), Core::pi(x_hat, a_out, b_out)))
+        Ok((cores::universe(), Core::pi(x_hat, a_out, b_out)))
     }
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        if let Core::The(t_out, e_out) = self.synth(ctx, r)? {
-            same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
-            Ok((*e_out).clone())
-        } else {
-            unreachable!()
-        }
+        let (t_out, e_out) = self.synth(ctx, r)?;
+        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
+        Ok(e_out)
     }
 
     fn alpha_equiv_aux(
@@ -168,7 +165,7 @@ impl CoreInterface for Lambda<Core> {
         Err(Error::NotAType(Core::new(self.clone())))
     }
 
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         Err(Error::CantDetermineType(Core::new(self.clone())))
     }
 
@@ -248,17 +245,14 @@ impl CoreInterface for App {
         }
     }
 
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         panic!("use AppStar for synthesis")
     }
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        if let Core::The(t_out, e_out) = self.synth(ctx, r)? {
-            same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
-            Ok((*e_out).clone())
-        } else {
-            unreachable!()
-        }
+        let (t_out, e_out) = self.synth(ctx, r)?;
+        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
+        Ok(e_out)
     }
 
     fn alpha_equiv_aux(
@@ -333,9 +327,15 @@ impl ValueInterface for Pi<Value, Closure> {
         ))
     }
 
-    fn apply(&self, _ctx: &Ctx, _r: &Renaming, rator_out: &Core, _rand: &Core) -> Result<Core> {
+    fn raw_apply(
+        &self,
+        _ctx: &Ctx,
+        _r: &Renaming,
+        rator_out: &Core,
+        _rand: &Core,
+    ) -> Result<(Core, Core)> {
         let rand_out = check(_ctx, _r, _rand, &self.arg_type)?;
-        Ok(Core::the(
+        Ok((
             read_back_type(_ctx, &self.res_type.val_of(val_in_ctx(_ctx, &rand_out))),
             Core::app((*rator_out).clone(), rand_out),
         ))

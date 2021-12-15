@@ -4,15 +4,12 @@ use crate::normalize::{read_back, read_back_type, val_in_ctx};
 use crate::typechecker::{check, convert, is_type, synth};
 
 pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
-    if let Core::The(t_out, e_out) = synth(ctx, &Renaming::new(), e)? {
-        let tv = val_in_ctx(ctx, &t_out);
-        let v = val_in_ctx(ctx, &e_out);
-        let vx = read_back(ctx, &tv, &v);
-        let tx = read_back_type(ctx, &tv);
-        Ok(Core::the(tx, vx))
-    } else {
-        unreachable!()
-    }
+    let (t_out, e_out) = synth(ctx, &Renaming::new(), e)?;
+    let tv = val_in_ctx(ctx, &t_out);
+    let v = val_in_ctx(ctx, &e_out);
+    let vx = read_back(ctx, &tv, &v);
+    let tx = read_back_type(ctx, &tv);
+    Ok(Core::the(tx, vx))
 }
 
 pub fn check_same(ctx: &Ctx, t: &Core, a: &Core, b: &Core) -> Result<()> {

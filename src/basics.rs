@@ -25,7 +25,7 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core>;
 
-    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<Core>;
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)>;
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core>;
 
@@ -42,7 +42,6 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
 #[derive(Debug, Clone)]
 pub enum Core {
-    The(R<Core>, R<Core>),
     Nat,
     Zero,
     Symbol(Symbol),
@@ -65,8 +64,8 @@ impl Core {
         Core::Object(R::new(obj))
     }
 
-    pub fn the(t: impl Into<R<Core>>, e: impl Into<R<Core>>) -> Self {
-        Core::The(t.into(), e.into())
+    pub fn the(t: Core, e: Core) -> Self {
+        cores::the(t, e)
     }
 
     pub fn fun(arg_types: Vec<Core>, ret_type: Core) -> Self {
@@ -122,7 +121,6 @@ impl Display for Core {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         use Core::*;
         match self {
-            The(t, v) => write!(f, "(the {} {})", t, v),
             Nat => write!(f, "Nat"),
             Zero => write!(f, "Zero"),
             Symbol(s) => write!(f, "{}", s.name()),
@@ -220,7 +218,13 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
         unimplemented!("{:?}", self)
     }
 
-    fn apply(&self, _ctx: &Ctx, _r: &Renaming, rator_out: &Core, _rand: &Core) -> Result<Core> {
+    fn raw_apply(
+        &self,
+        _ctx: &Ctx,
+        _r: &Renaming,
+        rator_out: &Core,
+        _rand: &Core,
+    ) -> Result<(Core, Core)> {
         Err(Error::NotAFunctionType((*rator_out).clone()))
     }
 
@@ -230,6 +234,11 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {
         None
+    }
+
+    fn apply(&self, ctx: &Ctx, r: &Renaming, rator_out: &Core, rand: &Core) -> Result<Core> {
+        self.raw_apply(ctx, r, rator_out, rand)
+            .map(|(t, e)| cores::the(t, e))
     }
 }
 
@@ -269,6 +278,16 @@ impl ValueInterface for Value {
 
     fn read_back(&self, ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
         self.0.read_back(ctx, tv, v)
+    }
+
+    fn raw_apply(
+        &self,
+        ctx: &Ctx,
+        r: &Renaming,
+        rator_out: &Core,
+        rand: &Core,
+    ) -> Result<(Core, Core)> {
+        self.0.raw_apply(ctx, r, rator_out, rand)
     }
 
     fn apply(&self, ctx: &Ctx, r: &Renaming, rator_out: &Core, rand: &Core) -> Result<Core> {
@@ -488,7 +507,6 @@ pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
 pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
     use Core::*;
     match expr {
-        The(t, e) => &occurring_names(t) | &occurring_names(e),
         Add1(n) => occurring_names(n),
         Fun(types) => {
             let mut names = hashset! {};

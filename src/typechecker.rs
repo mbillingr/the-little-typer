@@ -33,7 +33,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
         },
         PiStar(_, _) => todo!(),
 
-        The(_, _) | AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
+        AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
             Ok(t_out) => Ok(t_out),
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
@@ -55,7 +55,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     }
 }
 
-pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
+pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
     use crate::types::values;
     use Core::*;
     match inp {
@@ -69,7 +69,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
                     b,
                     &values::universe(),
                 )?;
-                Ok(Core::the(cores::universe(), Core::pi(z, a_out, b_out)))
+                Ok((cores::universe(), Core::pi(z, a_out, b_out)))
             }
             [a, b, cs @ ..] => {
                 let z = fresh_binder(ctx, &make_app(b, cs), &S::new("x"));
@@ -82,33 +82,26 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
                     &Core::Fun(out_args),
                     &values::universe(),
                 )?;
-                Ok(Core::the(cores::universe(), Core::pi(z, a_out, t_out)))
+                Ok((cores::universe(), Core::pi(z, a_out, t_out)))
             }
             _ => todo!(),
         },
         PiStar(_, _) => todo!(),
-        Nat => Ok(Core::the(cores::universe(), Nat)),
-        Zero => Ok(Core::the(Nat, Zero)),
-        Add1(n) => check(ctx, r, n, &values::nat()).map(|n_out| Core::the(Nat, Core::add1(n_out))),
-        The(t, e) => {
-            let t_out = is_type(ctx, r, t)?;
-            let e_out = check(ctx, r, e, &val_in_ctx(ctx, &t_out))?;
-            Ok(Core::the(t_out, e_out))
-        }
+        Nat => Ok((cores::universe(), Nat)),
+        Zero => Ok((Nat, Zero)),
+        Add1(n) => check(ctx, r, n, &values::nat()).map(|n_out| (Nat, Core::add1(n_out))),
         AppStar(rator, args) => match &args[..] {
             [] => panic!("nullary application"),
-            [rand] => match synth(ctx, r, rator)? {
-                The(rator_t, rator_out) => {
-                    val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand)
-                }
-                _ => unreachable!(),
-            },
+            [rand] => {
+                let (rator_t, rator_out) = synth(ctx, r, rator)?;
+                val_in_ctx(ctx, &rator_t).raw_apply(ctx, r, &rator_out, rand)
+            }
             [_rand0, _rands @ ..] => todo!(),
         },
         Symbol(x) if is_var_name(x) => {
             let real_x = r.rename(x);
             let xtv = ctx.var_type(&real_x)?;
-            Ok(Core::the(read_back_type(ctx, &xtv), inp.clone()))
+            Ok((read_back_type(ctx, &xtv), inp.clone()))
         }
         Symbol(_) | LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
 
@@ -129,20 +122,16 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             ),
         },
 
-        Core::The(_, _)
-        | Core::Fun(_)
+        Core::Fun(_)
         | Core::PiStar(_, _)
         | Core::AppStar(_, _)
         | Core::Symbol(_)
         | Core::Nat
         | Core::Zero
         | Core::Add1(_) => {
-            if let Core::The(t_out, e_out) = synth(ctx, r, e)? {
-                same_type(ctx, &val_in_ctx(ctx, &*t_out), tv)?;
-                Ok((*e_out).clone())
-            } else {
-                unreachable!()
-            }
+            let (t_out, e_out) = synth(ctx, r, e)?;
+            same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
+            Ok(e_out)
         }
 
         Core::Object(obj) => obj.check(ctx, r, tv),

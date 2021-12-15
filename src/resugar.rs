@@ -11,11 +11,6 @@ pub fn resugar(term: &Core) -> Core {
 pub fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
     use Core::*;
     match term {
-        The(t, v) => {
-            let t = resugar_(t);
-            let v = resugar_(v);
-            (&t.0 | &v.0, Core::the(t.1, v.1))
-        }
         PiStar(bindings, result_type) => match &bindings[..] {
             [(x, arg_type)] => resugar_unary_pi(x, arg_type, result_type),
             _ => todo!(),

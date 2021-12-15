@@ -51,7 +51,7 @@ impl CoreInterface for Universe {
         Ok(cores::universe())
     }
 
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         Err(Error::UhasNoType)
     }
 

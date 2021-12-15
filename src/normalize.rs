@@ -12,7 +12,6 @@ pub fn now(v: &Value) -> Cow<Value> {
 
 pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
-        Core::The(_, expr) => val_of(env, expr),
         Core::Nat => values::nat(),
         Core::Zero => values::zero(),
         Core::Add1(n) => values::add1(later(env.clone(), (**n).clone())),

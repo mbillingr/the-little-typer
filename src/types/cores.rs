@@ -1,8 +1,13 @@
 use crate::basics::Core;
 use crate::symbol::Symbol;
+use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, Lambda, Pi};
 use crate::types::universe::Universe;
+
+pub fn the(typ: Core, exp: Core) -> Core {
+    Core::new(The { typ, exp })
+}
 
 pub fn universe() -> Core {
     Core::new(Universe)
