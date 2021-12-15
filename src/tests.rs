@@ -1,4 +1,5 @@
 use crate::basics::{ctx_to_env, Ctx};
+use crate::errors::Error;
 use crate::normalize::val_of;
 use crate::rep::rep;
 use crate::types::{cores::*, values};
@@ -39,7 +40,7 @@ fn nary_functions_and_lamba_desugar_to_curried_unaries() {
         ),
         Ok(the(
             pi("x", nat(), pi("x₁", nat(), nat())),
-            lambda("x", lambda("x₁", refer("x")))
+            lambda("x", lambda("y", refer("x")))
         ))
     )
 }
@@ -59,9 +60,28 @@ fn rightmost_lambda_param_takes_precedence() {
 }
 
 #[test]
-fn foo() {
+fn which_nat_applies_steps() {
     assert_eq!(
         rep(&CTX, &"(which-Nat 1 2 (lambda (x) x))".parse().unwrap()),
         Ok(the(nat(), zero()))
+    )
+}
+
+#[test]
+fn which_nat_zero_returns_base() {
+    assert_eq!(
+        rep(&CTX, &"(which-Nat 0 2 (lambda (x) x))".parse().unwrap()),
+        Ok(the(nat(), add1(add1(zero()))))
+    )
+}
+
+#[test]
+fn a_type_error() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (-> Nat Nat Nat) (lambda (x) x))".parse().unwrap()
+        ),
+        Err(Error::WrongType(nat(), pi("x₁", nat(), nat())))
     )
 }

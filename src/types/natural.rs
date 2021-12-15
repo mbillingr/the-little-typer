@@ -26,7 +26,7 @@ pub struct Nat;
 pub struct Zero;
 
 /// One more than another natural number
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Add1<T>(pub T);
 
 #[derive(Debug, Clone)]
@@ -120,8 +120,12 @@ impl CoreInterface for Add1<Core> {
         self
     }
 
-    fn same(&self, _other: &dyn CoreInterface) -> bool {
-        unimplemented!()
+    fn same(&self, other: &dyn CoreInterface) -> bool {
+        other
+            .as_any()
+            .downcast_ref::<Self>()
+            .map(|o| self == o)
+            .unwrap_or(false)
     }
 
     fn occurring_names(&self) -> HashSet<Symbol> {

@@ -1,5 +1,4 @@
 use crate::alpha;
-use crate::alpha::is_alpha_equiv;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
 use crate::normalize::{val_in_ctx, val_of};
@@ -56,7 +55,15 @@ pub enum Core {
 
 impl PartialEq for Core {
     fn eq(&self, other: &Self) -> bool {
-        is_alpha_equiv(self, other)
+        use Core::*;
+        match (self, other) {
+            (Fun(a), Fun(b)) => a == b,
+            (PiStar(a, r1), PiStar(b, r2)) => a == b && r1 == r2,
+            (LambdaStar(a, r1), LambdaStar(b, r2)) => a == b && r1 == r2,
+            (AppStar(f1, a1), AppStar(f2, a2)) => f1 == f2 && a1 == a2,
+            (Object(a), Object(b)) => R::ptr_eq(a, b) || a.same(&**b),
+            _ => false,
+        }
     }
 }
 

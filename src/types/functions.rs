@@ -16,7 +16,7 @@ use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Pi<T, C> {
     pub arg_name: Symbol,
     pub arg_type: T,
@@ -24,7 +24,7 @@ pub struct Pi<T, C> {
 }
 
 /// An actual Function
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Lambda<B> {
     pub arg_name: Symbol,
     pub body: B,
@@ -42,8 +42,12 @@ impl CoreInterface for Pi<Core, Core> {
         self
     }
 
-    fn same(&self, _other: &dyn CoreInterface) -> bool {
-        unimplemented!()
+    fn same(&self, other: &dyn CoreInterface) -> bool {
+        other
+            .as_any()
+            .downcast_ref::<Self>()
+            .map(|o| self == o)
+            .unwrap_or(false)
     }
 
     fn occurring_names(&self) -> HashSet<Symbol> {
@@ -136,8 +140,12 @@ impl CoreInterface for Lambda<Core> {
         self
     }
 
-    fn same(&self, _other: &dyn CoreInterface) -> bool {
-        unimplemented!()
+    fn same(&self, other: &dyn CoreInterface) -> bool {
+        other
+            .as_any()
+            .downcast_ref::<Self>()
+            .map(|o| self == o)
+            .unwrap_or(false)
     }
 
     fn occurring_names(&self) -> HashSet<Symbol> {

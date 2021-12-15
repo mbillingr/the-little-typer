@@ -14,7 +14,7 @@ use std::fmt::Formatter;
 pub struct Atom;
 
 /// Quotations are atoms
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Quote(pub Symbol);
 
 impl CoreInterface for Atom {
@@ -62,8 +62,12 @@ impl CoreInterface for Quote {
         self
     }
 
-    fn same(&self, _other: &dyn CoreInterface) -> bool {
-        unimplemented!()
+    fn same(&self, other: &dyn CoreInterface) -> bool {
+        other
+            .as_any()
+            .downcast_ref::<Self>()
+            .map(|o| self == o)
+            .unwrap_or(false)
     }
 
     fn occurring_names(&self) -> HashSet<Symbol> {
