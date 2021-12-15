@@ -1,5 +1,5 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{fresh_binder, is_var_name, Core, Ctx, Renaming, Value, ValueInterface};
+use crate::basics::{fresh_binder, Core, Ctx, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
@@ -34,17 +34,6 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
 
         AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
             Ok(t_out) => Ok(t_out),
-            Err(_) => Err(Error::NotAType(inp.clone())),
-        },
-
-        Symbol(s) => match check(ctx, r, inp, &values::universe()) {
-            Ok(t_out) => Ok(t_out),
-            Err(_) if is_var_name(s) => ctx.var_type(s).and_then(|other_tv| {
-                Err(Error::WrongType(
-                    read_back_type(ctx, &other_tv),
-                    cores::universe(),
-                ))
-            }),
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
 
@@ -94,12 +83,8 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
             }
             [_rand0, _rands @ ..] => todo!(),
         },
-        Symbol(x) if is_var_name(x) => {
-            let real_x = r.rename(x);
-            let xtv = ctx.var_type(&real_x)?;
-            Ok((read_back_type(ctx, &xtv), inp.clone()))
-        }
-        Symbol(_) | LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
+
+        LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
 
         Object(obj) => obj.synth(ctx, r),
     }
@@ -118,7 +103,7 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             ),
         },
 
-        Core::Fun(_) | Core::PiStar(_, _) | Core::AppStar(_, _) | Core::Symbol(_) => {
+        Core::Fun(_) | Core::PiStar(_, _) | Core::AppStar(_, _) => {
             let (t_out, e_out) = synth(ctx, r, e)?;
             same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
             Ok(e_out)

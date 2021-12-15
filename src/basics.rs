@@ -42,7 +42,6 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
 #[derive(Debug, Clone)]
 pub enum Core {
-    Symbol(Symbol),
     Fun(Vec<Core>),
     PiStar(Vec<(Symbol, Core)>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
@@ -72,6 +71,10 @@ impl Core {
         Core::Fun(types)
     }
 
+    pub fn pi_star(params: Vec<(Symbol, Core)>, rt: impl Into<R<Core>>) -> Self {
+        Core::PiStar(params, rt.into())
+    }
+
     pub fn pi(x: impl Into<Symbol>, xt: Core, rt: Core) -> Self {
         cores::pi(x, xt, rt)
     }
@@ -93,7 +96,7 @@ impl Core {
     }
 
     pub fn symbol(s: impl Into<Symbol>) -> Self {
-        Core::Symbol(s.into())
+        cores::refer(s)
     }
 
     pub fn quote(s: impl Into<Symbol>) -> Self {
@@ -118,7 +121,6 @@ impl Display for Core {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         use Core::*;
         match self {
-            Symbol(s) => write!(f, "{}", s.name()),
             Fun(ts) => {
                 write!(f, "(->")?;
                 for t in &**ts {
@@ -173,7 +175,7 @@ impl From<&Sexpr> for Core {
                 "Nat" => cores::nat(),
                 "zero" => cores::zero(),
                 "Atom" => cores::atom(),
-                _ if is_var_name(s) => Core::Symbol(s.clone()),
+                _ if is_var_name(s) => cores::refer(s.clone()),
                 name => todo!("{}", name),
             },
             Sexpr::SmallNat(x) => Core::nat(*x),
@@ -185,7 +187,20 @@ impl From<&Sexpr> for Core {
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
                     }
-                    ("lambda", [Sexpr::List(params), body]) => Core::LambdaStar(
+                    ("Pi" | "Π", [Sexpr::List(params), rt]) => Core::pi_star(
+                        params
+                            .iter()
+                            .map(|x| match x {
+                                Sexpr::List(x) => match &x[..] {
+                                    [Sexpr::Symbol(name), typ] => (name.clone(), Core::from(typ)),
+                                    _ => unimplemented!(),
+                                },
+                                _ => unimplemented!(),
+                            })
+                            .collect(),
+                        Core::from(rt),
+                    ),
+                    ("lambda" | "λ", [Sexpr::List(params), body]) => Core::LambdaStar(
                         params
                             .iter()
                             .map(|x| x.as_symbol().cloned().unwrap())
@@ -509,8 +524,6 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
         AppStar(f, args) => args
             .iter()
             .fold(occurring_names(f), |a, b| &a | &occurring_names(b)),
-        Symbol(x) if is_var_name(x) => hashset! {x.clone()},
-        Symbol(_) => hashset! {},
         Object(obj) => obj.occurring_names(),
     }
 }

@@ -4,6 +4,7 @@ use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, Lambda, Pi};
 use crate::types::natural::{Add1, Nat, Zero};
+use crate::types::reference::Ref;
 use crate::types::universe::Universe;
 
 pub fn the(typ: Core, exp: Core) -> Core {
@@ -51,4 +52,8 @@ pub fn lambda(x: impl Into<Symbol>, body: Core) -> Core {
 
 pub fn app(fun: Core, arg: Core) -> Core {
     Core::new(App { fun, arg })
+}
+
+pub fn refer(s: impl Into<Symbol>) -> Core {
+    Core::new(Ref::new(s))
 }

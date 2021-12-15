@@ -1,8 +1,9 @@
 use std::borrow::Borrow;
+use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 use std::sync::Arc;
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq, Hash)]
 pub struct Symbol(Arc<str>);
 
 impl Symbol {
@@ -53,5 +54,11 @@ impl Borrow<str> for Symbol {
 impl PartialEq<&str> for Symbol {
     fn eq(&self, other: &&str) -> bool {
         *self.0 == **other
+    }
+}
+
+impl Debug for Symbol {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
