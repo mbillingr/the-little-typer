@@ -327,7 +327,7 @@ impl ValueInterface for Pi<Value, Closure> {
         ))
     }
 
-    fn raw_apply(
+    fn apply(
         &self,
         _ctx: &Ctx,
         _r: &Renaming,

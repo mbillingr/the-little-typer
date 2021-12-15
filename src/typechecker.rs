@@ -94,7 +94,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
             [] => panic!("nullary application"),
             [rand] => {
                 let (rator_t, rator_out) = synth(ctx, r, rator)?;
-                val_in_ctx(ctx, &rator_t).raw_apply(ctx, r, &rator_out, rand)
+                val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand)
             }
             [_rand0, _rands @ ..] => todo!(),
         },

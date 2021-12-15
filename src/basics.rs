@@ -218,7 +218,7 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
         unimplemented!("{:?}", self)
     }
 
-    fn raw_apply(
+    fn apply(
         &self,
         _ctx: &Ctx,
         _r: &Renaming,
@@ -234,11 +234,6 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {
         None
-    }
-
-    fn apply(&self, ctx: &Ctx, r: &Renaming, rator_out: &Core, rand: &Core) -> Result<Core> {
-        self.raw_apply(ctx, r, rator_out, rand)
-            .map(|(t, e)| cores::the(t, e))
     }
 }
 
@@ -280,17 +275,13 @@ impl ValueInterface for Value {
         self.0.read_back(ctx, tv, v)
     }
 
-    fn raw_apply(
+    fn apply(
         &self,
         ctx: &Ctx,
         r: &Renaming,
         rator_out: &Core,
         rand: &Core,
     ) -> Result<(Core, Core)> {
-        self.0.raw_apply(ctx, r, rator_out, rand)
-    }
-
-    fn apply(&self, ctx: &Ctx, r: &Renaming, rator_out: &Core, rand: &Core) -> Result<Core> {
         self.0.apply(ctx, r, rator_out, rand)
     }
 
