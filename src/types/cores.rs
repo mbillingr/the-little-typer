@@ -28,11 +28,11 @@ pub fn add1(n: Core) -> Core {
 }
 
 pub fn which_nat(target: Core, base: Core, step: Core) -> Core {
-    Core::new(WhichNat { target, base, step })
+    Core::new(WhichNat::Plain(target, base, step))
 }
 
 pub fn which_nat_desugared(target: Core, base_type: Core, base: Core, step: Core) -> Core {
-    todo!()
+    Core::new(WhichNat::Verbose(target, base_type, base, step))
 }
 
 pub fn atom() -> Core {

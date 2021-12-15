@@ -15,6 +15,7 @@ pub fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
             [(x, arg_type)] => resugar_unary_pi(x, arg_type, result_type),
             _ => todo!(),
         },
+        Object(obj) => obj.resugar(),
         any_term => (HashSet::new(), any_term.clone()),
     }
 }
