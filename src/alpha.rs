@@ -8,8 +8,6 @@ pub fn is_alpha_equiv(e1: &Core, e2: &Core) -> bool {
 pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: &Core) -> bool {
     use Core::*;
     match (e1, e2) {
-        (Nat, Nat) | (Zero, Zero) => true,
-
         (Symbol(x), Symbol(y)) if is_var_name(x) && is_var_name(y) => {
             let x_binding = b1.assv(x);
             let y_binding = b1.assv(x);
@@ -24,8 +22,6 @@ pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: 
         }
 
         (Symbol(x), Symbol(y)) => x == y,
-
-        (Add1(a), Add1(b)) => alpha_equiv_aux(lvl, b1, b2, a, b),
 
         (Object(a), Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),
         (Object(_), _) | (_, Object(_)) => false,

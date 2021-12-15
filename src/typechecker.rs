@@ -9,7 +9,6 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use crate::types::values;
     use Core::*;
     match inp {
-        Nat => Ok(Nat),
         Fun(params) => match &params[..] {
             [a, b] => {
                 let x = fresh_binder(ctx, b, &S::new("x"));
@@ -49,7 +48,7 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             Err(_) => Err(Error::NotAType(inp.clone())),
         },
 
-        Zero | Add1(_) | LambdaStar(_, _) => Err(Error::NotAType(inp.clone())),
+        LambdaStar(_, _) => Err(Error::NotAType(inp.clone())),
 
         Object(obj) => obj.is_type(ctx, r),
     }
@@ -87,9 +86,6 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
             _ => todo!(),
         },
         PiStar(_, _) => todo!(),
-        Nat => Ok((cores::universe(), Nat)),
-        Zero => Ok((Nat, Zero)),
-        Add1(n) => check(ctx, r, n, &values::nat()).map(|n_out| (Nat, Core::add1(n_out))),
         AppStar(rator, args) => match &args[..] {
             [] => panic!("nullary application"),
             [rand] => {
@@ -122,13 +118,7 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             ),
         },
 
-        Core::Fun(_)
-        | Core::PiStar(_, _)
-        | Core::AppStar(_, _)
-        | Core::Symbol(_)
-        | Core::Nat
-        | Core::Zero
-        | Core::Add1(_) => {
+        Core::Fun(_) | Core::PiStar(_, _) | Core::AppStar(_, _) | Core::Symbol(_) => {
             let (t_out, e_out) = synth(ctx, r, e)?;
             same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
             Ok(e_out)
@@ -176,7 +166,7 @@ mod tests {
         assert!(check(
             &Ctx::new(),
             &Renaming::new(),
-            &Core::pi(Symbol::new("x"), Core::Nat, Core::Nat),
+            &Core::pi(Symbol::new("x"), cores::nat(), cores::nat()),
             &values::universe()
         )
         .is_ok());

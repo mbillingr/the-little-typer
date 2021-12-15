@@ -42,10 +42,7 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
 #[derive(Debug, Clone)]
 pub enum Core {
-    Nat,
-    Zero,
     Symbol(Symbol),
-    Add1(R<Core>),
     Fun(Vec<Core>),
     PiStar(Vec<(Symbol, Core)>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
@@ -104,7 +101,7 @@ impl Core {
     }
 
     pub fn nat(mut x: u64) -> Self {
-        let mut n = Core::Zero;
+        let mut n = cores::zero();
         while x > 0 {
             x -= 1;
             n = Core::add1(n)
@@ -113,7 +110,7 @@ impl Core {
     }
 
     pub fn add1(n: Core) -> Self {
-        Core::Add1(R::new(n))
+        cores::add1(n)
     }
 }
 
@@ -121,10 +118,7 @@ impl Display for Core {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         use Core::*;
         match self {
-            Nat => write!(f, "Nat"),
-            Zero => write!(f, "Zero"),
             Symbol(s) => write!(f, "{}", s.name()),
-            Add1(n) => write!(f, "(add1 {})", n),
             Fun(ts) => {
                 write!(f, "(->")?;
                 for t in &**ts {
@@ -176,8 +170,8 @@ impl From<&Sexpr> for Core {
         match sexpr {
             Sexpr::Symbol(s) => match s.name() {
                 "U" => cores::universe(),
-                "Nat" => Core::Nat,
-                "zero" => Core::Zero,
+                "Nat" => cores::nat(),
+                "zero" => cores::zero(),
                 "Atom" => cores::atom(),
                 _ if is_var_name(s) => Core::Symbol(s.clone()),
                 name => todo!("{}", name),
@@ -186,7 +180,7 @@ impl From<&Sexpr> for Core {
             Sexpr::List(list) => match &list[..] {
                 [Sexpr::Symbol(s), args @ ..] if !is_var_name(s) => match (s.name(), args) {
                     ("the", [t, v]) => Core::the(Core::from(t), Core::from(v)),
-                    ("add1", [n]) => Core::add1(Core::from(n)),
+                    ("add1", [n]) => cores::add1(Core::from(n)),
                     ("quote", [Sexpr::Symbol(s)]) => Core::quote(s.clone()),
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
@@ -498,7 +492,6 @@ pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
 pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
     use Core::*;
     match expr {
-        Add1(n) => occurring_names(n),
         Fun(types) => {
             let mut names = hashset! {};
             for t in types {
@@ -513,7 +506,6 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
         LambdaStar(params, body) => {
             &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
         }
-        Nat | Zero => hashset! {},
         AppStar(f, args) => args
             .iter()
             .fold(occurring_names(f), |a, b| &a | &occurring_names(b)),

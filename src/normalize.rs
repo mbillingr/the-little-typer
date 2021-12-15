@@ -1,10 +1,5 @@
 use crate::basics::{ctx_to_env, is_var_name, Core, Ctx, Env, Norm, Value, ValueInterface, N};
-use crate::types::values;
 use std::borrow::Cow;
-
-fn later(env: Env, exp: Core) -> Value {
-    values::later(env, exp)
-}
 
 pub fn now(v: &Value) -> Cow<Value> {
     v.now(v)
@@ -12,9 +7,6 @@ pub fn now(v: &Value) -> Cow<Value> {
 
 pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
-        Core::Nat => values::nat(),
-        Core::Zero => values::zero(),
-        Core::Add1(n) => values::add1(later(env.clone(), (**n).clone())),
         Core::Fun(_) => panic!("Attempt to evaluate -> (should have been converted to Pi)"),
         Core::PiStar(_, _) => panic!("Attempt to evaluate Pi* (should have been converted to Pi)"),
         Core::LambdaStar(_, _) => panic!("Attempt to evaluate sugared lambda"),
@@ -51,17 +43,4 @@ pub fn read_back_neutral(ctx: &Ctx, ne: &N) -> Core {
 
 pub fn val_in_ctx(ctx: &Ctx, e: &Core) -> Value {
     val_of(&ctx_to_env(ctx), e)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::types::{cores, values};
-
-    #[test]
-    fn test_delayed() {
-        let env = Env::new();
-        let delayed_value = later(env, cores::universe());
-        assert_eq!(*now(&delayed_value), values::universe());
-    }
 }

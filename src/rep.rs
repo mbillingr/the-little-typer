@@ -25,7 +25,6 @@ pub fn check_same(ctx: &Ctx, t: &Core, a: &Core, b: &Core) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use Core::*;
 
     use crate::errors::Error;
     use crate::types::cores;
@@ -86,7 +85,7 @@ mod tests {
     fn type_annotation_mismatch() {
         assert_eq!(
             rep(&CTX, &"(the Nat 'atom)".parse().unwrap()),
-            Err(Error::WrongType(cores::atom(), Nat))
+            Err(Error::WrongType(cores::atom(), cores::nat()))
         );
     }
 
@@ -139,11 +138,11 @@ mod tests {
     fn the_number_zero() {
         assert_eq!(
             rep(&CTX, &"0".parse().unwrap()),
-            Ok(Core::the(Nat, Core::nat(0),))
+            Ok(Core::the(cores::nat(), Core::nat(0),))
         );
         assert_eq!(
             rep(&CTX, &"zero".parse().unwrap()),
-            Ok(Core::the(Nat, Core::nat(0)))
+            Ok(Core::the(cores::nat(), Core::nat(0)))
         );
     }
 
@@ -151,12 +150,12 @@ mod tests {
     fn one_more() {
         assert_eq!(
             rep(&CTX, &"(add1 0)".parse().unwrap()),
-            Ok(Core::the(Nat, Core::nat(1)))
+            Ok(Core::the(cores::nat(), Core::nat(1)))
         );
 
         assert_eq!(
             rep(&CTX, &"1".parse().unwrap()),
-            Ok(Core::the(Nat, Core::nat(1)))
+            Ok(Core::the(cores::nat(), Core::nat(1)))
         );
     }
 
@@ -164,12 +163,12 @@ mod tests {
     fn two_more() {
         assert_eq!(
             rep(&CTX, &"(add1 (add1 0))".parse().unwrap()),
-            Ok(Core::the(Nat, Core::nat(2)))
+            Ok(Core::the(cores::nat(), Core::nat(2)))
         );
 
         assert_eq!(
             rep(&CTX, &"2".parse().unwrap()),
-            Ok(Core::the(Nat, Core::nat(2)))
+            Ok(Core::the(cores::nat(), Core::nat(2)))
         );
     }
 

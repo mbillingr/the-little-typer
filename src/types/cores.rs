@@ -3,6 +3,7 @@ use crate::symbol::Symbol;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, Lambda, Pi};
+use crate::types::natural::{Add1, Nat, Zero};
 use crate::types::universe::Universe;
 
 pub fn the(typ: Core, exp: Core) -> Core {
@@ -11,6 +12,18 @@ pub fn the(typ: Core, exp: Core) -> Core {
 
 pub fn universe() -> Core {
     Core::new(Universe)
+}
+
+pub fn nat() -> Core {
+    Core::new(Nat)
+}
+
+pub fn zero() -> Core {
+    Core::new(Zero)
+}
+
+pub fn add1(n: Core) -> Core {
+    Core::new(Add1(n))
 }
 
 pub fn atom() -> Core {
