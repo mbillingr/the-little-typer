@@ -57,3 +57,11 @@ fn rightmost_lambda_param_takes_precedence() {
         ))
     )
 }
+
+#[test]
+fn foo() {
+    assert_eq!(
+        rep(&CTX, &"(which-Nat 1 2 (lambda (x) x))".parse().unwrap()),
+        Ok(the(nat(), zero()))
+    )
+}

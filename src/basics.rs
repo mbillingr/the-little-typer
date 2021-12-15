@@ -183,6 +183,9 @@ impl From<&Sexpr> for Core {
                 [Sexpr::Symbol(s), args @ ..] if !is_var_name(s) => match (s.name(), args) {
                     ("the", [t, v]) => Core::the(Core::from(t), Core::from(v)),
                     ("add1", [n]) => cores::add1(Core::from(n)),
+                    ("which-Nat", [target, base, step]) => {
+                        cores::which_nat(Core::from(target), Core::from(base), Core::from(step))
+                    }
                     ("quote", [Sexpr::Symbol(s)]) => Core::quote(s.clone()),
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
