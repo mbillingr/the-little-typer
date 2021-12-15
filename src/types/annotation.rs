@@ -5,7 +5,7 @@ use crate::errors::{Error, Result};
 use crate::normalize::{val_in_ctx, val_of};
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
-use crate::typechecker::{check, is_type, same_type};
+use crate::typechecker::{check, is_type};
 use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
@@ -45,12 +45,6 @@ impl CoreInterface for The {
         let t_out = is_type(ctx, r, &self.typ)?;
         let e_out = check(ctx, r, &self.exp, &val_in_ctx(ctx, &t_out))?;
         Ok((t_out, e_out))
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
     }
 
     fn alpha_equiv_aux(

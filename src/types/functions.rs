@@ -8,7 +8,7 @@ use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::resugar;
 use crate::symbol::Symbol;
-use crate::typechecker::{check, is_type, same_type};
+use crate::typechecker::{check, is_type};
 use crate::types::neutral::Neutral;
 use crate::types::values::{lambda, later, neutral};
 use crate::types::{cores, values};
@@ -85,12 +85,6 @@ impl CoreInterface for Pi<Core, Core> {
             &values::universe(),
         )?;
         Ok((cores::universe(), Core::pi(x_hat, a_out, b_out)))
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
     }
 
     fn alpha_equiv_aux(
@@ -247,12 +241,6 @@ impl CoreInterface for App {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         panic!("use AppStar for synthesis")
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
     }
 
     fn alpha_equiv_aux(

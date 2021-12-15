@@ -1,9 +1,8 @@
 use crate::alpha;
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::val_in_ctx;
 use crate::symbol::Symbol;
-use crate::typechecker::{atom_is_ok, same_type};
+use crate::typechecker::atom_is_ok;
 use crate::types::values::quote;
 use crate::types::{cores, values};
 use std::any::Any;
@@ -41,12 +40,6 @@ impl CoreInterface for Atom {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         Ok((cores::universe(), cores::atom()))
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
     }
 
     fn alpha_equiv_aux(
@@ -91,12 +84,6 @@ impl CoreInterface for Quote {
         } else {
             Err(Error::InvalidAtom(self.0.clone()))
         }
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
     }
 
     fn alpha_equiv_aux(

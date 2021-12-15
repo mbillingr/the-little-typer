@@ -1,9 +1,8 @@
 use crate::alpha;
 use crate::basics::{is_var_name, Core, CoreInterface, Ctx, Env, Renaming, Value};
 use crate::errors::{Error, Result};
-use crate::normalize::{read_back_type, val_in_ctx};
+use crate::normalize::read_back_type;
 use crate::symbol::Symbol;
-use crate::typechecker::same_type;
 use crate::types::{cores, values};
 use maplit::hashset;
 use std::any::Any;
@@ -55,12 +54,6 @@ impl CoreInterface for Ref {
         let real_x = r.rename(&self.0);
         let xtv = ctx.var_type(&real_x)?;
         Ok((read_back_type(ctx, &xtv), cores::refer(real_x)))
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
     }
 
     fn alpha_equiv_aux(

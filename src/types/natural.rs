@@ -5,10 +5,10 @@ use crate::basics::{
     ValueInterface,
 };
 use crate::errors::{Error, Result};
-use crate::normalize::{now, read_back, val_in_ctx};
+use crate::normalize::{now, read_back};
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
-use crate::typechecker::{check, same_type, synth};
+use crate::typechecker::{check, synth};
 use crate::types::cores::{which_nat, which_nat_desugared};
 use crate::types::functions::do_ap;
 use crate::types::values::{add1, later, zero};
@@ -60,12 +60,6 @@ impl CoreInterface for Nat {
         Ok((cores::universe(), cores::nat()))
     }
 
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
-    }
-
     fn alpha_equiv_aux(
         &self,
         other: &dyn CoreInterface,
@@ -106,12 +100,6 @@ impl CoreInterface for Zero {
         Ok((cores::nat(), cores::zero()))
     }
 
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
-    }
-
     fn alpha_equiv_aux(
         &self,
         other: &dyn CoreInterface,
@@ -150,12 +138,6 @@ impl CoreInterface for Add1<Core> {
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
         check(ctx, r, &self.0, &values::nat()).map(|n_out| (cores::nat(), Core::add1(n_out)))
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
     }
 
     fn alpha_equiv_aux(
@@ -242,12 +224,6 @@ impl CoreInterface for WhichNat {
                 ))
             }
         }
-    }
-
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
     }
 
     fn alpha_equiv_aux(
