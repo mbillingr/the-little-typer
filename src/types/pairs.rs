@@ -1,10 +1,11 @@
 use crate::alpha;
+use crate::alpha::alpha_equiv_aux;
 use crate::basics::{
     fresh, fresh_binder, occurring_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value,
-    ValueInterface,
+    ValueInterface, N,
 };
 use crate::errors::{Error, Result};
-use crate::normalize::{now, val_in_ctx};
+use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::typechecker::{check, is_type};
 use crate::types::values::later;
@@ -165,8 +166,11 @@ impl CoreInterface for Cons<Core> {
         &occurring_names(&self.0) | &occurring_names(&self.1)
     }
 
-    fn val_of(&self, _env: &Env) -> Value {
-        todo!()
+    fn val_of(&self, env: &Env) -> Value {
+        values::cons(
+            later(env.clone(), self.0.clone()),
+            later(env.clone(), self.1.clone()),
+        )
     }
 
     fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
@@ -195,12 +199,13 @@ impl CoreInterface for Cons<Core> {
     fn alpha_equiv_aux(
         &self,
         other: &dyn CoreInterface,
-        _lvl: usize,
-        _b1: &alpha::Bindings,
-        _b2: &alpha::Bindings,
+        lvl: usize,
+        b1: &alpha::Bindings,
+        b2: &alpha::Bindings,
     ) -> bool {
-        if let Some(_other) = other.as_any().downcast_ref::<Self>() {
-            todo!()
+        if let Some(other) = other.as_any().downcast_ref::<Self>() {
+            alpha_equiv_aux(lvl, b1, b2, &self.0, &other.0)
+                && alpha_equiv_aux(lvl, b1, b2, &self.1, &other.1)
         } else {
             false
         }
@@ -220,12 +225,28 @@ impl ValueInterface for Sigma<Value, Closure> {
         unimplemented!()
     }
 
-    fn read_back_type(&self, _ctx: &Ctx) -> Result<Core> {
-        todo!()
+    fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
+        let a_e = read_back_type(ctx, &self.car_type);
+        let x_hat = fresh(ctx, &self.arg_name);
+        let ctx_hat = ctx.bind_free(x_hat.clone(), self.car_type.clone())?;
+        Ok(cores::sigma(
+            x_hat.clone(),
+            a_e,
+            read_back_type(
+                &ctx_hat,
+                &self
+                    .cdr_type
+                    .val_of(values::neutral(self.car_type.clone(), N::Var(x_hat))),
+            ),
+        ))
     }
 
-    fn read_back(&self, _ctx: &Ctx, _tv: &Value, _f: &Value) -> Result<Core> {
-        todo!()
+    fn read_back(&self, ctx: &Ctx, _tv: &Value, pv: &Value) -> Result<Core> {
+        let the_car = do_car(pv);
+        Ok(cores::cons(
+            read_back(ctx, &self.car_type, &the_car),
+            read_back(ctx, &self.cdr_type.val_of(the_car), &do_cdr(pv)),
+        ))
     }
 
     fn apply(
@@ -236,6 +257,27 @@ impl ValueInterface for Sigma<Value, Closure> {
         _rand: &Core,
     ) -> Result<(Core, Core)> {
         todo!()
+    }
+}
+
+impl ValueInterface for Cons<Value> {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn same(&self, other: &dyn ValueInterface) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() {
+            self == other
+        } else {
+            false
+        }
+    }
+
+    fn read_back_type(&self, _ctx: &Ctx) -> Result<Core> {
+        Err(Error::NotATypeVar(values::cons(
+            self.0.clone(),
+            self.1.clone(),
+        )))
     }
 }
 
@@ -261,4 +303,22 @@ impl Display for Cons<Core> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "({} . {})", self.0, self.1)
     }
+}
+
+fn do_car(pv: &Value) -> Value {
+    match now(pv).as_any().downcast_ref::<Cons<Value>>() {
+        Some(Cons(a, _)) => return a.clone(),
+        None => {}
+    }
+
+    todo!()
+}
+
+fn do_cdr(pv: &Value) -> Value {
+    match now(pv).as_any().downcast_ref::<Cons<Value>>() {
+        Some(Cons(_, d)) => return d.clone(),
+        None => {}
+    }
+
+    todo!()
 }

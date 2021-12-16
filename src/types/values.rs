@@ -5,7 +5,7 @@ use crate::types::delay::Delay;
 use crate::types::functions::{Lambda, Pi};
 use crate::types::natural::{Add1, Nat, Zero};
 pub use crate::types::neutral::neutral;
-use crate::types::pairs::Sigma;
+use crate::types::pairs::{Cons, Sigma};
 use crate::types::universe::Universe;
 
 pub fn later(env: Env, exp: Core) -> Value {
@@ -54,4 +54,8 @@ pub fn sigma(x: impl Into<Symbol>, car_type: Value, cdr_type: Closure) -> Value 
         car_type,
         cdr_type,
     })
+}
+
+pub fn cons(car: Value, cdr: Value) -> Value {
+    Value::new(Cons(car, cdr))
 }

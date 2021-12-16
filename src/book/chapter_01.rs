@@ -19,3 +19,17 @@ fn test_019_the_result_of_cons_is_a_pair() {
         .core("(the (Pair Atom Atom) (cons 'ratatouille 'baguette))")
         .check();
 }
+
+#[test]
+fn test_022_024_sameness_of_pairs() {
+    in_context(&CTX).check_same(
+        "(Pair Atom Atom)",
+        "(cons 'ratatouille 'baguette)",
+        "(cons 'ratatouille 'baguette)",
+    );
+    in_context(&CTX).check_not_same(
+        "(Pair Atom Atom)",
+        "(cons 'ratatouille 'baguette)",
+        "(cons 'baguette 'baguette)",
+    );
+}

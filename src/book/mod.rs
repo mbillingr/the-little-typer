@@ -1,5 +1,7 @@
 use crate::basics::{Core, Ctx, Renaming};
+use crate::errors::Error;
 use crate::normalize::val_in_ctx;
+use crate::rep;
 use crate::typechecker::{check, is_type, synth};
 
 mod chapter_01;
@@ -17,6 +19,23 @@ impl<'a> Checker<'a> {
         CoreChecker {
             ctx: self.ctx,
             expr: s.parse().unwrap(),
+        }
+    }
+
+    fn check_same(&self, t: &'static str, a: &'static str, b: &'static str) {
+        let t = t.parse().unwrap();
+        let a = a.parse().unwrap();
+        let b = b.parse().unwrap();
+        rep::check_same(&self.ctx, &t, &a, &b).unwrap();
+    }
+
+    fn check_not_same(&self, t: &'static str, a: &'static str, b: &'static str) {
+        let t = t.parse().unwrap();
+        let a = a.parse().unwrap();
+        let b = b.parse().unwrap();
+        match rep::check_same(&self.ctx, &t, &a, &b) {
+            Err(Error::NotTheSame(_, _, _)) => {}
+            other => panic!("{:?}", other),
         }
     }
 }
