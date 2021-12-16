@@ -13,7 +13,9 @@ fn test_002_a_quote_is_an_atom() {
     assert!(in_context(&CTX).core("'atom").is_a(&cores::atom()));
 }
 
-/*#[test]
-fn  test_019_the_result_of_cons_is_a_pair() {
-    assert!(in_context(&CTX).core("(cons 'ratatuille 'baguette)").is_a(&Core::cons(Atom, Atom)));
-}*/
+#[test]
+fn test_019_the_result_of_cons_is_a_pair() {
+    in_context(&CTX)
+        .core("(the (Pair Atom Atom) (cons 'ratatouille 'baguette))")
+        .check();
+}

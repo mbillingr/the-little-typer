@@ -14,6 +14,7 @@ pub enum Error {
     NotAType(Core),
     NotAFunctionType(Core),
     NotAFunction(Core),
+    NotASigmaType(Core),
     UnknownVariable(Symbol),
     NotTheSame(Core, Core, Core),
 
@@ -36,6 +37,7 @@ impl Display for Error {
             Error::NotAType(t) => write!(f, "Not a type: {}", t),
             Error::NotAFunctionType(t) => write!(f, "Not a function type: {}", t),
             Error::NotAFunction(e) => write!(f, "Not a function type: {}", e),
+            Error::NotASigmaType(t) => write!(f, "Not a pair or sigma type: {}", t),
             Error::UnknownVariable(name) => write!(f, "Unknown variable {}", name.name()),
             Error::NotTheSame(t, a, b) => {
                 write!(f, "The expressions {} and {} are not the same {}", a, b, t)

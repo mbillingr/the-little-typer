@@ -228,6 +228,8 @@ impl From<&Sexpr> for Core {
                             .collect(),
                         Core::from(body).into(),
                     ),
+                    ("Pair", [a, d]) => cores::pair(Core::from(a), Core::from(d)),
+                    ("cons", [car, cdr]) => cores::cons(Core::from(car), Core::from(cdr)),
                     (key, _) => todo!("({} ...)", key),
                 },
                 [f, args @ ..] => {

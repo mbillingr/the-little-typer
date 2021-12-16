@@ -5,6 +5,7 @@ use crate::types::delay::Delay;
 use crate::types::functions::{Lambda, Pi};
 use crate::types::natural::{Add1, Nat, Zero};
 pub use crate::types::neutral::neutral;
+use crate::types::pairs::Sigma;
 use crate::types::universe::Universe;
 
 pub fn later(env: Env, exp: Core) -> Value {
@@ -45,4 +46,12 @@ pub fn atom() -> Value {
 
 pub fn quote(s: impl Into<Symbol>) -> Value {
     Value::new(Quote(s.into()))
+}
+
+pub fn sigma(x: impl Into<Symbol>, car_type: Value, cdr_type: Closure) -> Value {
+    Value::new(Sigma {
+        arg_name: x.into(),
+        car_type,
+        cdr_type,
+    })
 }

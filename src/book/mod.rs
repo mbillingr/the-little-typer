@@ -1,6 +1,6 @@
 use crate::basics::{Core, Ctx, Renaming};
 use crate::normalize::val_in_ctx;
-use crate::typechecker::{check, is_type};
+use crate::typechecker::{check, is_type, synth};
 
 mod chapter_01;
 
@@ -31,5 +31,9 @@ impl CoreChecker<'_> {
         let t_out = is_type(self.ctx, &Renaming::new(), t).unwrap();
         let tv = val_in_ctx(self.ctx, &t_out);
         check(self.ctx, &Renaming::new(), &self.expr, &tv).is_ok()
+    }
+
+    fn check(&self) {
+        synth(self.ctx, &Renaming::new(), &self.expr).unwrap();
     }
 }
