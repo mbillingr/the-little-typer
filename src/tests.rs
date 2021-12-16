@@ -115,3 +115,46 @@ fn some_higher_order_identity_thing() {
         ))
     )
 }
+
+#[test]
+fn which_nat_resolves_constant_target_inside_a_function() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (-> Nat (-> Nat Nat) Nat) (lambda (x f) (which-Nat 2 x f)))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(
+            pi("x", nat(), pi("x₁", pi("x₁", nat(), nat()), nat())),
+            lambda("x", lambda("f", app(refer("f"), add1(zero()))))
+        ))
+    )
+}
+
+#[test]
+fn which_nat_stays_unresolved_if_target_is_neutral() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (-> Nat (-> Nat Nat) Nat) (lambda (x f) (which-Nat x (add1 (add1 zero)) f)))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(
+            pi("x", nat(), pi("x₁", pi("x₁", nat(), nat()), nat())),
+            lambda(
+                "x",
+                lambda(
+                    "f",
+                    which_nat(
+                        refer("x"),
+                        the(nat(), add1(add1(zero()))),
+                        //lambda("n", app(refer("f"), refer("n")))  -- the reference implementation has this redundant lambda in... no idea why we don't have it
+                        refer("f")
+                    )
+                )
+            )
+        ))
+    )
+}

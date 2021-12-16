@@ -353,26 +353,21 @@ impl std::cmp::PartialEq for Closure {
 #[derive(Debug, Clone, PartialEq)]
 pub enum N {
     Var(Symbol),
-    App(R<N>, Norm),
+    App(R<N>, The),
+    WhichNat(R<N>, The, The),
 }
 
 impl N {
     pub fn app(f: N, typ: Value, val: Value) -> Self {
-        N::App(R::new(f), Norm::the(typ, val))
+        N::App(R::new(f), The(typ, val))
+    }
+    pub fn which_nat(target: impl Into<R<N>>, base: The, step: The) -> Self {
+        N::WhichNat(target.into(), base, step)
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Norm {
-    pub typ: Value,
-    pub val: Value,
-}
-
-impl Norm {
-    pub fn the(typ: Value, val: Value) -> Self {
-        Norm { typ, val }
-    }
-}
+pub struct The(pub Value, pub Value);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ctx(R<CtxImpl>);

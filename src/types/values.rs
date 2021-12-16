@@ -27,9 +27,9 @@ pub fn add1(n: Value) -> Value {
     Value::new(Add1(n))
 }
 
-pub fn pi(arg_name: Symbol, arg_type: Value, res_type: Closure) -> Value {
+pub fn pi(x: impl Into<Symbol>, arg_type: Value, res_type: Closure) -> Value {
     Value::new(Pi {
-        arg_name,
+        arg_name: x.into(),
         arg_type,
         res_type,
     })

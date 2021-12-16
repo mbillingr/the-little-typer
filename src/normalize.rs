@@ -1,4 +1,4 @@
-use crate::basics::{ctx_to_env, Core, Ctx, Env, Norm, Value, ValueInterface, N};
+use crate::basics::{ctx_to_env, Core, Ctx, Env, The, Value, ValueInterface, N};
 use crate::types::cores;
 use std::borrow::Cow;
 
@@ -33,8 +33,13 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Core {
 
 pub fn read_back_neutral(ctx: &Ctx, ne: &N) -> Core {
     match ne {
+        N::WhichNat(tgt, The(b_tv, b_v), The(s_tv, s_v)) => cores::which_nat(
+            read_back_neutral(ctx, tgt),
+            cores::the(read_back_type(ctx, b_tv), read_back(ctx, b_tv, b_v)),
+            read_back(ctx, s_tv, s_v),
+        ),
         N::Var(x) => cores::refer(x.clone()),
-        N::App(tgt, Norm { typ, val }) => {
+        N::App(tgt, The(typ, val)) => {
             Core::app(read_back_neutral(ctx, tgt), read_back(ctx, typ, val))
         }
     }

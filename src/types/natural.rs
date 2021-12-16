@@ -1,8 +1,8 @@
 use crate::alpha;
 use crate::alpha::alpha_equiv_aux;
 use crate::basics::{
-    ctx_to_env, fresh, occurring_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value,
-    ValueInterface,
+    ctx_to_env, fresh, occurring_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, The,
+    Value, ValueInterface, N,
 };
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back};
@@ -11,6 +11,7 @@ use crate::symbol::Symbol;
 use crate::typechecker::{check, synth};
 use crate::types::cores::{which_nat, which_nat_desugared};
 use crate::types::functions::do_ap;
+use crate::types::neutral::Neutral;
 use crate::types::values::{add1, later, zero};
 use crate::types::{cores, values};
 use std::any::Any;
@@ -29,7 +30,7 @@ pub struct Zero;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Add1<T>(pub T);
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WhichNat {
     Plain(Core, Core, Core),
     Verbose(Core, Core, Core, Core),
@@ -169,8 +170,12 @@ impl CoreInterface for WhichNat {
         self
     }
 
-    fn same(&self, _other: &dyn CoreInterface) -> bool {
-        unimplemented!()
+    fn same(&self, other: &dyn CoreInterface) -> bool {
+        other
+            .as_any()
+            .downcast_ref::<Self>()
+            .map(|o| self == o)
+            .unwrap_or(false)
     }
 
     fn occurring_names(&self) -> HashSet<Symbol> {
@@ -368,7 +373,15 @@ impl std::fmt::Display for WhichNat {
     }
 }
 
-fn do_which_nat(tgt_v: Value, _bt_v: Value, b_v: Value, s_v: Value) -> Value {
+macro_rules! pi_type {
+    ((), $ret:expr) => {$ret};
+
+    ((($x:ident, $arg_t:expr) $($b:tt)*), $ret:expr) => {
+        values::pi(stringify!($x), $arg_t, Closure::higher(move |$x| pi_type!(($($b)*), $ret)))
+    };
+}
+
+fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
     match now(&tgt_v).as_any().downcast_ref::<Zero>() {
         Some(_) => return b_v,
         None => {}
@@ -379,5 +392,19 @@ fn do_which_nat(tgt_v: Value, _bt_v: Value, b_v: Value, s_v: Value) -> Value {
         None => {}
     };
 
-    todo!()
+    match now(&tgt_v).as_any().downcast_ref::<Neutral>() {
+        Some(Neutral { kind: ne, .. }) => {
+            return values::neutral(
+                bt_v.clone(),
+                N::which_nat(
+                    ne.clone(),
+                    The(bt_v.clone(), b_v),
+                    The(pi_type!(((_n, values::nat())), bt_v.clone()), s_v),
+                ),
+            )
+        }
+        None => {}
+    };
+
+    unreachable!("{:?}", now(&tgt_v))
 }
