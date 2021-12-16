@@ -193,3 +193,19 @@ fn a_complexer_explicit_pi_type() {
         ))
     )
 }
+
+#[test]
+fn simple_use_of_ind_nat() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(ind-Nat (add1 (add1 zero)) \
+                       (lambda (x) Nat) \
+                       (add1 zero)\
+                       (lambda (n-1 ih) (add1 ih)))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(nat(), add1(add1(add1(zero())))))
+    )
+}

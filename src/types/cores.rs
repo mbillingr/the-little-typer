@@ -3,7 +3,7 @@ use crate::symbol::Symbol;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, Lambda, Pi};
-use crate::types::natural::{Add1, Nat, WhichNat, Zero};
+use crate::types::natural::{Add1, IndNat, Nat, WhichNat, Zero};
 use crate::types::reference::Ref;
 use crate::types::universe::Universe;
 
@@ -28,11 +28,15 @@ pub fn add1(n: Core) -> Core {
 }
 
 pub fn which_nat(target: Core, base: Core, step: Core) -> Core {
-    Core::new(WhichNat::Plain(target, base, step))
+    Core::new(WhichNat::untyped(target, base, step))
+}
+
+pub fn ind_nat(target: Core, motive: Core, base: Core, step: Core) -> Core {
+    Core::new(IndNat::new(target, motive, base, step))
 }
 
 pub fn which_nat_desugared(target: Core, base_type: Core, base: Core, step: Core) -> Core {
-    Core::new(WhichNat::Verbose(target, base_type, base, step))
+    Core::new(WhichNat::typed(target, base_type, base, step))
 }
 
 pub fn atom() -> Core {

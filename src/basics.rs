@@ -198,6 +198,12 @@ impl From<&Sexpr> for Core {
                     ("which-Nat", [target, base, step]) => {
                         cores::which_nat(Core::from(target), Core::from(base), Core::from(step))
                     }
+                    ("ind-Nat", [target, motive, base, step]) => cores::ind_nat(
+                        Core::from(target),
+                        Core::from(motive),
+                        Core::from(base),
+                        Core::from(step),
+                    ),
                     ("quote", [Sexpr::Symbol(s)]) => Core::quote(s.clone()),
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))

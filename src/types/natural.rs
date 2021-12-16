@@ -5,7 +5,7 @@ use crate::basics::{
     Value, ValueInterface, N,
 };
 use crate::errors::{Error, Result};
-use crate::normalize::{now, read_back};
+use crate::normalize::{now, read_back, val_in_ctx};
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::typechecker::{check, synth};
@@ -17,6 +17,14 @@ use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::Formatter;
+
+macro_rules! pi_type {
+    ((), $ret:expr) => {$ret};
+
+    ((($x:ident, $arg_t:expr) $($b:tt)*), $ret:expr) => {
+        values::pi(stringify!($x), $arg_t, Closure::higher(move |$x| pi_type!(($($b)*), $ret)))
+    };
+}
 
 /// The type of all natural numbers
 #[derive(Debug, Copy, Clone)]
@@ -31,9 +39,53 @@ pub struct Zero;
 pub struct Add1<T>(pub T);
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum WhichNat {
-    Plain(Core, Core, Core),
-    Verbose(Core, Core, Core, Core),
+pub struct WhichNat {
+    target: Core,
+    base: MaybeTyped,
+    step: Core,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndNat {
+    target: Core,
+    motive: Core,
+    base: Core,
+    step: Core,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+enum MaybeTyped {
+    Plain(Core),
+    The(Core, Core),
+}
+
+impl WhichNat {
+    pub fn typed(target: Core, base_t: Core, base: Core, step: Core) -> Self {
+        WhichNat {
+            target,
+            step,
+            base: MaybeTyped::The(base_t, base),
+        }
+    }
+
+    pub fn untyped(target: Core, base: Core, step: Core) -> Self {
+        WhichNat {
+            target,
+            step,
+            base: MaybeTyped::Plain(base),
+        }
+    }
+}
+
+impl IndNat {
+    pub fn new(target: Core, motive: Core, base: Core, step: Core) -> Self {
+        IndNat {
+            target,
+            motive,
+            base,
+            step,
+        }
+    }
 }
 
 impl CoreInterface for Nat {
@@ -179,25 +231,24 @@ impl CoreInterface for WhichNat {
     }
 
     fn occurring_names(&self) -> HashSet<Symbol> {
-        match self {
-            WhichNat::Plain(tgt, b, s) => {
-                &(&occurring_names(tgt) | &occurring_names(b)) | &occurring_names(s)
-            }
-            WhichNat::Verbose(tgt, bt, b, s) => {
-                &(&occurring_names(tgt) | &occurring_names(bt))
-                    | &(&occurring_names(b) | &occurring_names(s))
-            }
-        }
+        let names = &occurring_names(&self.target) | &occurring_names(&self.step);
+
+        let base_names = match &self.base {
+            MaybeTyped::Plain(b) => occurring_names(b),
+            MaybeTyped::The(bt, b) => &occurring_names(bt) | &occurring_names(b),
+        };
+
+        &names | &base_names
     }
 
     fn val_of(&self, env: &Env) -> Value {
-        match self {
-            WhichNat::Plain(_, _, _) => unimplemented!("evaluate WhichNatUnsugared instead"),
-            WhichNat::Verbose(tgt, bt, b, s) => do_which_nat(
-                later(env.clone(), tgt.clone()),
+        match &self.base {
+            MaybeTyped::Plain(_) => unimplemented!("evaluate a desugared which-Nat instead"),
+            MaybeTyped::The(bt, b) => do_which_nat(
+                later(env.clone(), self.target.clone()),
                 later(env.clone(), bt.clone()),
                 later(env.clone(), b.clone()),
-                later(env.clone(), s.clone()),
+                later(env.clone(), self.step.clone()),
             ),
         }
     }
@@ -207,16 +258,16 @@ impl CoreInterface for WhichNat {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
-        match self {
-            WhichNat::Verbose(_, _, _, _) => unimplemented!("already synth'ed"),
-            WhichNat::Plain(tgt, b, s) => {
-                let tgt_out = check(ctx, r, tgt, &values::nat())?;
+        match &self.base {
+            MaybeTyped::The(_, _) => unimplemented!("already synth'ed"),
+            MaybeTyped::Plain(b) => {
+                let tgt_out = check(ctx, r, &self.target, &values::nat())?;
                 let (b_t_out, b_out) = synth(ctx, r, b)?;
                 let n_minus_one = fresh(ctx, &Symbol::new("n-1"));
                 let s_out = check(
                     ctx,
                     r,
-                    s,
+                    &self.step,
                     &values::pi(
                         n_minus_one.clone(),
                         values::nat(),
@@ -243,44 +294,129 @@ impl CoreInterface for WhichNat {
         b2: &alpha::Bindings,
     ) -> bool {
         if let Some(other) = other.as_any().downcast_ref::<Self>() {
-            match (self, other) {
-                (WhichNat::Plain(tgt1, bs1, s1), WhichNat::Plain(tgt2, bs2, s2)) => {
-                    alpha_equiv_aux(lvl, b1, b2, tgt1, tgt2)
-                        && alpha_equiv_aux(lvl, b1, b2, bs1, bs2)
-                        && alpha_equiv_aux(lvl, b1, b2, s1, s2)
+            alpha_equiv_aux(lvl, b1, b2, &self.target, &other.target)
+                && alpha_equiv_aux(lvl, b1, b2, &self.step, &other.step)
+                && match (&self.base, &other.base) {
+                    (MaybeTyped::Plain(bs1), MaybeTyped::Plain(bs2)) => {
+                        alpha_equiv_aux(lvl, b1, b2, bs1, bs2)
+                    }
+                    (MaybeTyped::The(bt1, bs1), MaybeTyped::The(bt2, bs2)) => {
+                        alpha_equiv_aux(lvl, b1, b2, bt1, bt2)
+                            && alpha_equiv_aux(lvl, b1, b2, bs1, bs2)
+                    }
+                    _ => false,
                 }
-                (WhichNat::Verbose(tgt1, bt1, bs1, s1), WhichNat::Verbose(tgt2, bt2, bs2, s2)) => {
-                    alpha_equiv_aux(lvl, b1, b2, tgt1, tgt2)
-                        && alpha_equiv_aux(lvl, b1, b2, bt1, bt2)
-                        && alpha_equiv_aux(lvl, b1, b2, bs1, bs2)
-                        && alpha_equiv_aux(lvl, b1, b2, s1, s2)
-                }
-                _ => false,
-            }
         } else {
             false
         }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        match self {
-            WhichNat::Plain(tgt, b, s) => {
-                let t = resugar_(tgt);
+        let tgt = resugar_(&self.target);
+        let stp = resugar_(&self.step);
+        match &self.base {
+            MaybeTyped::Plain(b) => {
                 let b = resugar_(b);
-                let s = resugar_(s);
-                (&(&t.0 | &b.0) | &s.0, which_nat(t.1, b.1, s.1))
+                (&(&tgt.0 | &b.0) | &stp.0, which_nat(tgt.1, b.1, stp.1))
             }
-            WhichNat::Verbose(tgt, bt, b, s) => {
-                let t = resugar_(tgt);
+            MaybeTyped::The(bt, b) => {
                 let bt = resugar_(bt);
                 let b = resugar_(b);
-                let s = resugar_(s);
                 (
-                    &(&t.0 | &bt.0) | &(&b.0 | &s.0),
-                    which_nat_desugared(t.1, bt.1, b.1, s.1),
+                    &(&tgt.0 | &bt.0) | &(&b.0 | &stp.0),
+                    which_nat_desugared(tgt.1, bt.1, b.1, stp.1),
                 )
             }
         }
+    }
+}
+
+impl CoreInterface for IndNat {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+
+    fn same(&self, other: &dyn CoreInterface) -> bool {
+        other
+            .as_any()
+            .downcast_ref::<Self>()
+            .map(|o| self == o)
+            .unwrap_or(false)
+    }
+
+    fn occurring_names(&self) -> HashSet<Symbol> {
+        &(&occurring_names(&self.target) | &occurring_names(&self.motive))
+            | &(&occurring_names(&self.base) | &occurring_names(&self.step))
+    }
+
+    fn val_of(&self, env: &Env) -> Value {
+        do_ind_nat(
+            later(env.clone(), self.target.clone()),
+            later(env.clone(), self.motive.clone()),
+            later(env.clone(), self.base.clone()),
+            later(env.clone(), self.step.clone()),
+        )
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        Err(Error::NotAType(Core::new(self.clone())))
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let tgt_out = check(ctx, r, &self.target, &values::nat())?;
+        let mot_out = check(
+            ctx,
+            r,
+            &self.motive,
+            &values::pi("n", values::nat(), Closure::higher(|_| values::universe())),
+        )?;
+        let mot_val = val_in_ctx(ctx, &mot_out);
+        let b_out = check(ctx, r, &self.base, &do_ap(&mot_val, values::zero()))?;
+        let s_out = check(
+            ctx,
+            r,
+            &self.step,
+            &pi_type!(((n_minus_1, values::nat())), {
+                let mot_val = mot_val.clone();
+                pi_type!(
+                    ((_ih, do_ap(&mot_val, n_minus_1.clone()))),
+                    do_ap(&mot_val, values::add1(n_minus_1.clone()))
+                )
+            }),
+        )?;
+        Ok((
+            cores::app(mot_out.clone(), tgt_out.clone()),
+            cores::ind_nat(tgt_out, mot_out, b_out, s_out),
+        ))
+    }
+
+    fn alpha_equiv_aux(
+        &self,
+        other: &dyn CoreInterface,
+        lvl: usize,
+        b1: &alpha::Bindings,
+        b2: &alpha::Bindings,
+    ) -> bool {
+        if let Some(other) = other.as_any().downcast_ref::<Self>() {
+            alpha_equiv_aux(lvl, b1, b2, &self.target, &other.target)
+                && alpha_equiv_aux(lvl, b1, b2, &self.motive, &other.motive)
+                && alpha_equiv_aux(lvl, b1, b2, &self.base, &other.base)
+                && alpha_equiv_aux(lvl, b1, b2, &self.step, &other.step)
+        } else {
+            false
+        }
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        let tgt = resugar_(&self.target);
+        let mot = resugar_(&self.motive);
+        let bse = resugar_(&self.base);
+        let stp = resugar_(&self.step);
+
+        (
+            &(&tgt.0 | &mot.0) | &(&bse.0 | &stp.0),
+            cores::ind_nat(tgt.1, mot.1, bse.1, stp.1),
+        )
     }
 }
 
@@ -360,25 +496,27 @@ impl std::fmt::Display for Add1<Core> {
 
 impl std::fmt::Display for WhichNat {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            WhichNat::Plain(target, base, step) => {
-                write!(f, "(which-Nat {} {} {})", target, base, step)
+        match &self.base {
+            MaybeTyped::Plain(base) => {
+                write!(f, "(which-Nat {} {} {})", self.target, base, self.step)
             }
-            WhichNat::Verbose(target, base_type, base, step) => write!(
+            MaybeTyped::The(base_type, base) => write!(
                 f,
                 "(which-Nat {} (the {} {}) {})",
-                target, base_type, base, step
+                self.target, base_type, base, self.step
             ),
         }
     }
 }
 
-macro_rules! pi_type {
-    ((), $ret:expr) => {$ret};
-
-    ((($x:ident, $arg_t:expr) $($b:tt)*), $ret:expr) => {
-        values::pi(stringify!($x), $arg_t, Closure::higher(move |$x| pi_type!(($($b)*), $ret)))
-    };
+impl std::fmt::Display for IndNat {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "(ind-Nat {} {} {} {})",
+            self.target, self.motive, self.base, self.step
+        )
+    }
 }
 
 fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
@@ -399,7 +537,7 @@ fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
                 N::which_nat(
                     ne.clone(),
                     The(bt_v.clone(), b_v),
-                    The(pi_type!(((_n, values::nat())), bt_v.clone()), s_v),
+                    The(pi_type!(((_n, values::nat())), { bt_v.clone() }), s_v),
                 ),
             )
         }
@@ -407,4 +545,25 @@ fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
     };
 
     unreachable!("{:?}", now(&tgt_v))
+}
+
+fn do_ind_nat(tgt_v: Value, mot_v: Value, b_v: Value, s_v: Value) -> Value {
+    match now(&tgt_v).as_any().downcast_ref::<Zero>() {
+        Some(_) => return b_v,
+        None => {}
+    };
+
+    match now(&tgt_v).as_any().downcast_ref::<Add1<Value>>() {
+        Some(Add1(n_minus_1v)) => {
+            return do_ap(
+                &do_ap(&s_v, n_minus_1v.clone()),
+                do_ind_nat(n_minus_1v.clone(), mot_v, b_v, s_v),
+            )
+        }
+        None => {}
+    };
+
+    todo!()
+
+    //unreachable!("{:?}", now(&tgt_v))
 }
