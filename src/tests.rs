@@ -158,3 +158,38 @@ fn which_nat_stays_unresolved_if_target_is_neutral() {
         ))
     )
 }
+
+#[test]
+fn u_has_no_type() {
+    assert_eq!(rep(&CTX, &universe()), Err(Error::UhasNoType))
+}
+
+#[test]
+fn a_simple_explicit_pi_type() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (Pi ((A U)) U) (lambda (B) B))".parse().unwrap()
+        ),
+        Ok(the(
+            pi("A", universe(), universe()),
+            lambda("B", refer("B"))
+        ))
+    )
+}
+
+#[test]
+fn a_complexer_explicit_pi_type() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (Pi ((A U) (a A)) A) (lambda (B b) b))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(
+            pi("A", universe(), pi("a", refer("A"), refer("A"))),
+            lambda("B", lambda("b", refer("b")))
+        ))
+    )
+}

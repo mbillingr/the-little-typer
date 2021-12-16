@@ -1,5 +1,5 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{fresh_binder, Core, Ctx, Renaming, Value, ValueInterface};
+use crate::basics::{fresh, fresh_binder, Core, Ctx, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
 use crate::symbol::{Symbol as S, Symbol};
@@ -30,7 +30,31 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             }
             _ => panic!("invalid fun types {:?}", params),
         },
-        PiStar(_, _) => todo!(),
+        PiStar(bindings, b) => match &bindings[..] {
+            [] => unimplemented!(),
+            [(x, a)] => {
+                let y = fresh(ctx, x);
+                let a_out = is_type(ctx, r, a)?;
+                let a_outv = val_in_ctx(ctx, &a_out);
+                let b_out = is_type(
+                    &ctx.bind_free(y.clone(), a_outv)?,
+                    &r.extend(x.clone(), y.clone()),
+                    b,
+                )?;
+                Ok(cores::pi(y, a_out, b_out))
+            }
+            [(x, a), more @ ..] => {
+                let z = fresh(ctx, x);
+                let a_out = is_type(ctx, r, a)?;
+                let a_outv = val_in_ctx(ctx, &a_out);
+                let b_out = is_type(
+                    &ctx.bind_free(z.clone(), a_outv)?,
+                    &r.extend(x.clone(), z.clone()),
+                    &PiStar(more.to_vec(), b.clone()),
+                )?;
+                Ok(cores::pi(z, a_out, b_out))
+            }
+        },
 
         AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
             Ok(t_out) => Ok(t_out),
@@ -76,7 +100,7 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
         },
         PiStar(_, _) => todo!(),
         AppStar(rator, args) => match &args[..] {
-            [] => panic!("nullary application"),
+            [] => panic!("nullary application {}", rator),
             [rand] => {
                 let (rator_t, rator_out) = synth(ctx, r, rator)?;
                 val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand)
