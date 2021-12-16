@@ -31,7 +31,7 @@ pub struct Lambda<B> {
 }
 
 /// A function application
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct App {
     pub fun: Core,
     pub arg: Core,
@@ -225,8 +225,12 @@ impl CoreInterface for App {
         self
     }
 
-    fn same(&self, _other: &dyn CoreInterface) -> bool {
-        unimplemented!()
+    fn same(&self, other: &dyn CoreInterface) -> bool {
+        other
+            .as_any()
+            .downcast_ref::<Self>()
+            .map(|o| self == o)
+            .unwrap_or(false)
     }
 
     fn occurring_names(&self) -> HashSet<Symbol> {

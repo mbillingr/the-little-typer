@@ -85,3 +85,33 @@ fn a_type_error() {
         Err(Error::WrongType(nat(), pi("x₁", nat(), nat())))
     )
 }
+
+#[test]
+fn pass_nat_as_function_error() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (-> (-> Nat Nat) Nat) \
+                      (lambda (f x) (f x)))"
+                .parse()
+                .unwrap()
+        ),
+        Err(Error::NotAFunctionType(nat()))
+    )
+}
+
+#[test]
+fn some_higher_order_identity_thing() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (-> (-> Nat Nat) Nat Nat) (lambda (f x) (f x)))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(
+            pi("x", pi("x", nat(), nat()), pi("x₁", nat(), nat())),
+            lambda("f", lambda("x", app(refer("f"), refer("x"))))
+        ))
+    )
+}
