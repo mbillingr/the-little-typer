@@ -6,6 +6,7 @@ use crate::basics::{
 };
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
+use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::typechecker::{check, is_type};
 use crate::types::values::later;
@@ -82,7 +83,13 @@ impl CoreInterface for Sigma<Core, Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        todo!()
+        let a_t = resugar_(&self.car_type);
+        let d_t = resugar_(&self.cdr_type);
+        if d_t.0.contains(&self.arg_name) {
+            todo!()
+        } else {
+            (&a_t.0 | &d_t.0, cores::pair(a_t.1, d_t.1))
+        }
     }
 }
 
@@ -145,7 +152,7 @@ impl CoreInterface for Pair<Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        todo!()
+        unimplemented!()
     }
 }
 
@@ -212,7 +219,9 @@ impl CoreInterface for Cons<Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        todo!()
+        let a = resugar_(&self.0);
+        let d = resugar_(&self.1);
+        (&a.0 | &d.0, cores::cons(a.1, d.1))
     }
 }
 
@@ -301,7 +310,7 @@ impl Display for Pair<Core> {
 
 impl Display for Cons<Core> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({} . {})", self.0, self.1)
+        write!(f, "(cons {} {})", self.0, self.1)
     }
 }
 
