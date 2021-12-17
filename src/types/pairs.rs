@@ -31,17 +31,7 @@ pub struct Pair<T>(pub T, pub T);
 pub struct Cons<T>(pub T, pub T);
 
 impl CoreInterface for Sigma<Core, Core> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .map(|o| self == o)
-            .unwrap_or(false)
-    }
+    impl_core_defaults!(as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         todo!()
@@ -94,17 +84,7 @@ impl CoreInterface for Sigma<Core, Core> {
 }
 
 impl CoreInterface for Pair<Core> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .map(|o| self == o)
-            .unwrap_or(false)
-    }
+    impl_core_defaults!(as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         &occurring_names(&self.0) | &occurring_names(&self.1)
@@ -157,17 +137,7 @@ impl CoreInterface for Pair<Core> {
 }
 
 impl CoreInterface for Cons<Core> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .map(|o| self == o)
-            .unwrap_or(false)
-    }
+    impl_core_defaults!(as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         &occurring_names(&self.0) | &occurring_names(&self.1)

@@ -13,13 +13,7 @@ use std::fmt::Formatter;
 pub struct Zero;
 
 impl CoreInterface for Zero {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other.as_any().is::<Self>()
-    }
+    impl_core_defaults!(as_any, (same unique));
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         HashSet::new()

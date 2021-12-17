@@ -18,13 +18,7 @@ pub struct Atom;
 pub struct Quote(pub Symbol);
 
 impl CoreInterface for Atom {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other.as_any().is::<Self>()
-    }
+    impl_core_defaults!(as_any, (same unique));
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         HashSet::new()
@@ -58,17 +52,7 @@ impl CoreInterface for Atom {
 }
 
 impl CoreInterface for Quote {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .map(|o| self == o)
-            .unwrap_or(false)
-    }
+    impl_core_defaults!(as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         HashSet::new()

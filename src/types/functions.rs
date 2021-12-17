@@ -38,17 +38,7 @@ pub struct App {
 }
 
 impl CoreInterface for Pi<Core, Core> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .map(|o| self == o)
-            .unwrap_or(false)
-    }
+    impl_core_defaults!(as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         &occurring_binder_names(&self.arg_name, &self.arg_type) | &occurring_names(&self.res_type)
@@ -136,17 +126,7 @@ impl Display for Pi<Core, Core> {
 }
 
 impl CoreInterface for Lambda<Core> {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .map(|o| self == o)
-            .unwrap_or(false)
-    }
+    impl_core_defaults!(as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         occurring_binder_names(&self.arg_name, &self.body)
@@ -221,17 +201,7 @@ impl Display for Lambda<Core> {
 }
 
 impl CoreInterface for App {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .map(|o| self == o)
-            .unwrap_or(false)
-    }
+    impl_core_defaults!(as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         &occurring_names(&self.fun) | &occurring_names(&self.arg)

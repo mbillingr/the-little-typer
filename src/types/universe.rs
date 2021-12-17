@@ -31,13 +31,7 @@ impl ValueInterface for Universe {
 }
 
 impl CoreInterface for Universe {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other.as_any().is::<Self>()
-    }
+    impl_core_defaults!(as_any, (same unique));
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         HashSet::new()

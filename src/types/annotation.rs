@@ -18,17 +18,7 @@ pub struct The {
 }
 
 impl CoreInterface for The {
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-
-    fn same(&self, other: &dyn CoreInterface) -> bool {
-        other
-            .as_any()
-            .downcast_ref::<Self>()
-            .map(|o| self == o)
-            .unwrap_or(false)
-    }
+    impl_core_defaults!(as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         &occurring_names(&self.typ) | &occurring_names(&self.exp)
