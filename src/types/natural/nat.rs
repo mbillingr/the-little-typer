@@ -15,14 +15,10 @@ use std::fmt::Formatter;
 pub struct Nat;
 
 impl CoreInterface for Nat {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, simple_type);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::nat()
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<Core> {
-        Ok(cores::nat())
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {

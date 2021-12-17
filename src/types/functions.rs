@@ -126,7 +126,7 @@ impl Display for Pi<Core, Core> {
 }
 
 impl CoreInterface for Lambda<Core> {
-    impl_core_defaults!((arg_name, body), as_any, same);
+    impl_core_defaults!((arg_name, body), as_any, same, no_type);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         occurring_binder_names(&self.arg_name, &self.body)
@@ -141,10 +141,6 @@ impl CoreInterface for Lambda<Core> {
                 expr: self.body.clone(),
             },
         )
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        Err(Error::NotAType(Core::new(self.clone())))
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {

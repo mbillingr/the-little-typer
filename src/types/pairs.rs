@@ -117,17 +117,13 @@ impl CoreInterface for Pair<Core> {
 }
 
 impl CoreInterface for Cons<Core> {
-    impl_core_defaults!((0, 1), as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!((0, 1), as_any, same, occurring_names, alpha_equiv, no_type);
 
     fn val_of(&self, env: &Env) -> Value {
         values::cons(
             later(env.clone(), self.0.clone()),
             later(env.clone(), self.1.clone()),
         )
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        Err(Error::NotAType(Core::new(self.clone())))
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {

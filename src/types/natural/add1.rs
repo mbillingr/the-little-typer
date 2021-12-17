@@ -17,14 +17,10 @@ use std::result::Result::Err;
 pub struct Add1<T>(pub T);
 
 impl CoreInterface for Add1<Core> {
-    impl_core_defaults!((0), as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!((0), as_any, same, occurring_names, alpha_equiv, no_type);
 
     fn val_of(&self, env: &Env) -> Value {
         values::add1(later(env.clone(), self.0.clone()))
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        Err(Error::NotAType(Core::new(self.clone())))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {

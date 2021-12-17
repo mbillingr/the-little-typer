@@ -31,14 +31,10 @@ impl ValueInterface for Universe {
 }
 
 impl CoreInterface for Universe {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, simple_type);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::universe()
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        Ok(cores::universe())
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {

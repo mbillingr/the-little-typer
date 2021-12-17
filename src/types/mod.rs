@@ -13,6 +13,18 @@ macro_rules! impl_core_defaults {
         }
     };
 
+    ($fields:tt, no_type) => {
+        fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> crate::errors::Result<Core> {
+            Err(Error::NotAType(Core::new(self.clone())))
+        }
+    };
+
+    ($fields:tt, simple_type) => {
+        fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> crate::errors::Result<Core> {
+            Ok(Core::new(self.clone()))
+        }
+    };
+
     // no fields at all - every instance is the same
     (_, same) => {
         fn same(&self, other: &dyn CoreInterface) -> bool {

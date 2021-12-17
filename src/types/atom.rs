@@ -18,14 +18,10 @@ pub struct Atom;
 pub struct Quote(pub Symbol);
 
 impl CoreInterface for Atom {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, simple_type);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::atom()
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        Ok(cores::atom())
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
@@ -38,14 +34,10 @@ impl CoreInterface for Atom {
 }
 
 impl CoreInterface for Quote {
-    impl_core_defaults!((), as_any, same, occurring_names);
+    impl_core_defaults!((), as_any, same, occurring_names, no_type);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::quote(self.0.clone())
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        Err(Error::NotAType(Core::new(self.clone())))
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {

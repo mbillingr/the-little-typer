@@ -13,14 +13,10 @@ use std::fmt::Formatter;
 pub struct Zero;
 
 impl CoreInterface for Zero {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, no_type);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::zero()
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<Core> {
-        Err(Error::NotAType(Core::new(self.clone())))
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {

@@ -38,7 +38,8 @@ impl CoreInterface for IndNat {
         as_any,
         same,
         occurring_names,
-        alpha_equiv
+        alpha_equiv,
+        no_type
     );
 
     fn val_of(&self, env: &Env) -> Value {
@@ -48,10 +49,6 @@ impl CoreInterface for IndNat {
             later(env.clone(), self.base.clone()),
             later(env.clone(), self.step.clone()),
         )
-    }
-
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<Core> {
-        Err(Error::NotAType(Core::new(self.clone())))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
