@@ -6,6 +6,7 @@ mod zero;
 
 use crate::alpha;
 use crate::basics::{occurring_names, Core};
+use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 pub use add1::Add1;
 pub use ind_nat::IndNat;
@@ -44,6 +45,20 @@ impl MaybeTyped {
                     && alpha::alpha_equiv_aux(lvl, b1, b2, bs1, bs2)
             }
             _ => false,
+        }
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Self) {
+        match self {
+            MaybeTyped::Plain(b) => {
+                let b = resugar_(b);
+                (b.0, MaybeTyped::Plain(b.1))
+            }
+            MaybeTyped::The(bt, b) => {
+                let bt = resugar_(bt);
+                let b = resugar_(b);
+                (&bt.0 | &b.0, MaybeTyped::The(bt.1, b.1))
+            }
         }
     }
 }

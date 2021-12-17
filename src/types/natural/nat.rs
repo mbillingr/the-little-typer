@@ -15,7 +15,15 @@ use std::fmt::Formatter;
 pub struct Nat;
 
 impl CoreInterface for Nat {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, simple_type);
+    impl_core_defaults!(
+        _,
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        simple_type,
+        check_by_synth
+    );
 
     fn val_of(&self, _env: &Env) -> Value {
         values::nat()

@@ -1,10 +1,9 @@
 use crate::alpha;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
-use crate::normalize::{val_in_ctx, val_of};
+use crate::normalize::val_of;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
-use crate::typechecker::same_type;
 use crate::types::{cores, values};
 use maplit::hashset;
 use sexpr_parser::parse;
@@ -27,11 +26,7 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)>;
 
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        let (t_out, e_out) = self.synth(ctx, r)?;
-        same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-        Ok(e_out)
-    }
+    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core>;
 
     fn alpha_equiv_aux(
         &self,

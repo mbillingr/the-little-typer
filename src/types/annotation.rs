@@ -17,7 +17,14 @@ pub struct The {
 }
 
 impl CoreInterface for The {
-    impl_core_defaults!((typ, exp), as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!(
+        (typ, exp),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        check_by_synth
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         val_of(env, &self.exp)

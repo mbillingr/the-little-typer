@@ -38,7 +38,7 @@ pub struct App {
 }
 
 impl CoreInterface for Pi<Core, Core> {
-    impl_core_defaults!((fun, arg), as_any, same);
+    impl_core_defaults!((fun, arg), as_any, same, check_by_synth);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         &occurring_binder_names(&self.arg_name, &self.arg_type) | &occurring_names(&self.res_type)
@@ -197,7 +197,14 @@ impl Display for Lambda<Core> {
 }
 
 impl CoreInterface for App {
-    impl_core_defaults!((fun, arg), as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!(
+        (fun, arg),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        check_by_synth
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         do_ap(

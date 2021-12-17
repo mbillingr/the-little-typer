@@ -39,7 +39,8 @@ impl CoreInterface for IndNat {
         same,
         occurring_names,
         alpha_equiv,
-        no_type
+        no_type,
+        check_by_synth
     );
 
     fn val_of(&self, env: &Env) -> Value {

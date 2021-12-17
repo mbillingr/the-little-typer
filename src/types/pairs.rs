@@ -29,7 +29,7 @@ pub struct Pair<T>(pub T, pub T);
 pub struct Cons<T>(pub T, pub T);
 
 impl CoreInterface for Sigma<Core, Core> {
-    impl_core_defaults!((arg_name, car_type, cdr_type), as_any, same);
+    impl_core_defaults!((arg_name, car_type, cdr_type), as_any, same, check_by_synth);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         todo!()
@@ -82,7 +82,14 @@ impl CoreInterface for Sigma<Core, Core> {
 }
 
 impl CoreInterface for Pair<Core> {
-    impl_core_defaults!((0, 1), as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!(
+        (0, 1),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        check_by_synth
+    );
 
     fn val_of(&self, _env: &Env) -> Value {
         todo!()

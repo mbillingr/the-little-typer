@@ -7,7 +7,6 @@ use crate::normalize::now;
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::typechecker::{check, synth};
-use crate::types::cores::{which_nat, which_nat_desugared};
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, MaybeTyped, Zero};
 use crate::types::neutral::Neutral;
@@ -49,7 +48,9 @@ impl CoreInterface for WhichNat {
         as_any,
         same,
         occurring_names,
-        alpha_equiv, no_type
+        alpha_equiv,
+        no_type,
+        check_by_synth
     );
 
     fn val_of(&self, env: &Env) -> Value {
@@ -95,21 +96,16 @@ impl CoreInterface for WhichNat {
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
         let tgt = resugar_(&self.target);
+        let bas = self.base.resugar();
         let stp = resugar_(&self.step);
-        match &self.base {
-            MaybeTyped::Plain(b) => {
-                let b = resugar_(b);
-                (&(&tgt.0 | &b.0) | &stp.0, which_nat(tgt.1, b.1, stp.1))
-            }
-            MaybeTyped::The(bt, b) => {
-                let bt = resugar_(bt);
-                let b = resugar_(b);
-                (
-                    &(&tgt.0 | &bt.0) | &(&b.0 | &stp.0),
-                    which_nat_desugared(tgt.1, bt.1, b.1, stp.1),
-                )
-            }
-        }
+        (
+            &tgt.0 | &(&bas.0 | &stp.0),
+            Core::new(WhichNat {
+                target: tgt.1,
+                base: bas.1,
+                step: stp.1,
+            }),
+        )
     }
 }
 

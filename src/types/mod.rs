@@ -25,6 +25,14 @@ macro_rules! impl_core_defaults {
         }
     };
 
+    ($fields:tt, check_by_synth) => {
+        fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> crate::errors::Result<Core> {
+            let (t_out, e_out) = self.synth(ctx, r)?;
+            crate::typechecker::same_type(ctx, &crate::normalize::val_in_ctx(ctx, &t_out), tv)?;
+            Ok(e_out)
+        }
+    };
+
     // no fields at all - every instance is the same
     (_, same) => {
         fn same(&self, other: &dyn CoreInterface) -> bool {

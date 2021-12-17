@@ -13,7 +13,15 @@ use std::fmt::Formatter;
 pub struct Zero;
 
 impl CoreInterface for Zero {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, no_type);
+    impl_core_defaults!(
+        _,
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        no_type,
+        check_by_synth
+    );
 
     fn val_of(&self, _env: &Env) -> Value {
         values::zero()

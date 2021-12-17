@@ -18,7 +18,15 @@ pub struct Atom;
 pub struct Quote(pub Symbol);
 
 impl CoreInterface for Atom {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, simple_type);
+    impl_core_defaults!(
+        _,
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        simple_type,
+        check_by_synth
+    );
 
     fn val_of(&self, _env: &Env) -> Value {
         values::atom()
@@ -34,7 +42,7 @@ impl CoreInterface for Atom {
 }
 
 impl CoreInterface for Quote {
-    impl_core_defaults!((), as_any, same, occurring_names, no_type);
+    impl_core_defaults!((), as_any, same, occurring_names, no_type, check_by_synth);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::quote(self.0.clone())
