@@ -38,7 +38,7 @@ pub struct App {
 }
 
 impl CoreInterface for Pi<Core, Core> {
-    impl_core_defaults!(as_any, same);
+    impl_core_defaults!((fun, arg), as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         &occurring_binder_names(&self.arg_name, &self.arg_type) | &occurring_names(&self.res_type)
@@ -126,7 +126,7 @@ impl Display for Pi<Core, Core> {
 }
 
 impl CoreInterface for Lambda<Core> {
-    impl_core_defaults!(as_any, same);
+    impl_core_defaults!((arg_name, body), as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         occurring_binder_names(&self.arg_name, &self.body)
@@ -201,11 +201,7 @@ impl Display for Lambda<Core> {
 }
 
 impl CoreInterface for App {
-    impl_core_defaults!(as_any, same);
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        &occurring_names(&self.fun) | &occurring_names(&self.arg)
-    }
+    impl_core_defaults!((fun, arg), as_any, same, occurring_names, alpha_equiv);
 
     fn val_of(&self, env: &Env) -> Value {
         do_ap(
@@ -223,21 +219,6 @@ impl CoreInterface for App {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         panic!("use AppStar for synthesis")
-    }
-
-    fn alpha_equiv_aux(
-        &self,
-        other: &dyn CoreInterface,
-        lvl: usize,
-        b1: &alpha::Bindings,
-        b2: &alpha::Bindings,
-    ) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() {
-            alpha_equiv_aux(lvl, b1, b2, &self.fun, &other.fun)
-                && alpha_equiv_aux(lvl, b1, b2, &self.arg, &other.arg)
-        } else {
-            false
-        }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

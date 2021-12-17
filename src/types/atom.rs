@@ -18,11 +18,7 @@ pub struct Atom;
 pub struct Quote(pub Symbol);
 
 impl CoreInterface for Atom {
-    impl_core_defaults!(as_any, (same unique));
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        HashSet::new()
-    }
+    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::atom()
@@ -36,27 +32,13 @@ impl CoreInterface for Atom {
         Ok((cores::universe(), cores::atom()))
     }
 
-    fn alpha_equiv_aux(
-        &self,
-        other: &dyn CoreInterface,
-        _lvl: usize,
-        _b1: &alpha::Bindings,
-        _b2: &alpha::Bindings,
-    ) -> bool {
-        CoreInterface::same(self, other)
-    }
-
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
         (HashSet::new(), Core::new(*self))
     }
 }
 
 impl CoreInterface for Quote {
-    impl_core_defaults!(as_any, same);
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        HashSet::new()
-    }
+    impl_core_defaults!((), as_any, same, occurring_names);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::quote(self.0.clone())

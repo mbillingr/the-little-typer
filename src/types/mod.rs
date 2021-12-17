@@ -7,13 +7,20 @@ macro_rules! pi_type {
 }
 
 macro_rules! impl_core_defaults {
-    (as_any) => {
+    ($fields:tt, as_any) => {
         fn as_any(&self) -> &dyn Any {
             self
         }
     };
 
-    (same) => {
+    // no fields at all - every instance is the same
+    (_, same) => {
+        fn same(&self, other: &dyn CoreInterface) -> bool {
+            other.as_any().is::<Self>()
+        }
+    };
+
+    ($fields:tt, same) => {
         fn same(&self, other: &dyn CoreInterface) -> bool {
             other
                 .as_any()
@@ -23,14 +30,54 @@ macro_rules! impl_core_defaults {
         }
     };
 
-    ((same unique)) => {
-        fn same(&self, other: &dyn CoreInterface) -> bool {
-            other.as_any().is::<Self>()
+    (_, occurring_names) => {
+        fn occurring_names(&self) -> HashSet<Symbol> {
+            HashSet::new()
         }
     };
 
-    ($($more:tt),*) => {
-        $(impl_core_defaults!($more);)*
+    (($($field:tt),*), occurring_names) => {
+        fn occurring_names(&self) -> HashSet<Symbol> {
+            let names = HashSet::new();
+            $(let names = &names | &self.$field.occurring_names();)*
+            names
+        }
+    };
+
+    (_, alpha_equiv) => {
+        fn alpha_equiv_aux(&self,
+                           other: &dyn CoreInterface,
+                           _lvl: usize,
+                           _b1: &alpha::Bindings,
+                           _b2: &alpha::Bindings)
+                        -> bool {
+            CoreInterface::same(self, other)
+        }
+    };
+
+    (($($field:tt),*), alpha_equiv) => {
+        fn alpha_equiv_aux(&self,
+                           other: &dyn CoreInterface,
+                           lvl: usize,
+                           b1: &alpha::Bindings,
+                           b2: &alpha::Bindings)
+                        -> bool {
+            if let Some(other) = other.as_any().downcast_ref::<Self>() {
+                let eq = true;
+                $(let eq = eq && self.$field.alpha_equiv_aux(&other.$field, lvl, b1, b2);)*
+                eq
+            } else {
+                false
+            }
+        }
+    };
+
+    ($fields:tt, $unknown:tt) => {
+        fn $unknown() { 0 }  // cheap way to raise an error
+    };
+
+    ($fields:tt, $($more:tt),+) => {
+        $(impl_core_defaults!($fields, $more);)+
     }
 }
 

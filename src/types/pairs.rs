@@ -1,8 +1,6 @@
 use crate::alpha;
-use crate::alpha::alpha_equiv_aux;
 use crate::basics::{
-    fresh, fresh_binder, occurring_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value,
-    ValueInterface, N,
+    fresh, fresh_binder, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface, N,
 };
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
@@ -31,7 +29,7 @@ pub struct Pair<T>(pub T, pub T);
 pub struct Cons<T>(pub T, pub T);
 
 impl CoreInterface for Sigma<Core, Core> {
-    impl_core_defaults!(as_any, same);
+    impl_core_defaults!((arg_name, car_type, cdr_type), as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         todo!()
@@ -84,11 +82,7 @@ impl CoreInterface for Sigma<Core, Core> {
 }
 
 impl CoreInterface for Pair<Core> {
-    impl_core_defaults!(as_any, same);
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        &occurring_names(&self.0) | &occurring_names(&self.1)
-    }
+    impl_core_defaults!((0, 1), as_any, same, occurring_names, alpha_equiv);
 
     fn val_of(&self, _env: &Env) -> Value {
         todo!()
@@ -117,31 +111,13 @@ impl CoreInterface for Pair<Core> {
         Ok((cores::universe(), cores::sigma(a, a_out, d_out)))
     }
 
-    fn alpha_equiv_aux(
-        &self,
-        other: &dyn CoreInterface,
-        _lvl: usize,
-        _b1: &alpha::Bindings,
-        _b2: &alpha::Bindings,
-    ) -> bool {
-        if let Some(_other) = other.as_any().downcast_ref::<Self>() {
-            todo!()
-        } else {
-            false
-        }
-    }
-
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
         unimplemented!()
     }
 }
 
 impl CoreInterface for Cons<Core> {
-    impl_core_defaults!(as_any, same);
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        &occurring_names(&self.0) | &occurring_names(&self.1)
-    }
+    impl_core_defaults!((0, 1), as_any, same, occurring_names, alpha_equiv);
 
     fn val_of(&self, env: &Env) -> Value {
         values::cons(
@@ -170,21 +146,6 @@ impl CoreInterface for Cons<Core> {
             Ok(cores::cons(a_out, d_out))
         } else {
             Err(Error::NotASigmaType(tv.read_back_type(ctx).unwrap()))
-        }
-    }
-
-    fn alpha_equiv_aux(
-        &self,
-        other: &dyn CoreInterface,
-        lvl: usize,
-        b1: &alpha::Bindings,
-        b2: &alpha::Bindings,
-    ) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() {
-            alpha_equiv_aux(lvl, b1, b2, &self.0, &other.0)
-                && alpha_equiv_aux(lvl, b1, b2, &self.1, &other.1)
-        } else {
-            false
         }
     }
 

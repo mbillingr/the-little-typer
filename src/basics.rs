@@ -127,6 +127,26 @@ impl Core {
     pub fn add1(n: Core) -> Self {
         cores::add1(n)
     }
+
+    pub fn occurring_names(&self) -> HashSet<Symbol> {
+        match self {
+            Core::Object(obj) => obj.occurring_names(),
+            _ => unimplemented!(),
+        }
+    }
+
+    pub fn alpha_equiv_aux(
+        &self,
+        other: &Self,
+        lvl: usize,
+        b1: &alpha::Bindings,
+        b2: &alpha::Bindings,
+    ) -> bool {
+        match (self, other) {
+            (Core::Object(a), Core::Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),
+            _ => unimplemented!(),
+        }
+    }
 }
 
 impl Display for Core {

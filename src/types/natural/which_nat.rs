@@ -1,7 +1,6 @@
-use crate::alpha::alpha_equiv_aux;
 use crate::basics::{
-    ctx_to_env, fresh, occurring_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, The,
-    Value, ValueInterface, N,
+    ctx_to_env, fresh, Closure, Core, CoreInterface, Ctx, Env, Renaming, The, Value,
+    ValueInterface, N,
 };
 use crate::errors::Error;
 use crate::normalize::now;
@@ -45,18 +44,13 @@ impl WhichNat {
 }
 
 impl CoreInterface for WhichNat {
-    impl_core_defaults!(as_any, same);
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        let names = &occurring_names(&self.target) | &occurring_names(&self.step);
-
-        let base_names = match &self.base {
-            MaybeTyped::Plain(b) => occurring_names(b),
-            MaybeTyped::The(bt, b) => &occurring_names(bt) | &occurring_names(b),
-        };
-
-        &names | &base_names
-    }
+    impl_core_defaults!(
+        (target, base, step),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         match &self.base {
@@ -100,31 +94,6 @@ impl CoreInterface for WhichNat {
                     cores::which_nat_desugared(tgt_out, b_t_out, b_out, s_out),
                 ))
             }
-        }
-    }
-
-    fn alpha_equiv_aux(
-        &self,
-        other: &dyn CoreInterface,
-        lvl: usize,
-        b1: &alpha::Bindings,
-        b2: &alpha::Bindings,
-    ) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() {
-            alpha_equiv_aux(lvl, b1, b2, &self.target, &other.target)
-                && alpha_equiv_aux(lvl, b1, b2, &self.step, &other.step)
-                && match (&self.base, &other.base) {
-                    (MaybeTyped::Plain(bs1), MaybeTyped::Plain(bs2)) => {
-                        alpha_equiv_aux(lvl, b1, b2, bs1, bs2)
-                    }
-                    (MaybeTyped::The(bt1, bs1), MaybeTyped::The(bt2, bs2)) => {
-                        alpha_equiv_aux(lvl, b1, b2, bt1, bt2)
-                            && alpha_equiv_aux(lvl, b1, b2, bs1, bs2)
-                    }
-                    _ => false,
-                }
-        } else {
-            false
         }
     }
 

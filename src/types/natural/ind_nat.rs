@@ -1,7 +1,4 @@
-use crate::alpha::alpha_equiv_aux;
-use crate::basics::{
-    occurring_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface,
-};
+use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::Error;
 use crate::normalize::{now, val_in_ctx};
 use crate::resugar::resugar_;
@@ -36,12 +33,13 @@ impl IndNat {
 }
 
 impl CoreInterface for IndNat {
-    impl_core_defaults!(as_any, same);
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        &(&occurring_names(&self.target) | &occurring_names(&self.motive))
-            | &(&occurring_names(&self.base) | &occurring_names(&self.step))
-    }
+    impl_core_defaults!(
+        (target, motive, base, step),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         do_ind_nat(
@@ -82,23 +80,6 @@ impl CoreInterface for IndNat {
             cores::app(mot_out.clone(), tgt_out.clone()),
             cores::ind_nat(tgt_out, mot_out, b_out, s_out),
         ))
-    }
-
-    fn alpha_equiv_aux(
-        &self,
-        other: &dyn CoreInterface,
-        lvl: usize,
-        b1: &alpha::Bindings,
-        b2: &alpha::Bindings,
-    ) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() {
-            alpha_equiv_aux(lvl, b1, b2, &self.target, &other.target)
-                && alpha_equiv_aux(lvl, b1, b2, &self.motive, &other.motive)
-                && alpha_equiv_aux(lvl, b1, b2, &self.base, &other.base)
-                && alpha_equiv_aux(lvl, b1, b2, &self.step, &other.step)
-        } else {
-            false
-        }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

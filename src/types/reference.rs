@@ -22,7 +22,7 @@ impl Ref {
 }
 
 impl CoreInterface for Ref {
-    impl_core_defaults!(as_any, same);
+    impl_core_defaults!((0), as_any, same);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
         hashset![self.0.clone()]

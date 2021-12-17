@@ -13,11 +13,7 @@ use std::fmt::Formatter;
 pub struct Zero;
 
 impl CoreInterface for Zero {
-    impl_core_defaults!(as_any, (same unique));
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        HashSet::new()
-    }
+    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv);
 
     fn val_of(&self, _env: &Env) -> Value {
         values::zero()
@@ -29,16 +25,6 @@ impl CoreInterface for Zero {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {
         Ok((cores::nat(), cores::zero()))
-    }
-
-    fn alpha_equiv_aux(
-        &self,
-        other: &dyn CoreInterface,
-        _lvl: usize,
-        _b1: &alpha::Bindings,
-        _b2: &alpha::Bindings,
-    ) -> bool {
-        CoreInterface::same(self, other)
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

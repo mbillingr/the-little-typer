@@ -1,8 +1,5 @@
 use crate::alpha;
-use crate::alpha::alpha_equiv_aux;
-use crate::basics::{
-    occurring_names, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface,
-};
+use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
@@ -20,11 +17,7 @@ use std::result::Result::Err;
 pub struct Add1<T>(pub T);
 
 impl CoreInterface for Add1<Core> {
-    impl_core_defaults!(as_any, same);
-
-    fn occurring_names(&self) -> HashSet<Symbol> {
-        occurring_names(&self.0)
-    }
+    impl_core_defaults!((0), as_any, same, occurring_names, alpha_equiv);
 
     fn val_of(&self, env: &Env) -> Value {
         values::add1(later(env.clone(), self.0.clone()))
@@ -36,20 +29,6 @@ impl CoreInterface for Add1<Core> {
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
         check(ctx, r, &self.0, &values::nat()).map(|n_out| (cores::nat(), Core::add1(n_out)))
-    }
-
-    fn alpha_equiv_aux(
-        &self,
-        other: &dyn CoreInterface,
-        lvl: usize,
-        b1: &alpha::Bindings,
-        b2: &alpha::Bindings,
-    ) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() {
-            alpha_equiv_aux(lvl, b1, b2, &self.0, &other.0)
-        } else {
-            false
-        }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
