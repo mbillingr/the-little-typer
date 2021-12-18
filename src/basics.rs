@@ -8,7 +8,6 @@ use crate::types::{cores, values};
 use maplit::hashset;
 use sexpr_parser::parse;
 use std::any::Any;
-use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
@@ -275,8 +274,8 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
         Err(Error::NotAFunctionType((*rator_out).clone()))
     }
 
-    fn now<'a>(&self, v: &'a Value) -> Cow<'a, Value> {
-        Cow::Borrowed(v)
+    fn now(&self) -> Option<Value> {
+        None
     }
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {
@@ -332,9 +331,8 @@ impl ValueInterface for Value {
         self.0.apply(ctx, r, rator_out, rand)
     }
 
-    fn now<'a>(&self, v: &'a Value) -> Cow<'a, Value> {
-        assert!(std::ptr::eq(self, v));
-        self.0.now(v)
+    fn now(&self) -> Option<Value> {
+        self.0.now()
     }
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {

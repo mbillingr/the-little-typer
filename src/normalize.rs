@@ -3,7 +3,10 @@ use crate::types::cores;
 use std::borrow::Cow;
 
 pub fn now(v: &Value) -> Cow<Value> {
-    v.now(v)
+    match v.now() {
+        None => Cow::Borrowed(v),
+        Some(x) => Cow::Owned(x),
+    }
 }
 
 pub fn val_of(env: &Env, e: &Core) -> Value {

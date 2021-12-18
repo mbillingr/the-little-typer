@@ -2,7 +2,6 @@ use crate::basics::{Core, Ctx, Env, Value, ValueInterface, N};
 use crate::errors::Result;
 use crate::normalize::{now, val_of};
 use std::any::Any;
-use std::borrow::Cow;
 use std::ops::Deref;
 use std::sync::{Arc as R, Mutex, MutexGuard};
 
@@ -55,8 +54,8 @@ impl ValueInterface for Delay {
         unimplemented!()
     }
 
-    fn now<'a>(&self, _v: &'a Value) -> Cow<'a, Value> {
-        Cow::Owned(self.force())
+    fn now(&self) -> Option<Value> {
+        Some(self.force())
     }
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {
