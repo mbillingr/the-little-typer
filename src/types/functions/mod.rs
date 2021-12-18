@@ -11,7 +11,7 @@ use crate::types::values::neutral;
 pub use app::{App, AppStar};
 pub use fun::Fun;
 pub use lambda::Lambda;
-pub use pi::Pi;
+pub use pi::{Pi, PiStar};
 
 pub fn do_ap(rator: &Value, rand: Value) -> Value {
     match now(rator).as_any().downcast_ref::<Lambda<Closure>>() {

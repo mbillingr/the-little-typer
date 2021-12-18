@@ -1,39 +1,12 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{fresh, Core, Ctx, Renaming, Value};
+use crate::basics::{Core, Ctx, Renaming, Value};
 use crate::errors::{Error, Result};
-use crate::normalize::{read_back, read_back_type, val_in_ctx};
+use crate::normalize::{read_back, read_back_type};
 use crate::symbol::Symbol;
-use crate::types::cores;
 
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use Core::*;
     match inp {
-        PiStar(bindings, b) => match &bindings[..] {
-            [] => unimplemented!(),
-            [(x, a)] => {
-                let y = fresh(ctx, x);
-                let a_out = is_type(ctx, r, a)?;
-                let a_outv = val_in_ctx(ctx, &a_out);
-                let b_out = is_type(
-                    &ctx.bind_free(y.clone(), a_outv)?,
-                    &r.extend(x.clone(), y.clone()),
-                    b,
-                )?;
-                Ok(cores::pi(y, a_out, b_out))
-            }
-            [(x, a), more @ ..] => {
-                let z = fresh(ctx, x);
-                let a_out = is_type(ctx, r, a)?;
-                let a_outv = val_in_ctx(ctx, &a_out);
-                let b_out = is_type(
-                    &ctx.bind_free(z.clone(), a_outv)?,
-                    &r.extend(x.clone(), z.clone()),
-                    &PiStar(more.to_vec(), b.clone()),
-                )?;
-                Ok(cores::pi(z, a_out, b_out))
-            }
-        },
-
         LambdaStar(_, _) => Err(Error::NotAType(inp.clone())),
 
         Object(obj) => obj.is_type(ctx, r),
@@ -43,8 +16,6 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
 pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
     use Core::*;
     match inp {
-        PiStar(_, _) => todo!(),
-
         LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
 
         Object(obj) => obj.synth(ctx, r),
@@ -63,12 +34,6 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
                 tv,
             ),
         },
-
-        Core::PiStar(_, _) => {
-            let (t_out, e_out) = synth(ctx, r, e)?;
-            same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
-            Ok(e_out)
-        }
 
         Core::Object(obj) => obj.check(ctx, r, tv),
     }
@@ -101,7 +66,7 @@ pub fn atom_is_ok(_: &Symbol) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::values;
+    use crate::types::{cores, values};
 
     #[test]
     fn pi_is_a_type() {

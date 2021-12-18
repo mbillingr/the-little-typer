@@ -2,7 +2,7 @@ use crate::basics::Core;
 use crate::symbol::Symbol;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
-use crate::types::functions::{App, AppStar, Fun, Lambda, Pi};
+use crate::types::functions::{App, AppStar, Fun, Lambda, Pi, PiStar};
 use crate::types::natural::{Add1, IndNat, Nat, WhichNat, Zero};
 use crate::types::pairs::{Cons, Pair, Sigma};
 use crate::types::reference::Ref;
@@ -58,6 +58,10 @@ pub fn pi(x: impl Into<Symbol>, arg_type: Core, res_type: Core) -> Core {
         arg_type,
         res_type,
     })
+}
+
+pub fn pi_star(binders: Vec<(Symbol, Core)>, res_type: Core) -> Core {
+    Core::new(PiStar { binders, res_type })
 }
 
 pub fn lambda(x: impl Into<Symbol>, body: Core) -> Core {

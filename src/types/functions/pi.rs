@@ -4,6 +4,7 @@ use crate::basics::{
     Renaming, Value, ValueInterface, N,
 };
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
+use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::typechecker::{check, is_type};
 use crate::types::functions::lambda::Lambda;
@@ -19,6 +20,12 @@ pub struct Pi<T, C> {
     pub arg_name: Symbol,
     pub arg_type: T,
     pub res_type: C,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PiStar {
+    pub binders: Vec<(Symbol, Core)>,
+    pub res_type: Core,
 }
 
 impl CoreInterface for Pi<Core, Core> {
@@ -97,6 +104,60 @@ impl CoreInterface for Pi<Core, Core> {
     }
 }
 
+impl CoreInterface for PiStar {
+    impl_core_defaults!((), as_any, same, check_by_synth, no_alpha_equiv);
+
+    fn occurring_names(&self) -> HashSet<Symbol> {
+        self.binders
+            .iter()
+            .map(|(x, t)| occurring_binder_names(x, t))
+            .fold(occurring_names(&self.res_type), |a, b| &a | &b)
+    }
+
+    fn val_of(&self, _env: &Env) -> Value {
+        panic!("Attempt to evaluate Pi* (should have been desugared to `Pi`s)")
+    }
+
+    fn is_type(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<Core> {
+        match &self.binders[..] {
+            [] => unimplemented!(),
+            [(x, a)] => {
+                let y = fresh(ctx, x);
+                let a_out = is_type(ctx, r, a)?;
+                let a_outv = val_in_ctx(ctx, &a_out);
+                let b_out = is_type(
+                    &ctx.bind_free(y.clone(), a_outv)?,
+                    &r.extend(x.clone(), y.clone()),
+                    &self.res_type,
+                )?;
+                Ok(cores::pi(y, a_out, b_out))
+            }
+            [(x, a), more @ ..] => {
+                let z = fresh(ctx, x);
+                let a_out = is_type(ctx, r, a)?;
+                let a_outv = val_in_ctx(ctx, &a_out);
+                let b_out = is_type(
+                    &ctx.bind_free(z.clone(), a_outv)?,
+                    &r.extend(x.clone(), z.clone()),
+                    &cores::pi_star(more.to_vec(), self.res_type.clone()),
+                )?;
+                Ok(cores::pi(z, a_out, b_out))
+            }
+        }
+    }
+
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {
+        todo!()
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        match &self.binders[..] {
+            [(x, arg_type)] => resugar_unary_pi(x, arg_type, &self.res_type),
+            _ => todo!(),
+        }
+    }
+}
+
 impl Display for Pi<Core, Core> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -106,6 +167,17 @@ impl Display for Pi<Core, Core> {
             self.arg_type,
             self.res_type
         )
+    }
+}
+
+impl Display for PiStar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let b: Vec<_> = self
+            .binders
+            .iter()
+            .map(|(x, t)| format!("({} {})", x.name(), t))
+            .collect();
+        write!(f, "(Π ({}) {})", b.join(" "), self.res_type)
     }
 }
 
@@ -165,5 +237,15 @@ impl ValueInterface for Pi<Value, Closure> {
             read_back_type(_ctx, &self.res_type.val_of(val_in_ctx(_ctx, &rand_out))),
             Core::app((*rator_out).clone(), rand_out),
         ))
+    }
+}
+
+fn resugar_unary_pi(x: &Symbol, arg_type: &Core, result_type: &Core) -> (HashSet<Symbol>, Core) {
+    let arg = resugar_(arg_type);
+    let res = resugar_(result_type);
+    if res.0.contains(x) {
+        todo!()
+    } else {
+        (&arg.0 | &res.0, resugar::add_fun(arg.1, res.1))
     }
 }

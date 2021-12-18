@@ -39,7 +39,6 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
 #[derive(Debug, Clone)]
 pub enum Core {
-    PiStar(Vec<(Symbol, Core)>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
     Object(R<dyn CoreInterface>),
 }
@@ -48,7 +47,6 @@ impl PartialEq for Core {
     fn eq(&self, other: &Self) -> bool {
         use Core::*;
         match (self, other) {
-            (PiStar(a, r1), PiStar(b, r2)) => a == b && r1 == r2,
             (LambdaStar(a, r1), LambdaStar(b, r2)) => a == b && r1 == r2,
             (Object(a), Object(b)) => R::ptr_eq(a, b) || a.same(&**b),
             _ => false,
@@ -83,8 +81,8 @@ impl Core {
         cores::fun(types)
     }
 
-    pub fn pi_star(params: Vec<(Symbol, Core)>, rt: impl Into<R<Core>>) -> Self {
-        Core::PiStar(params, rt.into())
+    pub fn pi_star(params: Vec<(Symbol, Core)>, rt: impl Into<Core>) -> Self {
+        cores::pi_star(params, rt.into())
     }
 
     pub fn pi(x: impl Into<Symbol>, xt: Core, rt: Core) -> Self {
@@ -153,13 +151,6 @@ impl Display for Core {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         use Core::*;
         match self {
-            PiStar(bindings, rt) => {
-                let b: Vec<_> = bindings
-                    .iter()
-                    .map(|(x, t)| format!("({} {})", x.name(), t))
-                    .collect();
-                write!(f, "(Π ({}) {})", b.join(" "), rt)
-            }
             LambdaStar(params, body) => write!(
                 f,
                 "(λ ({}) {})",
@@ -528,10 +519,6 @@ pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
 pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
     use Core::*;
     match expr {
-        PiStar(bindings, t) => bindings
-            .iter()
-            .map(|(x, t)| occurring_binder_names(x, t))
-            .fold(occurring_names(t), |a, b| &a | &b),
         LambdaStar(params, body) => {
             &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
         }
