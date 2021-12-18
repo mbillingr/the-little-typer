@@ -38,32 +38,21 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 }
 
 #[derive(Debug, Clone)]
-pub enum Core {
-    Object(R<dyn CoreInterface>),
-}
+pub struct Core(R<dyn CoreInterface>);
 
 impl PartialEq for Core {
     fn eq(&self, other: &Self) -> bool {
-        use Core::*;
-        match (self, other) {
-            (Object(a), Object(b)) => R::ptr_eq(a, b) || a.same(&**b),
-        }
+        R::ptr_eq(&self.0, &other.0) || self.0.same(&*other.0)
     }
 }
 
 impl Core {
     pub fn new(obj: impl CoreInterface) -> Self {
-        Core::Object(R::new(obj))
+        Core(R::new(obj))
     }
 
     pub fn try_as<T: 'static>(&self) -> Option<&T> {
         self.as_any().downcast_ref::<T>()
-    }
-
-    fn as_any(&self) -> &dyn Any {
-        match self {
-            Core::Object(obj) => obj.as_any(),
-        }
     }
 
     pub fn the(t: Core, e: Core) -> Self {
@@ -121,32 +110,55 @@ impl Core {
     pub fn add1(n: Core) -> Self {
         cores::add1(n)
     }
+}
 
-    pub fn occurring_names(&self) -> HashSet<Symbol> {
-        match self {
-            Core::Object(obj) => obj.occurring_names(),
-        }
+impl CoreInterface for Core {
+    fn as_any(&self) -> &dyn Any {
+        self.0.as_any()
     }
 
-    pub fn alpha_equiv_aux(
+    fn same(&self, other: &dyn CoreInterface) -> bool {
+        self.0.same(other)
+    }
+
+    fn occurring_names(&self) -> HashSet<Symbol> {
+        self.0.occurring_names()
+    }
+
+    fn val_of(&self, env: &Env) -> Value {
+        self.0.val_of(env)
+    }
+
+    fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
+        self.0.is_type(ctx, r)
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        self.0.synth(ctx, r)
+    }
+
+    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
+        self.0.check(ctx, r, tv)
+    }
+
+    fn alpha_equiv_aux(
         &self,
-        other: &Self,
+        other: &dyn CoreInterface,
         lvl: usize,
         b1: &alpha::Bindings,
         b2: &alpha::Bindings,
     ) -> bool {
-        match (self, other) {
-            (Core::Object(a), Core::Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),
-        }
+        self.0.alpha_equiv_aux(other, lvl, b1, b2)
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        self.0.resugar()
     }
 }
 
 impl Display for Core {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        use Core::*;
-        match self {
-            Object(obj) => write!(f, "{}", obj),
-        }
+        write!(f, "{}", self.0)
     }
 }
 
@@ -501,10 +513,7 @@ pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
 }
 
 pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
-    use Core::*;
-    match expr {
-        Object(obj) => obj.occurring_names(),
-    }
+    expr.occurring_names()
 }
 
 pub fn occurring_binder_names(name: &Symbol, t: &Core) -> HashSet<Symbol> {

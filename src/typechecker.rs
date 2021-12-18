@@ -1,27 +1,19 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{Core, Ctx, Renaming, Value};
+use crate::basics::{Core, CoreInterface, Ctx, Renaming, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, read_back_type};
 use crate::symbol::Symbol;
 
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
-    use Core::*;
-    match inp {
-        Object(obj) => obj.is_type(ctx, r),
-    }
+    inp.is_type(ctx, r)
 }
 
 pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
-    use Core::*;
-    match inp {
-        Object(obj) => obj.synth(ctx, r),
-    }
+    inp.synth(ctx, r)
 }
 
 pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
-    match e {
-        Core::Object(obj) => obj.check(ctx, r, tv),
-    }
+    e.check(ctx, r, tv)
 }
 
 pub fn same_type(ctx: &Ctx, given: &Value, expected: &Value) -> Result<()> {

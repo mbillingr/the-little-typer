@@ -1,4 +1,4 @@
-use crate::basics::{ctx_to_env, Core, Ctx, Env, The, Value, ValueInterface, N};
+use crate::basics::{ctx_to_env, Core, CoreInterface, Ctx, Env, The, Value, ValueInterface, N};
 use crate::types::cores;
 use std::borrow::Cow;
 
@@ -10,9 +10,7 @@ pub fn now(v: &Value) -> Cow<Value> {
 }
 
 pub fn val_of(env: &Env, e: &Core) -> Value {
-    match e {
-        Core::Object(obj) => obj.val_of(env),
-    }
+    e.val_of(env)
 }
 
 pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {

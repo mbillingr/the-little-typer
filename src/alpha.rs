@@ -1,4 +1,4 @@
-use crate::basics::Core;
+use crate::basics::{Core, CoreInterface};
 use crate::symbol::Symbol;
 
 pub fn is_alpha_equiv(e1: &Core, e2: &Core) -> bool {
@@ -6,10 +6,7 @@ pub fn is_alpha_equiv(e1: &Core, e2: &Core) -> bool {
 }
 
 pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: &Core) -> bool {
-    use Core::*;
-    match (e1, e2) {
-        (Object(a), Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),
-    }
+    e1.alpha_equiv_aux(e2, lvl, b1, b2)
 }
 
 pub enum Bindings<'a> {
