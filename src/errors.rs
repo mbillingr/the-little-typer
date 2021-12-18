@@ -17,6 +17,7 @@ pub enum Error {
     NotASigmaType(Core),
     UnknownVariable(Symbol),
     NotTheSame(Core, Core, Core),
+    WrongArity(Core),
 
     TypeMismatchVar(Value, Value),
     NotATypeVar(Value),
@@ -41,6 +42,9 @@ impl Display for Error {
             Error::UnknownVariable(name) => write!(f, "Unknown variable {}", name.name()),
             Error::NotTheSame(t, a, b) => {
                 write!(f, "The expressions {} and {} are not the same {}", a, b, t)
+            }
+            Error::WrongArity(expr) => {
+                write!(f, "Wrong number of arguments: {}", expr)
             }
             Error::TypeMismatchVar(v, t) => {
                 write!(f, "The value {:?} is not a {:?}", v, t)

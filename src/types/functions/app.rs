@@ -81,12 +81,10 @@ impl CoreInterface for AppStar {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
+        let (rator_t, rator_out) = synth(ctx, r, &self.fun)?;
         match &self.args[..] {
-            [] => panic!("nullary application {}", self.fun),
-            [rand] => {
-                let (rator_t, rator_out) = synth(ctx, r, &self.fun)?;
-                val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand)
-            }
+            [] => Err(Error::WrongArity(Core::app_star(rator_out, vec![]))),
+            [rand] => val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand),
             [_rand0, _rands @ ..] => todo!(),
         }
     }
