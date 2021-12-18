@@ -2,7 +2,6 @@ use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterfa
 use crate::errors::{Error, Result};
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
-use crate::typechecker::check;
 use crate::types::values::{add1, later};
 use crate::types::{cores, values};
 use std::any::Any;
@@ -31,7 +30,10 @@ impl CoreInterface for Add1<Core> {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
-        check(ctx, r, &self.0, &values::nat()).map(|n_out| (cores::nat(), Core::add1(n_out)))
+        let e = &self.0;
+        let tv = &values::nat();
+        e.check(ctx, r, tv)
+            .map(|n_out| (cores::nat(), Core::add1(n_out)))
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

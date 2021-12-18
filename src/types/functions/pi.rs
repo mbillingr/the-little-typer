@@ -6,7 +6,6 @@ use crate::basics::{
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
-use crate::typechecker::{check, is_type};
 use crate::types::functions::lambda::Lambda;
 use crate::types::values::later;
 use crate::types::{cores, functions, neutral, values};
@@ -50,25 +49,26 @@ impl CoreInterface for Pi<Core, Core> {
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<Core> {
         let y = fresh(ctx, &self.arg_name);
-        let a_out = is_type(ctx, r, &self.arg_type)?;
+        let inp = &self.arg_type;
+        let a_out = inp.is_type(ctx, r)?;
         let a_outv = val_in_ctx(ctx, &a_out);
-        let b_out = is_type(
-            &ctx.bind_free(y.clone(), a_outv)?,
-            &r.extend(self.arg_name.clone(), y.clone()),
-            &self.res_type,
-        )?;
+        let ctx = &ctx.bind_free(y.clone(), a_outv)?;
+        let r = &r.extend(self.arg_name.clone(), y.clone());
+        let inp = &self.res_type;
+        let b_out = inp.is_type(ctx, r)?;
         Ok(Core::pi(y, a_out, b_out))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
         let x_hat = fresh(ctx, &self.arg_name);
-        let a_out = check(ctx, r, &self.arg_type, &values::universe())?;
-        let b_out = check(
-            &ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?,
-            &r.extend(self.arg_name.clone(), x_hat.clone()),
-            &self.res_type,
-            &values::universe(),
-        )?;
+        let e = &self.arg_type;
+        let tv = &values::universe();
+        let a_out = e.check(ctx, r, tv)?;
+        let ctx = &ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?;
+        let r = &r.extend(self.arg_name.clone(), x_hat.clone());
+        let e = &self.res_type;
+        let tv = &values::universe();
+        let b_out = e.check(ctx, r, tv)?;
         Ok((cores::universe(), Core::pi(x_hat, a_out, b_out)))
     }
 
@@ -123,24 +123,24 @@ impl CoreInterface for PiStar {
             [] => unimplemented!(),
             [(x, a)] => {
                 let y = fresh(ctx, x);
-                let a_out = is_type(ctx, r, a)?;
+                let inp = a;
+                let a_out = inp.is_type(ctx, r)?;
                 let a_outv = val_in_ctx(ctx, &a_out);
-                let b_out = is_type(
-                    &ctx.bind_free(y.clone(), a_outv)?,
-                    &r.extend(x.clone(), y.clone()),
-                    &self.res_type,
-                )?;
+                let ctx = &ctx.bind_free(y.clone(), a_outv)?;
+                let r = &r.extend(x.clone(), y.clone());
+                let inp = &self.res_type;
+                let b_out = inp.is_type(ctx, r)?;
                 Ok(cores::pi(y, a_out, b_out))
             }
             [(x, a), more @ ..] => {
                 let z = fresh(ctx, x);
-                let a_out = is_type(ctx, r, a)?;
+                let inp = a;
+                let a_out = inp.is_type(ctx, r)?;
                 let a_outv = val_in_ctx(ctx, &a_out);
-                let b_out = is_type(
-                    &ctx.bind_free(z.clone(), a_outv)?,
-                    &r.extend(x.clone(), z.clone()),
-                    &cores::pi_star(more.to_vec(), self.res_type.clone()),
-                )?;
+                let ctx = &ctx.bind_free(z.clone(), a_outv)?;
+                let r = &r.extend(x.clone(), z.clone());
+                let inp = &cores::pi_star(more.to_vec(), self.res_type.clone());
+                let b_out = inp.is_type(ctx, r)?;
                 Ok(cores::pi(z, a_out, b_out))
             }
         }
@@ -232,7 +232,11 @@ impl ValueInterface for Pi<Value, Closure> {
         rator_out: &Core,
         _rand: &Core,
     ) -> errors::Result<(Core, Core)> {
-        let rand_out = check(_ctx, _r, _rand, &self.arg_type)?;
+        let ctx = _ctx;
+        let r = _r;
+        let e = _rand;
+        let tv = &self.arg_type;
+        let rand_out = e.check(ctx, r, tv)?;
         Ok((
             read_back_type(_ctx, &self.res_type.val_of(val_in_ctx(_ctx, &rand_out))),
             Core::app((*rator_out).clone(), rand_out),

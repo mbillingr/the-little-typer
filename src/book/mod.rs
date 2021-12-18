@@ -1,8 +1,7 @@
-use crate::basics::{Core, Ctx, Renaming};
+use crate::basics::{Core, CoreInterface, Ctx, Renaming};
 use crate::errors::Error;
 use crate::normalize::val_in_ctx;
 use crate::rep;
-use crate::typechecker::{check, is_type, synth};
 
 mod chapter_01;
 
@@ -47,12 +46,22 @@ struct CoreChecker<'a> {
 
 impl CoreChecker<'_> {
     fn is_a(&self, t: &Core) -> bool {
-        let t_out = is_type(self.ctx, &Renaming::new(), t).unwrap();
+        let ctx_argument = self.ctx;
+        let r = &Renaming::new();
+        let inp = t;
+        let t_out = inp.is_type(ctx_argument, r).unwrap();
         let tv = val_in_ctx(self.ctx, &t_out);
-        check(self.ctx, &Renaming::new(), &self.expr, &tv).is_ok()
+        let ctx_argument = self.ctx;
+        let r = &Renaming::new();
+        let e = &self.expr;
+        let tv_argument = &tv;
+        e.check(ctx_argument, r, tv_argument).is_ok()
     }
 
     fn check(&self) {
-        synth(self.ctx, &Renaming::new(), &self.expr).unwrap();
+        let ctx_argument = self.ctx;
+        let r = &Renaming::new();
+        let inp = &self.expr;
+        inp.synth(ctx_argument, r).unwrap();
     }
 }

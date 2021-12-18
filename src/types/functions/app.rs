@@ -2,7 +2,6 @@ use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterfa
 use crate::errors::Error;
 use crate::normalize::val_in_ctx;
 use crate::symbol::Symbol;
-use crate::typechecker::synth;
 use crate::types::values::later;
 use crate::types::{cores, functions, values};
 use crate::{errors, resugar};
@@ -81,7 +80,8 @@ impl CoreInterface for AppStar {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
-        let (rator_t, rator_out) = synth(ctx, r, &self.fun)?;
+        let inp = &self.fun;
+        let (rator_t, rator_out) = inp.synth(ctx, r)?;
         match &self.args[..] {
             [] => Err(Error::WrongArity(Core::app_star(rator_out, vec![]))),
             [rand] => val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand),

@@ -6,7 +6,6 @@ use crate::basics::{
 use crate::errors::Error;
 use crate::normalize::now;
 use crate::symbol::Symbol;
-use crate::typechecker::check;
 use crate::types::functions::Pi;
 use crate::types::values::lambda;
 use crate::types::{cores, values};
@@ -27,6 +26,12 @@ pub struct Lambda<B> {
 pub struct LambdaStar {
     pub params: Vec<Symbol>,
     pub body: Core,
+}
+
+impl<B> Lambda<B> {
+    pub fn new(arg_name: Symbol, body: B) -> Self {
+        Lambda { arg_name, body }
+    }
 }
 
 impl CoreInterface for Lambda<Core> {
@@ -52,13 +57,13 @@ impl CoreInterface for Lambda<Core> {
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> errors::Result<Core> {
         if let Some(pi) = now(tv).as_any().downcast_ref::<Pi<Value, Closure>>() {
             let x_hat = fresh(ctx, &self.arg_name);
-            let b_out = check(
-                &ctx.bind_free(x_hat.clone(), pi.arg_type.clone())?,
-                &r.extend(self.arg_name.clone(), x_hat.clone()),
-                &self.body,
-                &pi.res_type
-                    .val_of(values::neutral(pi.arg_type.clone(), N::Var(x_hat.clone()))),
-            )?;
+            let ctx = &ctx.bind_free(x_hat.clone(), pi.arg_type.clone())?;
+            let r = &r.extend(self.arg_name.clone(), x_hat.clone());
+            let e = &self.body;
+            let tv = &pi
+                .res_type
+                .val_of(values::neutral(pi.arg_type.clone(), N::Var(x_hat.clone())));
+            let b_out = e.check(ctx, r, tv)?;
             Ok(Core::lambda(x_hat, b_out))
         } else {
             Err(Error::NotAFunctionType(tv.read_back_type(ctx).unwrap()))
@@ -110,16 +115,12 @@ impl CoreInterface for LambdaStar {
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> errors::Result<Core> {
         match &self.params[..] {
             [] => panic!("nullary lambda"),
-            [x] => check(ctx, r, &cores::lambda(x.clone(), self.body.clone()), tv),
-            [x, xs @ ..] => check(
-                ctx,
-                r,
-                &Core::lambda(
-                    x.clone(),
-                    cores::lambda_star(xs.to_vec(), self.body.clone()),
-                ),
-                tv,
-            ),
+            [x] => Lambda::new(x.clone(), self.body.clone()).check(ctx, r, tv),
+            [x, xs @ ..] => Lambda::new(
+                x.clone(),
+                cores::lambda_star(xs.to_vec(), self.body.clone()),
+            )
+            .check(ctx, r, tv),
         }
     }
 

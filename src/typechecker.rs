@@ -1,20 +1,8 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{Core, CoreInterface, Ctx, Renaming, Value};
+use crate::basics::{Ctx, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, read_back_type};
 use crate::symbol::Symbol;
-
-pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
-    inp.is_type(ctx, r)
-}
-
-pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
-    inp.synth(ctx, r)
-}
-
-pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
-    e.check(ctx, r, tv)
-}
 
 pub fn same_type(ctx: &Ctx, given: &Value, expected: &Value) -> Result<()> {
     let given_e = read_back_type(ctx, given);
@@ -43,16 +31,15 @@ pub fn atom_is_ok(_: &Symbol) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::basics::{Core, CoreInterface, Renaming};
     use crate::types::{cores, values};
 
     #[test]
     fn pi_is_a_type() {
-        assert!(check(
-            &Ctx::new(),
-            &Renaming::new(),
-            &Core::pi(Symbol::new("x"), cores::nat(), cores::nat()),
-            &values::universe()
-        )
-        .is_ok());
+        let ctx = &Ctx::new();
+        let r = &Renaming::new();
+        let e = &Core::pi(Symbol::new("x"), cores::nat(), cores::nat());
+        let tv = &values::universe();
+        assert!(e.check(ctx, r, tv).is_ok());
     }
 }

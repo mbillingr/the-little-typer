@@ -1,7 +1,6 @@
 use crate::alpha;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
-use crate::normalize::val_of;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
 use crate::types::{cores, values};
@@ -330,7 +329,7 @@ impl Closure {
 
     pub fn val_of(&self, v: Value) -> Value {
         match self {
-            Closure::FirstOrder { env, var, expr } => val_of(&env.extend(var.clone(), v), expr),
+            Closure::FirstOrder { env, var, expr } => expr.val_of(&env.extend(var.clone(), v)),
             Closure::HigherOrder(fun) => fun(v),
         }
     }

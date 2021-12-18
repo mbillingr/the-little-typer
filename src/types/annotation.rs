@@ -1,9 +1,8 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value};
 use crate::errors::{Error, Result};
-use crate::normalize::{val_in_ctx, val_of};
+use crate::normalize::val_in_ctx;
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
-use crate::typechecker::{check, is_type};
 use crate::types::{cores, values};
 use std::collections::HashSet;
 use std::fmt::Formatter;
@@ -25,7 +24,8 @@ impl CoreInterface for The {
     );
 
     fn val_of(&self, env: &Env) -> Value {
-        val_of(env, &self.exp)
+        let e = &self.exp;
+        e.val_of(env)
     }
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
@@ -36,8 +36,11 @@ impl CoreInterface for The {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
-        let t_out = is_type(ctx, r, &self.typ)?;
-        let e_out = check(ctx, r, &self.exp, &val_in_ctx(ctx, &t_out))?;
+        let inp = &self.typ;
+        let t_out = inp.is_type(ctx, r)?;
+        let e = &self.exp;
+        let tv = &val_in_ctx(ctx, &t_out);
+        let e_out = e.check(ctx, r, tv)?;
         Ok((t_out, e_out))
     }
 

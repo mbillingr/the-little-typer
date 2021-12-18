@@ -1,6 +1,6 @@
-use crate::basics::{Core, Ctx, Env, Value, ValueInterface, N};
+use crate::basics::{Core, CoreInterface, Ctx, Env, Value, ValueInterface, N};
 use crate::errors::Result;
-use crate::normalize::{now, val_of};
+use crate::normalize::now;
 use std::any::Any;
 use std::ops::Deref;
 use std::sync::{Arc as R, Mutex, MutexGuard};
@@ -32,7 +32,7 @@ impl Delay {
 
 fn undelay(c: &SharedBoxGuard<Delayed>) -> Value {
     match &**c {
-        Delayed::Later(env, exp) => now(&val_of(env, exp)).into_owned(),
+        Delayed::Later(env, exp) => now(&exp.val_of(env)).into_owned(),
         _ => unreachable!(),
     }
 }

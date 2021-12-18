@@ -7,7 +7,6 @@ use crate::errors::Error;
 use crate::normalize::now;
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
-use crate::typechecker::{check, synth};
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, MaybeTyped, Zero};
 use crate::types::neutral::Neutral;
@@ -68,23 +67,23 @@ impl CoreInterface for WhichNat {
         match &self.base {
             MaybeTyped::The(_, _) => unimplemented!("already synth'ed"),
             MaybeTyped::Plain(b) => {
-                let tgt_out = check(ctx, r, &self.target, &values::nat())?;
-                let (b_t_out, b_out) = synth(ctx, r, b)?;
+                let e = &self.target;
+                let tv = &values::nat();
+                let tgt_out = e.check(ctx, r, tv)?;
+                let inp = b;
+                let (b_t_out, b_out) = inp.synth(ctx, r)?;
                 let n_minus_one = fresh(ctx, &Symbol::new("n-1"));
-                let s_out = check(
-                    ctx,
-                    r,
-                    &self.step,
-                    &values::pi(
-                        n_minus_one.clone(),
-                        values::nat(),
-                        Closure::FirstOrder {
-                            env: ctx_to_env(ctx),
-                            var: n_minus_one,
-                            expr: b_t_out.clone(),
-                        },
-                    ),
-                )?;
+                let e = &self.step;
+                let tv = &values::pi(
+                    n_minus_one.clone(),
+                    values::nat(),
+                    Closure::FirstOrder {
+                        env: ctx_to_env(ctx),
+                        var: n_minus_one,
+                        expr: b_t_out.clone(),
+                    },
+                );
+                let s_out = e.check(ctx, r, tv)?;
                 Ok((
                     b_t_out.clone(),
                     cores::which_nat_desugared(tgt_out, b_t_out, b_out, s_out),

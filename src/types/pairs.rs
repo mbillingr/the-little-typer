@@ -6,7 +6,6 @@ use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::resugar::resugar_;
 use crate::symbol::Symbol;
-use crate::typechecker::{check, is_type};
 use crate::types::values::later;
 use crate::types::{cores, values};
 use std::any::Any;
@@ -97,24 +96,23 @@ impl CoreInterface for Pair<Core> {
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
         let x = fresh_binder(ctx, &self.1, &Symbol::new("x"));
-        let a_out = is_type(ctx, r, &self.0)?;
-        let d_out = is_type(
-            &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?,
-            r,
-            &self.1,
-        )?;
+        let inp = &self.0;
+        let a_out = inp.is_type(ctx, r)?;
+        let ctx = &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?;
+        let inp = &self.1;
+        let d_out = inp.is_type(ctx, r)?;
         Ok(cores::sigma(x, a_out, d_out))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
         let a = fresh(ctx, &Symbol::new("a"));
-        let a_out = check(ctx, r, &self.0, &values::universe())?;
-        let d_out = check(
-            &ctx.bind_free(a.clone(), val_in_ctx(ctx, &a_out))?,
-            r,
-            &self.1,
-            &values::universe(),
-        )?;
+        let e = &self.0;
+        let tv = &values::universe();
+        let a_out = e.check(ctx, r, tv)?;
+        let ctx = &ctx.bind_free(a.clone(), val_in_ctx(ctx, &a_out))?;
+        let e = &self.1;
+        let tv = &values::universe();
+        let d_out = e.check(ctx, r, tv)?;
         Ok((cores::universe(), cores::sigma(a, a_out, d_out)))
     }
 
@@ -139,13 +137,12 @@ impl CoreInterface for Cons<Core> {
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
         if let Some(sigma) = now(tv).as_any().downcast_ref::<Sigma<Value, Closure>>() {
-            let a_out = check(ctx, r, &self.0, &sigma.car_type)?;
-            let d_out = check(
-                ctx,
-                r,
-                &self.1,
-                &sigma.cdr_type.val_of(val_in_ctx(ctx, &a_out)),
-            )?;
+            let e = &self.0;
+            let tv = &sigma.car_type;
+            let a_out = e.check(ctx, r, tv)?;
+            let e = &self.1;
+            let tv = &sigma.cdr_type.val_of(val_in_ctx(ctx, &a_out));
+            let d_out = e.check(ctx, r, tv)?;
             Ok(cores::cons(a_out, d_out))
         } else {
             Err(Error::NotASigmaType(tv.read_back_type(ctx).unwrap()))

@@ -1,6 +1,5 @@
-use crate::basics::{ctx_to_env, Ctx};
+use crate::basics::{ctx_to_env, CoreInterface, Ctx};
 use crate::errors::Error;
-use crate::normalize::val_of;
 use crate::rep::rep;
 use crate::types::{cores::*, values};
 use lazy_static::lazy_static;
@@ -11,10 +10,9 @@ lazy_static! {
 
 #[test]
 fn the_nat_zero_evaluates_to_zero() {
-    assert_eq!(
-        val_of(&ctx_to_env(&CTX), &the(nat(), zero())),
-        values::zero()
-    );
+    let env = &ctx_to_env(&CTX);
+    let e = &the(nat(), zero());
+    assert_eq!(e.val_of(env), values::zero());
 }
 
 #[test]

@@ -1,10 +1,12 @@
-use crate::basics::{Core, Ctx, Renaming};
+use crate::basics::{Core, CoreInterface, Ctx, Renaming};
 use crate::errors::Result;
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
-use crate::typechecker::{check, convert, is_type, synth};
+use crate::typechecker::convert;
 
 pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
-    let (t_out, e_out) = synth(ctx, &Renaming::new(), e)?;
+    let r = &Renaming::new();
+    let inp = e;
+    let (t_out, e_out) = inp.synth(ctx, r)?;
     let tv = val_in_ctx(ctx, &t_out);
     let v = val_in_ctx(ctx, &e_out);
     let vx = read_back(ctx, &tv, &v);
@@ -13,10 +15,18 @@ pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
 }
 
 pub fn check_same(ctx: &Ctx, t: &Core, a: &Core, b: &Core) -> Result<()> {
-    let t_out = is_type(ctx, &Renaming::new(), t)?;
+    let r = &Renaming::new();
+    let inp = t;
+    let t_out = inp.is_type(ctx, r)?;
     let tv = val_in_ctx(ctx, &t_out);
-    let a_out = check(ctx, &Renaming::new(), a, &tv)?;
-    let b_out = check(ctx, &Renaming::new(), b, &tv)?;
+    let r = &Renaming::new();
+    let e = a;
+    let tv_argument = &tv;
+    let a_out = e.check(ctx, r, tv_argument)?;
+    let r = &Renaming::new();
+    let e = b;
+    let tv_argument = &tv;
+    let b_out = e.check(ctx, r, tv_argument)?;
     let av = val_in_ctx(ctx, &a_out);
     let bv = val_in_ctx(ctx, &b_out);
     convert(ctx, &tv, &av, &bv)

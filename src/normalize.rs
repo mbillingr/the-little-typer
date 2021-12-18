@@ -1,4 +1,4 @@
-use crate::basics::{ctx_to_env, Core, CoreInterface, Ctx, Env, The, Value, ValueInterface, N};
+use crate::basics::{ctx_to_env, Core, CoreInterface, Ctx, The, Value, ValueInterface, N};
 use crate::types::cores;
 use std::borrow::Cow;
 
@@ -7,10 +7,6 @@ pub fn now(v: &Value) -> Cow<Value> {
         None => Cow::Borrowed(v),
         Some(x) => Cow::Owned(x),
     }
-}
-
-pub fn val_of(env: &Env, e: &Core) -> Value {
-    e.val_of(env)
 }
 
 pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Core {
@@ -43,5 +39,6 @@ pub fn read_back_neutral(ctx: &Ctx, ne: &N) -> Core {
 }
 
 pub fn val_in_ctx(ctx: &Ctx, e: &Core) -> Value {
-    val_of(&ctx_to_env(ctx), e)
+    let env = &ctx_to_env(ctx);
+    e.val_of(env)
 }
