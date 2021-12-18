@@ -5,8 +5,8 @@ use crate::normalize::{read_back, read_back_type};
 use crate::symbol::Symbol;
 
 pub fn same_type(ctx: &Ctx, given: &Value, expected: &Value) -> Result<()> {
-    let given_e = read_back_type(ctx, given);
-    let expected_e = read_back_type(ctx, expected);
+    let given_e = read_back_type(ctx, given)?;
+    let expected_e = read_back_type(ctx, expected)?;
     if is_alpha_equiv(&given_e, &expected_e) {
         Ok(())
     } else {
@@ -15,12 +15,12 @@ pub fn same_type(ctx: &Ctx, given: &Value, expected: &Value) -> Result<()> {
 }
 
 pub fn convert(ctx: &Ctx, tv: &Value, av: &Value, bv: &Value) -> Result<()> {
-    let a = read_back(ctx, tv, av);
-    let b = read_back(ctx, tv, bv);
+    let a = read_back(ctx, tv, av)?;
+    let b = read_back(ctx, tv, bv)?;
     if is_alpha_equiv(&a, &b) {
         Ok(())
     } else {
-        Err(Error::NotTheSame(read_back_type(ctx, tv), a, b))
+        Err(Error::NotTheSame(read_back_type(ctx, tv)?, a, b))
     }
 }
 

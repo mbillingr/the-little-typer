@@ -25,7 +25,7 @@ impl ValueInterface for Universe {
     }
 
     fn read_back(&self, ctx: &Ctx, _tv: &Value, v: &Value) -> Result<Core> {
-        Ok(read_back_type(ctx, v))
+        Ok(read_back_type(ctx, v)?)
     }
 }
 

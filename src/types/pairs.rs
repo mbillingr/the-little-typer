@@ -166,7 +166,7 @@ impl ValueInterface for Sigma<Value, Closure> {
     }
 
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
-        let a_e = read_back_type(ctx, &self.car_type);
+        let a_e = read_back_type(ctx, &self.car_type)?;
         let x_hat = fresh(ctx, &self.arg_name);
         let ctx_hat = ctx.bind_free(x_hat.clone(), self.car_type.clone())?;
         Ok(cores::sigma(
@@ -177,15 +177,15 @@ impl ValueInterface for Sigma<Value, Closure> {
                 &self
                     .cdr_type
                     .val_of(values::neutral(self.car_type.clone(), N::Var(x_hat))),
-            ),
+            )?,
         ))
     }
 
     fn read_back(&self, ctx: &Ctx, _tv: &Value, pv: &Value) -> Result<Core> {
         let the_car = do_car(pv);
         Ok(cores::cons(
-            read_back(ctx, &self.car_type, &the_car),
-            read_back(ctx, &self.cdr_type.val_of(the_car), &do_cdr(pv)),
+            read_back(ctx, &self.car_type, &the_car)?,
+            read_back(ctx, &self.cdr_type.val_of(the_car), &do_cdr(pv))?,
         ))
     }
 

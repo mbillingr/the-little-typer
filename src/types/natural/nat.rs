@@ -55,7 +55,7 @@ impl ValueInterface for Nat {
         if v.as_any().downcast_ref::<Zero>().is_some() {
             Ok(cores::zero())
         } else if let Some(Add1(n)) = v.as_any().downcast_ref::<Add1<Value>>() {
-            Ok(cores::add1(read_back(ctx, tv, n)))
+            read_back(ctx, tv, n).map(cores::add1)
         } else {
             Err(Error::TypeMismatchVar(v.clone(), tv.clone()))
         }

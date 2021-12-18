@@ -191,7 +191,7 @@ impl ValueInterface for Pi<Value, Closure> {
     }
 
     fn read_back_type(&self, ctx: &Ctx) -> errors::Result<Core> {
-        let ae = read_back_type(ctx, &self.arg_type);
+        let ae = read_back_type(ctx, &self.arg_type)?;
         let x_hat = fresh(ctx, &self.arg_name);
 
         let ctx_hat = ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap();
@@ -201,7 +201,7 @@ impl ValueInterface for Pi<Value, Closure> {
                 self.arg_type.clone(),
                 N::Var(x_hat.clone()),
             )),
-        );
+        )?;
         Ok(Core::pi(x_hat, ae, r))
     }
 
@@ -212,17 +212,20 @@ impl ValueInterface for Pi<Value, Closure> {
         };
 
         let x_hat = fresh(ctx, y);
-        Ok(Core::lambda(
-            x_hat.clone(),
-            read_back(
-                &ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap(),
-                &self.res_type.val_of(neutral::neutral(
-                    self.arg_type.clone(),
-                    N::Var(x_hat.clone()),
-                )),
-                &functions::do_ap(f, neutral::neutral(self.arg_type.clone(), N::Var(x_hat))),
+
+        let body = read_back(
+            &ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap(),
+            &self.res_type.val_of(neutral::neutral(
+                self.arg_type.clone(),
+                N::Var(x_hat.clone()),
+            )),
+            &functions::do_ap(
+                f,
+                neutral::neutral(self.arg_type.clone(), N::Var(x_hat.clone())),
             ),
-        ))
+        )?;
+
+        Ok(Core::lambda(x_hat, body))
     }
 
     fn apply(
@@ -238,7 +241,7 @@ impl ValueInterface for Pi<Value, Closure> {
         let tv = &self.arg_type;
         let rand_out = e.check(ctx, r, tv)?;
         Ok((
-            read_back_type(_ctx, &self.res_type.val_of(val_in_ctx(_ctx, &rand_out))),
+            read_back_type(_ctx, &self.res_type.val_of(val_in_ctx(_ctx, &rand_out)))?,
             Core::app((*rator_out).clone(), rand_out),
         ))
     }

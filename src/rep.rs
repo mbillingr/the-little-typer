@@ -9,8 +9,8 @@ pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
     let (t_out, e_out) = inp.synth(ctx, r)?;
     let tv = val_in_ctx(ctx, &t_out);
     let v = val_in_ctx(ctx, &e_out);
-    let vx = read_back(ctx, &tv, &v);
-    let tx = read_back_type(ctx, &tv);
+    let vx = read_back(ctx, &tv, &v)?;
+    let tx = read_back_type(ctx, &tv)?;
     Ok(Core::the(tx, vx))
 }
 

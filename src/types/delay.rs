@@ -46,8 +46,8 @@ impl ValueInterface for Delay {
         unimplemented!()
     }
 
-    fn read_back_type(&self, _ctx: &Ctx) -> Result<Core> {
-        unimplemented!()
+    fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
+        self.now().unwrap().read_back_type(ctx)
     }
 
     fn read_back(&self, _ctx: &Ctx, _tv: &Value, _v: &Value) -> Result<Core> {

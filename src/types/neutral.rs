@@ -28,11 +28,11 @@ impl ValueInterface for Neutral {
             .as_any()
             .downcast_ref::<Universe>()
             .is_some());
-        Ok(read_back_neutral(ctx, &self.kind))
+        read_back_neutral(ctx, &self.kind)
     }
 
     fn read_back(&self, ctx: &Ctx, _tv: &Value, _v: &Value) -> Result<Core> {
-        Ok(read_back_neutral(ctx, &self.kind))
+        read_back_neutral(ctx, &self.kind)
     }
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {
