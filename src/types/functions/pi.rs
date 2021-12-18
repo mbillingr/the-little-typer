@@ -46,24 +46,28 @@ impl CoreInterface for Pi<Core, Core> {
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<Core> {
         let a_out = self.arg_type.is_type(ctx, r)?;
         let a_outv = val_in_ctx(ctx, &a_out);
-        let ctx = ctx.bind_free(ctx.fresh(&self.arg_name).clone(), a_outv)?;
-        let r = &r.extend(self.arg_name.clone(), ctx.fresh(&self.arg_name).clone());
-        let inp = &self.res_type;
-        let b_out = inp.is_type(&ctx, r)?;
-        Ok(Core::pi(ctx.fresh(&self.arg_name), a_out, b_out))
+        let b_out = self.res_type.is_type(
+            &ctx.bind_free(ctx.fresh(&self.arg_name), a_outv.clone())?,
+            &r.extend(
+                self.arg_name.clone(),
+                ctx.bind_free(ctx.fresh(&self.arg_name), a_outv.clone())?
+                    .fresh(&self.arg_name),
+            ),
+        )?;
+        Ok(Core::pi(
+            ctx.bind_free(ctx.fresh(&self.arg_name), a_outv)?
+                .fresh(&self.arg_name),
+            a_out,
+            b_out,
+        ))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
-        let x = &self.arg_name;
-        let x_hat = ctx.fresh(x);
-        let e = &self.arg_type;
-        let tv = &values::universe();
-        let a_out = e.check(ctx, r, tv)?;
-        let ctx = &ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?;
-        let r = &r.extend(self.arg_name.clone(), x_hat.clone());
-        let e = &self.res_type;
-        let tv = &values::universe();
-        let b_out = e.check(ctx, r, tv)?;
+        let x_hat = ctx.fresh(&self.arg_name);
+        let a_out = self.arg_type.check(ctx, r, &values::universe())?;
+        let ctx_hat = ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?;
+        let r_hat = r.extend(self.arg_name.clone(), x_hat.clone());
+        let b_out = self.res_type.check(&ctx_hat, &r_hat, &values::universe())?;
         Ok((cores::universe(), Core::pi(x_hat, a_out, b_out)))
     }
 
@@ -89,10 +93,8 @@ impl CoreInterface for Pi<Core, Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let term = &self.arg_type;
-        let arg = term.resugar();
-        let term = &self.res_type;
-        let res = term.resugar();
+        let arg = self.arg_type.resugar();
+        let res = self.res_type.resugar();
         if res.0.contains(&self.arg_name) {
             todo!()
         } else {
@@ -120,24 +122,22 @@ impl CoreInterface for PiStar {
             [] => unimplemented!(),
             [(x, a)] => {
                 let y = ctx.fresh(x);
-                let inp = a;
-                let a_out = inp.is_type(ctx, r)?;
+                let a_out = a.is_type(ctx, r)?;
                 let a_outv = val_in_ctx(ctx, &a_out);
-                let ctx = &ctx.bind_free(y.clone(), a_outv)?;
-                let r = &r.extend(x.clone(), y.clone());
-                let inp = &self.res_type;
-                let b_out = inp.is_type(ctx, r)?;
+                let b_out = self.res_type.is_type(
+                    &ctx.bind_free(y.clone(), a_outv)?,
+                    &r.extend(x.clone(), y.clone()),
+                )?;
                 Ok(cores::pi(y, a_out, b_out))
             }
             [(x, a), more @ ..] => {
                 let z = ctx.fresh(x);
-                let inp = a;
-                let a_out = inp.is_type(ctx, r)?;
+                let a_out = a.is_type(ctx, r)?;
                 let a_outv = val_in_ctx(ctx, &a_out);
-                let ctx = &ctx.bind_free(z.clone(), a_outv)?;
-                let r = &r.extend(x.clone(), z.clone());
-                let inp = &cores::pi_star(more.to_vec(), self.res_type.clone());
-                let b_out = inp.is_type(ctx, r)?;
+                let b_out = cores::pi_star(more.to_vec(), self.res_type.clone()).is_type(
+                    &ctx.bind_free(z.clone(), a_outv)?,
+                    &r.extend(x.clone(), z.clone()),
+                )?;
                 Ok(cores::pi(z, a_out, b_out))
             }
         }

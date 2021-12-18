@@ -28,27 +28,19 @@ impl CoreInterface for Fun {
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
         match &self.0[..] {
             [a, b] => {
-                let expr = b;
-                let x = &Symbol::new("x");
-                let x = ctx.fresh_binder(expr, x);
-                let inp = a;
-                let a_out = inp.is_type(ctx, r)?;
-                let ctx = &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?;
-                let inp = b;
-                let b_out = inp.is_type(ctx, r)?;
+                let x = ctx.fresh_binder(b, &Symbol::new("x"));
+                let a_out = a.is_type(ctx, r)?;
+                let b_out = b.is_type(&ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?, r)?;
                 Ok(Core::pi(x, a_out, b_out))
             }
             [a, b, cs @ ..] => {
-                let expr = &Core::app_star(b.clone(), cs.to_vec());
-                let x = &Symbol::new("x");
-                let x = ctx.fresh_binder(expr, x);
-                let inp = a;
-                let a_out = inp.is_type(ctx, r)?;
+                let x =
+                    ctx.fresh_binder(&Core::app_star(b.clone(), cs.to_vec()), &Symbol::new("x"));
+                let a_out = a.is_type(ctx, r)?;
                 let mut rest = vec![b.clone()];
                 rest.extend(cs.iter().cloned());
-                let ctx = &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?;
-                let inp = &cores::fun(rest);
-                let t_out = inp.is_type(ctx, r)?;
+                let t_out = cores::fun(rest)
+                    .is_type(&ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?, r)?;
                 Ok(Core::pi(x, a_out, t_out))
             }
             _ => panic!("invalid fun types {:?}", self.0),
@@ -58,31 +50,26 @@ impl CoreInterface for Fun {
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
         match &self.0[..] {
             [a, b] => {
-                let expr = b;
-                let x = &Symbol::new("x");
-                let z = ctx.fresh_binder(expr, x);
-                let e = a;
-                let tv = &values::universe();
-                let a_out = e.check(ctx, r, tv)?;
-                let ctx = &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?;
-                let e = b;
-                let tv = &values::universe();
-                let b_out = e.check(ctx, r, tv)?;
+                let z = ctx.fresh_binder(b, &Symbol::new("x"));
+                let a_out = a.check(ctx, r, &values::universe())?;
+                let b_out = b.check(
+                    &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
+                    r,
+                    &values::universe(),
+                )?;
                 Ok((cores::universe(), Core::pi(z, a_out, b_out)))
             }
             [a, b, cs @ ..] => {
-                let expr = &Core::app_star(b.clone(), cs.to_vec());
-                let x = &Symbol::new("x");
-                let z = ctx.fresh_binder(expr, x);
-                let e = a;
-                let tv = &values::universe();
-                let a_out = e.check(ctx, r, tv)?;
+                let z =
+                    ctx.fresh_binder(&Core::app_star(b.clone(), cs.to_vec()), &Symbol::new("x"));
+                let a_out = a.check(ctx, r, &values::universe())?;
                 let mut out_args = vec![b.clone()];
                 out_args.extend(cs.iter().cloned());
-                let ctx = &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?;
-                let e = &cores::fun(out_args);
-                let tv = &values::universe();
-                let t_out = e.check(ctx, r, tv)?;
+                let t_out = cores::fun(out_args).check(
+                    &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
+                    r,
+                    &values::universe(),
+                )?;
                 Ok((cores::universe(), Core::pi(z, a_out, t_out)))
             }
             _ => todo!(),

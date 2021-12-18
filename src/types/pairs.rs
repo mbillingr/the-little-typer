@@ -67,10 +67,8 @@ impl CoreInterface for Sigma<Core, Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let term = &self.car_type;
-        let a_t = term.resugar();
-        let term = &self.cdr_type;
-        let d_t = term.resugar();
+        let a_t = self.car_type.resugar();
+        let d_t = self.cdr_type.resugar();
         if d_t.0.contains(&self.arg_name) {
             todo!()
         } else {
@@ -94,28 +92,36 @@ impl CoreInterface for Pair<Core> {
     }
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
-        let expr = &self.1;
-        let x = &Symbol::new("x");
-        let x = ctx.fresh_binder(expr, x);
-        let inp = &self.0;
-        let a_out = inp.is_type(ctx, r)?;
-        let ctx = &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?;
-        let inp = &self.1;
-        let d_out = inp.is_type(ctx, r)?;
+        let x = ctx.fresh_binder(&self.1, &Symbol::new("x"));
+        let a_out = self.0.is_type(ctx, r)?;
+        let d_out = self
+            .1
+            .is_type(&ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?, r)?;
         Ok(cores::sigma(x, a_out, d_out))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
-        let x = &Symbol::new("a");
-        let a = ctx.fresh(x);
-        let e = &self.0;
-        let tv = &values::universe();
-        let a_out = e.check(ctx, r, tv)?;
-        let ctx = &ctx.bind_free(a.clone(), val_in_ctx(ctx, &a_out))?;
-        let e = &self.1;
-        let tv = &values::universe();
-        let d_out = e.check(ctx, r, tv)?;
-        Ok((cores::universe(), cores::sigma(a, a_out, d_out)))
+        let a_out = self.0.check(ctx, r, &values::universe())?;
+        let d_out = self.1.check(
+            &ctx.bind_free(
+                ctx.fresh(&Symbol::new("a")).clone(),
+                val_in_ctx(ctx, &a_out),
+            )?,
+            r,
+            &values::universe(),
+        )?;
+        Ok((
+            cores::universe(),
+            cores::sigma(
+                ctx.bind_free(
+                    ctx.fresh(&Symbol::new("a")).clone(),
+                    val_in_ctx(ctx, &a_out),
+                )?
+                .fresh(&Symbol::new("a")),
+                a_out,
+                d_out,
+            ),
+        ))
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
@@ -139,12 +145,10 @@ impl CoreInterface for Cons<Core> {
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
         if let Some(sigma) = now(tv).as_any().downcast_ref::<Sigma<Value, Closure>>() {
-            let e = &self.0;
-            let tv = &sigma.car_type;
-            let a_out = e.check(ctx, r, tv)?;
-            let e = &self.1;
-            let tv = &sigma.cdr_type.val_of(val_in_ctx(ctx, &a_out));
-            let d_out = e.check(ctx, r, tv)?;
+            let a_out = self.0.check(ctx, r, &sigma.car_type)?;
+            let d_out = self
+                .1
+                .check(ctx, r, &sigma.cdr_type.val_of(val_in_ctx(ctx, &a_out)))?;
             Ok(cores::cons(a_out, d_out))
         } else {
             Err(Error::NotASigmaType(tv.read_back_type(ctx).unwrap()))
@@ -152,10 +156,8 @@ impl CoreInterface for Cons<Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let term = &self.0;
-        let a = term.resugar();
-        let term = &self.1;
-        let d = term.resugar();
+        let a = self.0.resugar();
+        let d = self.1.resugar();
         (&a.0 | &d.0, cores::cons(a.1, d.1))
     }
 }

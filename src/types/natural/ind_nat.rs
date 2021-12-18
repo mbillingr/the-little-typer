@@ -51,7 +51,11 @@ impl CoreInterface for IndNat {
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
         let tgt_out = self.target.check(ctx, r, &values::nat())?;
-        let mot_out = self.motive.check(ctx, r, &values::pi("n", values::nat(), Closure::higher(|_| values::universe())))?;
+        let mot_out = self.motive.check(
+            ctx,
+            r,
+            &values::pi("n", values::nat(), Closure::higher(|_| values::universe())),
+        )?;
         let mot_val = val_in_ctx(ctx, &mot_out);
         let b_out = self.base.check(ctx, r, &do_ap(&mot_val, values::zero()))?;
         let tv = pi_type!(((n_minus_1, values::nat())), {

@@ -65,24 +65,22 @@ impl CoreInterface for WhichNat {
         match &self.base {
             MaybeTyped::The(_, _) => unimplemented!("already synth'ed"),
             MaybeTyped::Plain(b) => {
-                let e = &self.target;
-                let tv = &values::nat();
-                let tgt_out = e.check(ctx, r, tv)?;
-                let inp = b;
-                let (b_t_out, b_out) = inp.synth(ctx, r)?;
-                let x = &Symbol::new("n-1");
-                let n_minus_one = ctx.fresh(x);
-                let e = &self.step;
-                let tv = &values::pi(
-                    n_minus_one.clone(),
-                    values::nat(),
-                    Closure::FirstOrder {
-                        env: ctx.to_env(),
-                        var: n_minus_one,
-                        expr: b_t_out.clone(),
-                    },
-                );
-                let s_out = e.check(ctx, r, tv)?;
+                let tgt_out = self.target.check(ctx, r, &values::nat())?;
+                let (b_t_out, b_out) = b.synth(ctx, r)?;
+                let n_minus_one = ctx.fresh(&Symbol::new("n-1"));
+                let s_out = self.step.check(
+                    ctx,
+                    r,
+                    &values::pi(
+                        n_minus_one.clone(),
+                        values::nat(),
+                        Closure::FirstOrder {
+                            env: ctx.to_env(),
+                            var: n_minus_one,
+                            expr: b_t_out.clone(),
+                        },
+                    ),
+                )?;
                 Ok((
                     b_t_out.clone(),
                     cores::which_nat_desugared(tgt_out, b_t_out, b_out, s_out),
@@ -92,11 +90,9 @@ impl CoreInterface for WhichNat {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let term = &self.target;
-        let tgt = term.resugar();
+        let tgt = self.target.resugar();
         let bas = self.base.resugar();
-        let term = &self.step;
-        let stp = term.resugar();
+        let stp = self.step.resugar();
         (
             &tgt.0 | &(&bas.0 | &stp.0),
             Core::new(WhichNat {

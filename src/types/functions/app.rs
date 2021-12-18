@@ -51,10 +51,8 @@ impl CoreInterface for App {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let term = &self.fun;
-        let f = term.resugar();
-        let term = &self.arg;
-        let a = term.resugar();
+        let f = self.fun.resugar();
+        let a = self.arg.resugar();
         (&f.0 | &a.0, cores::app(f.1, a.1))
     }
 }

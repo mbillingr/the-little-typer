@@ -54,18 +54,16 @@ impl CoreInterface for Lambda<Core> {
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> errors::Result<Core> {
         if let Some(pi) = now(tv).as_any().downcast_ref::<Pi<Value, Closure>>() {
-            let x = &self.arg_name;
-            let x_hat = ctx.fresh(x);
-            let ctx = &ctx.bind_free(x_hat.clone(), pi.arg_type.clone())?;
-            let r = &r.extend(self.arg_name.clone(), x_hat.clone());
-            let e = &self.body;
-            let tv = &pi
-                .res_type
-                .val_of(values::neutral(pi.arg_type.clone(), N::Var(x_hat.clone())));
-            let b_out = e.check(ctx, r, tv)?;
+            let x_hat = ctx.fresh(&self.arg_name);
+            let b_out = self.body.check(
+                &ctx.bind_free(x_hat.clone(), pi.arg_type.clone())?,
+                &r.extend(self.arg_name.clone(), x_hat.clone()),
+                &pi.res_type
+                    .val_of(values::neutral(pi.arg_type.clone(), N::Var(x_hat.clone()))),
+            )?;
             Ok(Core::lambda(x_hat, b_out))
         } else {
-            Err(Error::NotAFunctionType(tv.read_back_type(ctx).unwrap()))
+            Err(Error::NotAFunctionType(tv.read_back_type(ctx)?))
         }
     }
 
@@ -90,8 +88,7 @@ impl CoreInterface for Lambda<Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let term = &self.body;
-        let (mut names, r) = term.resugar();
+        let (mut names, r) = self.body.resugar();
         names.remove(&self.arg_name);
         (names, resugar::add_lambda(self.arg_name.clone(), r))
     }
