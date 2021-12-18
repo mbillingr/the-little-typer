@@ -5,7 +5,6 @@ use crate::normalize::read_back_type;
 use crate::symbol::Symbol;
 use crate::types::{cores, values};
 use maplit::hashset;
-use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::Formatter;
 

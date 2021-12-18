@@ -1,4 +1,3 @@
-use crate::alpha;
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::{val_in_ctx, val_of};
@@ -6,7 +5,6 @@ use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::typechecker::{check, is_type};
 use crate::types::{cores, values};
-use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::Formatter;
 

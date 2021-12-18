@@ -2,6 +2,7 @@ use crate::basics::{
     ctx_to_env, fresh, Closure, Core, CoreInterface, Ctx, Env, Renaming, The, Value,
     ValueInterface, N,
 };
+use crate::errors;
 use crate::errors::Error;
 use crate::normalize::now;
 use crate::resugar::resugar_;
@@ -12,8 +13,6 @@ use crate::types::natural::{Add1, MaybeTyped, Zero};
 use crate::types::neutral::Neutral;
 use crate::types::values::later;
 use crate::types::{cores, values};
-use crate::{alpha, errors};
-use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::Formatter;
 

@@ -1,4 +1,5 @@
 use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::errors;
 use crate::errors::Error;
 use crate::normalize::{now, val_in_ctx};
 use crate::resugar::resugar_;
@@ -8,8 +9,6 @@ use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, Zero};
 use crate::types::values::later;
 use crate::types::{cores, values};
-use crate::{alpha, errors};
-use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::Formatter;
 

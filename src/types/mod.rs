@@ -8,7 +8,7 @@ macro_rules! pi_type {
 
 macro_rules! impl_core_defaults {
     ($fields:tt, as_any) => {
-        fn as_any(&self) -> &dyn Any {
+        fn as_any(&self) -> &dyn std::any::Any {
             self
         }
     };
@@ -79,8 +79,8 @@ macro_rules! impl_core_defaults {
         fn alpha_equiv_aux(&self,
                            other: &dyn CoreInterface,
                            lvl: usize,
-                           b1: &alpha::Bindings,
-                           b2: &alpha::Bindings)
+                           b1: &crate::alpha::Bindings,
+                           b2: &crate::alpha::Bindings)
                         -> bool {
             if let Some(other) = other.as_any().downcast_ref::<Self>() {
                 let eq = true;
