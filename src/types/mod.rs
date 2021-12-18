@@ -68,8 +68,8 @@ macro_rules! impl_core_defaults {
         fn alpha_equiv_aux(&self,
                            other: &dyn CoreInterface,
                            _lvl: usize,
-                           _b1: &alpha::Bindings,
-                           _b2: &alpha::Bindings)
+                           _b1: &crate::alpha::Bindings,
+                           _b2: &crate::alpha::Bindings)
                         -> bool {
             CoreInterface::same(self, other)
         }
@@ -89,6 +89,17 @@ macro_rules! impl_core_defaults {
             } else {
                 false
             }
+        }
+    };
+
+    ($_:tt, no_alpha_equiv) => {
+        fn alpha_equiv_aux(&self,
+                           _other: &dyn CoreInterface,
+                           _lvl: usize,
+                           _b1: &crate::alpha::Bindings,
+                           _b2: &crate::alpha::Bindings)
+                        -> bool {
+            unimplemented!()
         }
     };
 

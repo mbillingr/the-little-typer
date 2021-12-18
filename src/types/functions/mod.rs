@@ -1,4 +1,5 @@
 mod app;
+mod fun;
 mod lambda;
 mod pi;
 
@@ -8,6 +9,7 @@ use crate::types::neutral::Neutral;
 use crate::types::values::neutral;
 
 pub use app::App;
+pub use fun::Fun;
 pub use lambda::Lambda;
 pub use pi::Pi;
 

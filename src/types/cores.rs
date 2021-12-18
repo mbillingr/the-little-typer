@@ -2,7 +2,7 @@ use crate::basics::Core;
 use crate::symbol::Symbol;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
-use crate::types::functions::{App, Lambda, Pi};
+use crate::types::functions::{App, Fun, Lambda, Pi};
 use crate::types::natural::{Add1, IndNat, Nat, WhichNat, Zero};
 use crate::types::pairs::{Cons, Pair, Sigma};
 use crate::types::reference::Ref;
@@ -46,6 +46,10 @@ pub fn atom() -> Core {
 
 pub fn quote(s: impl Into<Symbol>) -> Core {
     Core::new(Quote(s.into()))
+}
+
+pub fn fun(ts: Vec<Core>) -> Core {
+    Core::new(Fun(ts))
 }
 
 pub fn pi(x: impl Into<Symbol>, arg_type: Core, res_type: Core) -> Core {

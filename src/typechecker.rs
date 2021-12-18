@@ -1,35 +1,14 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{fresh, fresh_binder, Core, Ctx, Renaming, Value, ValueInterface};
+use crate::basics::{fresh, Core, Ctx, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
-use crate::symbol::{Symbol as S, Symbol};
+use crate::symbol::Symbol;
 use crate::types::cores;
 
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use crate::types::values;
     use Core::*;
     match inp {
-        Fun(params) => match &params[..] {
-            [a, b] => {
-                let x = fresh_binder(ctx, b, &S::new("x"));
-                let a_out = is_type(ctx, r, a)?;
-                let b_out = is_type(&ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?, r, b)?;
-                Ok(Core::pi(x, a_out, b_out))
-            }
-            [a, b, cs @ ..] => {
-                let x = fresh_binder(ctx, &make_app(b, cs), &S::new("x"));
-                let a_out = is_type(ctx, r, a)?;
-                let mut rest = vec![b.clone()];
-                rest.extend(cs.iter().cloned());
-                let t_out = is_type(
-                    &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?,
-                    r,
-                    &Core::Fun(rest),
-                )?;
-                Ok(Core::pi(x, a_out, t_out))
-            }
-            _ => panic!("invalid fun types {:?}", params),
-        },
         PiStar(bindings, b) => match &bindings[..] {
             [] => unimplemented!(),
             [(x, a)] => {
@@ -68,36 +47,8 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
 }
 
 pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
-    use crate::types::values;
     use Core::*;
     match inp {
-        Fun(types) => match &types[..] {
-            [a, b] => {
-                let z = fresh_binder(ctx, b, &S::new("x"));
-                let a_out = check(ctx, r, a, &values::universe())?;
-                let b_out = check(
-                    &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
-                    r,
-                    b,
-                    &values::universe(),
-                )?;
-                Ok((cores::universe(), Core::pi(z, a_out, b_out)))
-            }
-            [a, b, cs @ ..] => {
-                let z = fresh_binder(ctx, &make_app(b, cs), &S::new("x"));
-                let a_out = check(ctx, r, a, &values::universe())?;
-                let mut out_args = vec![b.clone()];
-                out_args.extend(cs.iter().cloned());
-                let t_out = check(
-                    &ctx.bind_free(z.clone(), val_in_ctx(ctx, &a_out))?,
-                    r,
-                    &Core::Fun(out_args),
-                    &values::universe(),
-                )?;
-                Ok((cores::universe(), Core::pi(z, a_out, t_out)))
-            }
-            _ => todo!(),
-        },
         PiStar(_, _) => todo!(),
         AppStar(rator, args) => match &args[..] {
             [] => panic!("nullary application {}", rator),
@@ -127,7 +78,7 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             ),
         },
 
-        Core::Fun(_) | Core::PiStar(_, _) | Core::AppStar(_, _) => {
+        Core::PiStar(_, _) | Core::AppStar(_, _) => {
             let (t_out, e_out) = synth(ctx, r, e)?;
             same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
             Ok(e_out)
@@ -159,10 +110,6 @@ pub fn convert(ctx: &Ctx, tv: &Value, av: &Value, bv: &Value) -> Result<()> {
 
 pub fn atom_is_ok(_: &Symbol) -> bool {
     true
-}
-
-fn make_app(a: &Core, cs: &[Core]) -> Core {
-    Core::app_star(a.clone(), cs)
 }
 
 #[cfg(test)]

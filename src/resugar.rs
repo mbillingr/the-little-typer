@@ -1,6 +1,7 @@
 use crate::basics::{Core, R};
 use crate::symbol::Symbol;
-use crate::types::functions::Lambda;
+use crate::types::cores;
+use crate::types::functions::{Fun, Lambda};
 use std::collections::HashSet;
 use std::sync::Arc;
 
@@ -52,11 +53,12 @@ pub fn add_lambda(x: Symbol, term: Core) -> Core {
 }
 
 pub fn add_fun(arg_type: Core, term: Core) -> Core {
-    match term {
-        Core::Fun(mut types) => {
-            types.insert(0, arg_type);
-            Core::Fun(types)
-        }
-        _ => Core::fun(vec![arg_type], term),
+    if let Some(Fun(ts)) = term.try_as::<Fun>() {
+        let mut types = Vec::with_capacity(ts.len() + 1);
+        types.push(arg_type);
+        types.extend(ts.iter().cloned());
+        cores::fun(types)
+    } else {
+        Core::fun(vec![arg_type], term)
     }
 }

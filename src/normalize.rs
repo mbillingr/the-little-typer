@@ -11,7 +11,6 @@ pub fn now(v: &Value) -> Cow<Value> {
 
 pub fn val_of(env: &Env, e: &Core) -> Value {
     match e {
-        Core::Fun(_) => panic!("Attempt to evaluate -> (should have been converted to Pi)"),
         Core::PiStar(_, _) => panic!("Attempt to evaluate Pi* (should have been converted to Pi)"),
         Core::LambdaStar(_, _) => panic!("Attempt to evaluate sugared lambda"),
         Core::AppStar(_, _) => panic!("Attempt to evaluate n-ary application (should have been converted to sequence of unary applications)"),

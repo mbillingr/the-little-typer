@@ -5,7 +5,6 @@ use crate::normalize::val_of;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
 use crate::types::{cores, values};
-use maplit::hashset;
 use sexpr_parser::parse;
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
@@ -40,7 +39,6 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
 #[derive(Debug, Clone)]
 pub enum Core {
-    Fun(Vec<Core>),
     PiStar(Vec<(Symbol, Core)>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
     AppStar(R<Core>, Vec<Core>),
@@ -51,7 +49,6 @@ impl PartialEq for Core {
     fn eq(&self, other: &Self) -> bool {
         use Core::*;
         match (self, other) {
-            (Fun(a), Fun(b)) => a == b,
             (PiStar(a, r1), PiStar(b, r2)) => a == b && r1 == r2,
             (LambdaStar(a, r1), LambdaStar(b, r2)) => a == b && r1 == r2,
             (AppStar(f1, a1), AppStar(f2, a2)) => f1 == f2 && a1 == a2,
@@ -66,6 +63,17 @@ impl Core {
         Core::Object(R::new(obj))
     }
 
+    pub fn try_as<T: 'static>(&self) -> Option<&T> {
+        self.as_any().downcast_ref::<T>()
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        match self {
+            Core::Object(obj) => obj.as_any(),
+            _ => unimplemented!(),
+        }
+    }
+
     pub fn the(t: Core, e: Core) -> Self {
         cores::the(t, e)
     }
@@ -74,7 +82,7 @@ impl Core {
         assert!(arg_types.len() > 0);
         let mut types = arg_types;
         types.push(ret_type);
-        Core::Fun(types)
+        cores::fun(types)
     }
 
     pub fn pi_star(params: Vec<(Symbol, Core)>, rt: impl Into<R<Core>>) -> Self {
@@ -147,13 +155,6 @@ impl Display for Core {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         use Core::*;
         match self {
-            Fun(ts) => {
-                write!(f, "(->")?;
-                for t in &**ts {
-                    write!(f, " {}", t)?;
-                }
-                write!(f, ")")
-            }
             PiStar(bindings, rt) => {
                 let b: Vec<_> = bindings
                     .iter()
@@ -538,13 +539,6 @@ pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
 pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
     use Core::*;
     match expr {
-        Fun(types) => {
-            let mut names = hashset! {};
-            for t in types {
-                names = &names | &occurring_names(t)
-            }
-            names
-        }
         PiStar(bindings, t) => bindings
             .iter()
             .map(|(x, t)| occurring_binder_names(x, t))
