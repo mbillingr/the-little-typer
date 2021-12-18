@@ -380,6 +380,14 @@ impl Ctx {
         Ctx(R::new(CtxImpl::Nil))
     }
 
+    pub fn fresh(&self, x: &Symbol) -> Symbol {
+        freshen(&self.names_only(), x)
+    }
+
+    pub fn fresh_binder(&self, expr: &Core, x: &Symbol) -> Symbol {
+        freshen(&(&self.names_only() | &expr.occurring_names()), x)
+    }
+
     pub fn bind_free(&self, x: Symbol, tv: Value) -> Result<Self> {
         if self.0.assv(&x).is_some() {
             Err(Error::AlreadyBound(x.clone(), self.clone()))
@@ -409,6 +417,26 @@ impl Ctx {
             CtxImpl::Entry(_, Binder::Claim(_), next) => next.var_type(x),
             CtxImpl::Entry(y, b, _) if x == y => Ok(b.get_type()),
             CtxImpl::Entry(_, _, next) => next.var_type(x),
+        }
+    }
+
+    pub fn to_env(&self) -> Env {
+        match &*self.0 {
+            CtxImpl::Nil => Env::new(),
+            CtxImpl::Entry(x, Binder::Def(_, v), next) => {
+                let ctx = next;
+                let mut env = ctx.to_env();
+                env.0.insert(x.clone(), v.clone());
+                env
+            }
+            CtxImpl::Entry(x, Binder::Free(tv), next) => {
+                let ctx = next;
+                let mut env = ctx.to_env();
+                env.0
+                    .insert(x.clone(), values::neutral(tv.clone(), N::Var(x.clone())));
+                env
+            }
+            CtxImpl::Entry(_, Binder::Claim(_), next) => next.to_env(),
         }
     }
 }
@@ -483,42 +511,6 @@ impl Renaming {
             Some(y) => y.clone(),
         }
     }
-}
-
-pub fn ctx_to_env(ctx: &Ctx) -> Env {
-    match &*ctx.0 {
-        CtxImpl::Nil => Env::new(),
-        CtxImpl::Entry(x, Binder::Def(_, v), next) => {
-            let mut env = ctx_to_env(next);
-            env.0.insert(x.clone(), v.clone());
-            env
-        }
-        CtxImpl::Entry(x, Binder::Free(tv), next) => {
-            let mut env = ctx_to_env(next);
-            env.0
-                .insert(x.clone(), values::neutral(tv.clone(), N::Var(x.clone())));
-            env
-        }
-        CtxImpl::Entry(_, Binder::Claim(_), next) => ctx_to_env(next),
-    }
-}
-
-pub fn fresh(ctx: &Ctx, x: &Symbol) -> Symbol {
-    freshen(&ctx.names_only(), x)
-}
-
-pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
-    freshen(&(&ctx.names_only() | &occurring_names(expr)), x)
-}
-
-pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
-    expr.occurring_names()
-}
-
-pub fn occurring_binder_names(name: &Symbol, t: &Core) -> HashSet<Symbol> {
-    let mut names = occurring_names(t);
-    names.insert(name.clone());
-    names
 }
 
 pub fn is_var_name(x: &str) -> bool {

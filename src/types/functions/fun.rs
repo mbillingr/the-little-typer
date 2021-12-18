@@ -1,4 +1,4 @@
-use crate::basics::{fresh_binder, Core, CoreInterface, Ctx, Env, Renaming, Value};
+use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value};
 use crate::errors::Result;
 use crate::normalize::val_in_ctx;
 use crate::symbol::Symbol;
@@ -28,7 +28,9 @@ impl CoreInterface for Fun {
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
         match &self.0[..] {
             [a, b] => {
-                let x = fresh_binder(ctx, b, &Symbol::new("x"));
+                let expr = b;
+                let x = &Symbol::new("x");
+                let x = ctx.fresh_binder(expr, x);
                 let inp = a;
                 let a_out = inp.is_type(ctx, r)?;
                 let ctx = &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?;
@@ -37,11 +39,9 @@ impl CoreInterface for Fun {
                 Ok(Core::pi(x, a_out, b_out))
             }
             [a, b, cs @ ..] => {
-                let x = fresh_binder(
-                    ctx,
-                    &Core::app_star(b.clone(), cs.to_vec()),
-                    &Symbol::new("x"),
-                );
+                let expr = &Core::app_star(b.clone(), cs.to_vec());
+                let x = &Symbol::new("x");
+                let x = ctx.fresh_binder(expr, x);
                 let inp = a;
                 let a_out = inp.is_type(ctx, r)?;
                 let mut rest = vec![b.clone()];
@@ -58,7 +58,9 @@ impl CoreInterface for Fun {
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
         match &self.0[..] {
             [a, b] => {
-                let z = fresh_binder(ctx, b, &Symbol::new("x"));
+                let expr = b;
+                let x = &Symbol::new("x");
+                let z = ctx.fresh_binder(expr, x);
                 let e = a;
                 let tv = &values::universe();
                 let a_out = e.check(ctx, r, tv)?;
@@ -69,11 +71,9 @@ impl CoreInterface for Fun {
                 Ok((cores::universe(), Core::pi(z, a_out, b_out)))
             }
             [a, b, cs @ ..] => {
-                let z = fresh_binder(
-                    ctx,
-                    &Core::app_star(b.clone(), cs.to_vec()),
-                    &Symbol::new("x"),
-                );
+                let expr = &Core::app_star(b.clone(), cs.to_vec());
+                let x = &Symbol::new("x");
+                let z = ctx.fresh_binder(expr, x);
                 let e = a;
                 let tv = &values::universe();
                 let a_out = e.check(ctx, r, tv)?;

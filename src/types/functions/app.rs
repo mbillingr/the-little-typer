@@ -1,10 +1,10 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::errors;
 use crate::errors::Error;
 use crate::normalize::val_in_ctx;
 use crate::symbol::Symbol;
 use crate::types::values::later;
 use crate::types::{cores, functions, values};
-use crate::{errors, resugar};
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 
@@ -51,8 +51,10 @@ impl CoreInterface for App {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let f = resugar::resugar_(&self.fun);
-        let a = resugar::resugar_(&self.arg);
+        let term = &self.fun;
+        let f = term.resugar();
+        let term = &self.arg;
+        let a = term.resugar();
         (&f.0 | &a.0, cores::app(f.1, a.1))
     }
 }

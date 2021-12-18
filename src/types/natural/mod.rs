@@ -5,8 +5,7 @@ mod which_nat;
 mod zero;
 
 use crate::alpha;
-use crate::basics::{occurring_names, Core};
-use crate::resugar::resugar_;
+use crate::basics::{Core, CoreInterface};
 use crate::symbol::Symbol;
 pub use add1::Add1;
 pub use ind_nat::IndNat;
@@ -24,8 +23,8 @@ enum MaybeTyped {
 impl MaybeTyped {
     pub fn occurring_names(&self) -> HashSet<Symbol> {
         match self {
-            MaybeTyped::Plain(b) => occurring_names(b),
-            MaybeTyped::The(bt, b) => &occurring_names(bt) | &occurring_names(b),
+            MaybeTyped::Plain(b) => b.occurring_names(),
+            MaybeTyped::The(bt, b) => &bt.occurring_names() | &b.occurring_names(),
         }
     }
 
@@ -51,12 +50,15 @@ impl MaybeTyped {
     fn resugar(&self) -> (HashSet<Symbol>, Self) {
         match self {
             MaybeTyped::Plain(b) => {
-                let b = resugar_(b);
+                let term = b;
+                let b = term.resugar();
                 (b.0, MaybeTyped::Plain(b.1))
             }
             MaybeTyped::The(bt, b) => {
-                let bt = resugar_(bt);
-                let b = resugar_(b);
+                let term = bt;
+                let bt = term.resugar();
+                let term = b;
+                let b = term.resugar();
                 (&bt.0 | &b.0, MaybeTyped::The(bt.1, b.1))
             }
         }

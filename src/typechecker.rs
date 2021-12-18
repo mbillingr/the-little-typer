@@ -2,7 +2,6 @@ use crate::alpha::is_alpha_equiv;
 use crate::basics::{Ctx, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, read_back_type};
-use crate::symbol::Symbol;
 
 pub fn same_type(ctx: &Ctx, given: &Value, expected: &Value) -> Result<()> {
     let given_e = read_back_type(ctx, given)?;
@@ -24,14 +23,11 @@ pub fn convert(ctx: &Ctx, tv: &Value, av: &Value, bv: &Value) -> Result<()> {
     }
 }
 
-pub fn atom_is_ok(_: &Symbol) -> bool {
-    true
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::basics::{Core, CoreInterface, Renaming};
+    use crate::symbol::Symbol;
     use crate::types::{cores, values};
 
     #[test]

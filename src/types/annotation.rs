@@ -1,7 +1,6 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::val_in_ctx;
-use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::types::{cores, values};
 use std::collections::HashSet;
@@ -45,8 +44,10 @@ impl CoreInterface for The {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let t = resugar_(&self.typ);
-        let e = resugar_(&self.exp);
+        let term = &self.typ;
+        let t = term.resugar();
+        let term = &self.exp;
+        let e = term.resugar();
         (&t.0 | &e.0, cores::the(t.1, e.1))
     }
 }

@@ -1,11 +1,9 @@
 use crate::basics::{
-    ctx_to_env, fresh, Closure, Core, CoreInterface, Ctx, Env, Renaming, The, Value,
-    ValueInterface, N,
+    Closure, Core, CoreInterface, Ctx, Env, Renaming, The, Value, ValueInterface, N,
 };
 use crate::errors;
 use crate::errors::Error;
 use crate::normalize::now;
-use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, MaybeTyped, Zero};
@@ -72,13 +70,14 @@ impl CoreInterface for WhichNat {
                 let tgt_out = e.check(ctx, r, tv)?;
                 let inp = b;
                 let (b_t_out, b_out) = inp.synth(ctx, r)?;
-                let n_minus_one = fresh(ctx, &Symbol::new("n-1"));
+                let x = &Symbol::new("n-1");
+                let n_minus_one = ctx.fresh(x);
                 let e = &self.step;
                 let tv = &values::pi(
                     n_minus_one.clone(),
                     values::nat(),
                     Closure::FirstOrder {
-                        env: ctx_to_env(ctx),
+                        env: ctx.to_env(),
                         var: n_minus_one,
                         expr: b_t_out.clone(),
                     },
@@ -93,9 +92,11 @@ impl CoreInterface for WhichNat {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let tgt = resugar_(&self.target);
+        let term = &self.target;
+        let tgt = term.resugar();
         let bas = self.base.resugar();
-        let stp = resugar_(&self.step);
+        let term = &self.step;
+        let stp = term.resugar();
         (
             &tgt.0 | &(&bas.0 | &stp.0),
             Core::new(WhichNat {

@@ -2,7 +2,6 @@ use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, Val
 use crate::errors;
 use crate::errors::Error;
 use crate::normalize::{now, val_in_ctx};
-use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, Zero};
@@ -51,25 +50,18 @@ impl CoreInterface for IndNat {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
-        let e = &self.target;
-        let tv = &values::nat();
-        let tgt_out = e.check(ctx, r, tv)?;
-        let e = &self.motive;
-        let tv = &values::pi("n", values::nat(), Closure::higher(|_| values::universe()));
-        let mot_out = e.check(ctx, r, tv)?;
+        let tgt_out = self.target.check(ctx, r, &values::nat())?;
+        let mot_out = self.motive.check(ctx, r, &values::pi("n", values::nat(), Closure::higher(|_| values::universe())))?;
         let mot_val = val_in_ctx(ctx, &mot_out);
-        let e = &self.base;
-        let tv = &do_ap(&mot_val, values::zero());
-        let b_out = e.check(ctx, r, tv)?;
-        let e = &self.step;
-        let tv = &pi_type!(((n_minus_1, values::nat())), {
+        let b_out = self.base.check(ctx, r, &do_ap(&mot_val, values::zero()))?;
+        let tv = pi_type!(((n_minus_1, values::nat())), {
             let mot_val = mot_val.clone();
             pi_type!(
                 ((_ih, do_ap(&mot_val, n_minus_1.clone()))),
                 do_ap(&mot_val, values::add1(n_minus_1.clone()))
             )
         });
-        let s_out = e.check(ctx, r, tv)?;
+        let s_out = self.step.check(ctx, r, &tv)?;
         Ok((
             cores::app(mot_out.clone(), tgt_out.clone()),
             cores::ind_nat(tgt_out, mot_out, b_out, s_out),
@@ -77,10 +69,10 @@ impl CoreInterface for IndNat {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let tgt = resugar_(&self.target);
-        let mot = resugar_(&self.motive);
-        let bse = resugar_(&self.base);
-        let stp = resugar_(&self.step);
+        let tgt = self.target.resugar();
+        let mot = self.motive.resugar();
+        let bse = self.base.resugar();
+        let stp = self.step.resugar();
 
         (
             &(&tgt.0 | &mot.0) | &(&bse.0 | &stp.0),

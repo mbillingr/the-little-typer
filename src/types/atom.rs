@@ -2,7 +2,6 @@ use crate::alpha;
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::symbol::Symbol;
-use crate::typechecker::atom_is_ok;
 use crate::types::values::quote;
 use crate::types::{cores, values};
 use std::any::Any;
@@ -125,4 +124,8 @@ impl std::fmt::Display for Quote {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "'{}", self.0.name())
     }
+}
+
+pub fn atom_is_ok(_: &Symbol) -> bool {
+    true
 }

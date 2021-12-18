@@ -1,10 +1,6 @@
 use crate::alpha::alpha_equiv_aux;
-use crate::basics::{
-    fresh, occurring_binder_names, occurring_names, Closure, Core, CoreInterface, Ctx, Env,
-    Renaming, Value, ValueInterface, N,
-};
+use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface, N};
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
-use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::types::functions::lambda::Lambda;
 use crate::types::values::later;
@@ -31,7 +27,7 @@ impl CoreInterface for Pi<Core, Core> {
     impl_core_defaults!((fun, arg), as_any, same, check_by_synth);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
-        &occurring_binder_names(&self.arg_name, &self.arg_type) | &occurring_names(&self.res_type)
+        &occurring_binder_names(&self.arg_name, &self.arg_type) | &self.res_type.occurring_names()
     }
 
     fn val_of(&self, env: &Env) -> Value {
@@ -48,19 +44,18 @@ impl CoreInterface for Pi<Core, Core> {
     }
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<Core> {
-        let y = fresh(ctx, &self.arg_name);
-        let inp = &self.arg_type;
-        let a_out = inp.is_type(ctx, r)?;
+        let a_out = self.arg_type.is_type(ctx, r)?;
         let a_outv = val_in_ctx(ctx, &a_out);
-        let ctx = &ctx.bind_free(y.clone(), a_outv)?;
-        let r = &r.extend(self.arg_name.clone(), y.clone());
+        let ctx = ctx.bind_free(ctx.fresh(&self.arg_name).clone(), a_outv)?;
+        let r = &r.extend(self.arg_name.clone(), ctx.fresh(&self.arg_name).clone());
         let inp = &self.res_type;
-        let b_out = inp.is_type(ctx, r)?;
-        Ok(Core::pi(y, a_out, b_out))
+        let b_out = inp.is_type(&ctx, r)?;
+        Ok(Core::pi(ctx.fresh(&self.arg_name), a_out, b_out))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
-        let x_hat = fresh(ctx, &self.arg_name);
+        let x = &self.arg_name;
+        let x_hat = ctx.fresh(x);
         let e = &self.arg_type;
         let tv = &values::universe();
         let a_out = e.check(ctx, r, tv)?;
@@ -94,8 +89,10 @@ impl CoreInterface for Pi<Core, Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let arg = resugar::resugar_(&self.arg_type);
-        let res = resugar::resugar_(&self.res_type);
+        let term = &self.arg_type;
+        let arg = term.resugar();
+        let term = &self.res_type;
+        let res = term.resugar();
         if res.0.contains(&self.arg_name) {
             todo!()
         } else {
@@ -111,7 +108,7 @@ impl CoreInterface for PiStar {
         self.binders
             .iter()
             .map(|(x, t)| occurring_binder_names(x, t))
-            .fold(occurring_names(&self.res_type), |a, b| &a | &b)
+            .fold(self.res_type.occurring_names(), |a, b| &a | &b)
     }
 
     fn val_of(&self, _env: &Env) -> Value {
@@ -122,7 +119,7 @@ impl CoreInterface for PiStar {
         match &self.binders[..] {
             [] => unimplemented!(),
             [(x, a)] => {
-                let y = fresh(ctx, x);
+                let y = ctx.fresh(x);
                 let inp = a;
                 let a_out = inp.is_type(ctx, r)?;
                 let a_outv = val_in_ctx(ctx, &a_out);
@@ -133,7 +130,7 @@ impl CoreInterface for PiStar {
                 Ok(cores::pi(y, a_out, b_out))
             }
             [(x, a), more @ ..] => {
-                let z = fresh(ctx, x);
+                let z = ctx.fresh(x);
                 let inp = a;
                 let a_out = inp.is_type(ctx, r)?;
                 let a_outv = val_in_ctx(ctx, &a_out);
@@ -192,7 +189,8 @@ impl ValueInterface for Pi<Value, Closure> {
 
     fn read_back_type(&self, ctx: &Ctx) -> errors::Result<Core> {
         let ae = read_back_type(ctx, &self.arg_type)?;
-        let x_hat = fresh(ctx, &self.arg_name);
+        let x = &self.arg_name;
+        let x_hat = ctx.fresh(x);
 
         let ctx_hat = ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap();
         let r = read_back_type(
@@ -211,7 +209,8 @@ impl ValueInterface for Pi<Value, Closure> {
             None => &self.arg_name,
         };
 
-        let x_hat = fresh(ctx, y);
+        let x = y;
+        let x_hat = ctx.fresh(x);
 
         let body = read_back(
             &ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap(),
@@ -248,11 +247,20 @@ impl ValueInterface for Pi<Value, Closure> {
 }
 
 fn resugar_unary_pi(x: &Symbol, arg_type: &Core, result_type: &Core) -> (HashSet<Symbol>, Core) {
-    let arg = resugar_(arg_type);
-    let res = resugar_(result_type);
+    let term = arg_type;
+    let arg = term.resugar();
+    let term = result_type;
+    let res = term.resugar();
     if res.0.contains(x) {
         todo!()
     } else {
         (&arg.0 | &res.0, resugar::add_fun(arg.1, res.1))
     }
+}
+
+pub fn occurring_binder_names(name: &Symbol, t: &Core) -> HashSet<Symbol> {
+    let expr = t;
+    let mut names = expr.occurring_names();
+    names.insert(name.clone());
+    names
 }

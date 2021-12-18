@@ -1,6 +1,5 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::types::values::{add1, later};
 use crate::types::{cores, values};
@@ -37,7 +36,8 @@ impl CoreInterface for Add1<Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let (names, n) = resugar_(&self.0);
+        let term = &self.0;
+        let (names, n) = term.resugar();
         (names, cores::add1(n))
     }
 }

@@ -1,10 +1,7 @@
 use crate::alpha;
-use crate::basics::{
-    fresh, fresh_binder, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface, N,
-};
+use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface, N};
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
-use crate::resugar::resugar_;
 use crate::symbol::Symbol;
 use crate::types::values::later;
 use crate::types::{cores, values};
@@ -70,8 +67,10 @@ impl CoreInterface for Sigma<Core, Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let a_t = resugar_(&self.car_type);
-        let d_t = resugar_(&self.cdr_type);
+        let term = &self.car_type;
+        let a_t = term.resugar();
+        let term = &self.cdr_type;
+        let d_t = term.resugar();
         if d_t.0.contains(&self.arg_name) {
             todo!()
         } else {
@@ -95,7 +94,9 @@ impl CoreInterface for Pair<Core> {
     }
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
-        let x = fresh_binder(ctx, &self.1, &Symbol::new("x"));
+        let expr = &self.1;
+        let x = &Symbol::new("x");
+        let x = ctx.fresh_binder(expr, x);
         let inp = &self.0;
         let a_out = inp.is_type(ctx, r)?;
         let ctx = &ctx.bind_free(x.clone(), val_in_ctx(ctx, &a_out))?;
@@ -105,7 +106,8 @@ impl CoreInterface for Pair<Core> {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
-        let a = fresh(ctx, &Symbol::new("a"));
+        let x = &Symbol::new("a");
+        let a = ctx.fresh(x);
         let e = &self.0;
         let tv = &values::universe();
         let a_out = e.check(ctx, r, tv)?;
@@ -150,8 +152,10 @@ impl CoreInterface for Cons<Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let a = resugar_(&self.0);
-        let d = resugar_(&self.1);
+        let term = &self.0;
+        let a = term.resugar();
+        let term = &self.1;
+        let d = term.resugar();
         (&a.0 | &d.0, cores::cons(a.1, d.1))
     }
 }
@@ -167,7 +171,8 @@ impl ValueInterface for Sigma<Value, Closure> {
 
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
         let a_e = read_back_type(ctx, &self.car_type)?;
-        let x_hat = fresh(ctx, &self.arg_name);
+        let x = &self.arg_name;
+        let x_hat = ctx.fresh(x);
         let ctx_hat = ctx.bind_free(x_hat.clone(), self.car_type.clone())?;
         Ok(cores::sigma(
             x_hat.clone(),

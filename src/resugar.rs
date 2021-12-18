@@ -2,14 +2,9 @@ use crate::basics::{Core, CoreInterface};
 use crate::symbol::Symbol;
 use crate::types::cores;
 use crate::types::functions::{Fun, Lambda, LambdaStar};
-use std::collections::HashSet;
 
 pub fn resugar(term: &Core) -> Core {
-    resugar_(term).1
-}
-
-pub fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
-    term.resugar()
+    term.resugar().1
 }
 
 pub fn add_lambda(x: Symbol, term: Core) -> Core {

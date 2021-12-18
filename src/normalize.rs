@@ -1,4 +1,4 @@
-use crate::basics::{ctx_to_env, Core, CoreInterface, Ctx, The, Value, ValueInterface, N};
+use crate::basics::{Core, CoreInterface, Ctx, The, Value, ValueInterface, N};
 use crate::errors::Result;
 use crate::types::cores;
 use std::borrow::Cow;
@@ -40,6 +40,6 @@ pub fn read_back_neutral(ctx: &Ctx, ne: &N) -> Result<Core> {
 }
 
 pub fn val_in_ctx(ctx: &Ctx, e: &Core) -> Value {
-    let env = &ctx_to_env(ctx);
+    let env = &ctx.to_env();
     e.val_of(env)
 }

@@ -1,8 +1,5 @@
 use crate::alpha::alpha_equiv_aux;
-use crate::basics::{
-    fresh, occurring_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value,
-    ValueInterface, N,
-};
+use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface, N};
 use crate::errors::Error;
 use crate::normalize::now;
 use crate::symbol::Symbol;
@@ -38,7 +35,8 @@ impl CoreInterface for Lambda<Core> {
     impl_core_defaults!((arg_name, body), as_any, same, no_type, no_synth);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
-        let mut names = occurring_names(&self.body);
+        let expr = &self.body;
+        let mut names = expr.occurring_names();
         names.insert(self.arg_name.clone());
         names
     }
@@ -56,7 +54,8 @@ impl CoreInterface for Lambda<Core> {
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> errors::Result<Core> {
         if let Some(pi) = now(tv).as_any().downcast_ref::<Pi<Value, Closure>>() {
-            let x_hat = fresh(ctx, &self.arg_name);
+            let x = &self.arg_name;
+            let x_hat = ctx.fresh(x);
             let ctx = &ctx.bind_free(x_hat.clone(), pi.arg_type.clone())?;
             let r = &r.extend(self.arg_name.clone(), x_hat.clone());
             let e = &self.body;
@@ -91,7 +90,8 @@ impl CoreInterface for Lambda<Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let (mut names, r) = resugar::resugar_(&self.body);
+        let term = &self.body;
+        let (mut names, r) = term.resugar();
         names.remove(&self.arg_name);
         (names, resugar::add_lambda(self.arg_name.clone(), r))
     }
@@ -101,7 +101,8 @@ impl CoreInterface for LambdaStar {
     impl_core_defaults!((), as_any, same, no_type, no_synth, no_alpha_equiv);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
-        let mut names = occurring_names(&self.body);
+        let expr = &self.body;
+        let mut names = expr.occurring_names();
         for p in &self.params {
             names.insert(p.clone());
         }
