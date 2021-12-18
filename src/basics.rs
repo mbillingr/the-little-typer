@@ -39,7 +39,6 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
 #[derive(Debug, Clone)]
 pub enum Core {
-    LambdaStar(Vec<Symbol>, R<Core>),
     Object(R<dyn CoreInterface>),
 }
 
@@ -47,9 +46,7 @@ impl PartialEq for Core {
     fn eq(&self, other: &Self) -> bool {
         use Core::*;
         match (self, other) {
-            (LambdaStar(a, r1), LambdaStar(b, r2)) => a == b && r1 == r2,
             (Object(a), Object(b)) => R::ptr_eq(a, b) || a.same(&**b),
-            _ => false,
         }
     }
 }
@@ -66,7 +63,6 @@ impl Core {
     fn as_any(&self) -> &dyn Any {
         match self {
             Core::Object(obj) => obj.as_any(),
-            _ => unimplemented!(),
         }
     }
 
@@ -93,8 +89,8 @@ impl Core {
         cores::lambda(x, body)
     }
 
-    pub fn lambda_star(params: impl Into<Vec<Symbol>>, body: impl Into<R<Core>>) -> Self {
-        Self::LambdaStar(params.into(), body.into())
+    pub fn lambda_star(params: impl Into<Vec<Symbol>>, body: impl Into<Core>) -> Self {
+        cores::lambda_star(params.into(), body.into())
     }
 
     pub fn app(f: Core, a: Core) -> Self {
@@ -129,7 +125,6 @@ impl Core {
     pub fn occurring_names(&self) -> HashSet<Symbol> {
         match self {
             Core::Object(obj) => obj.occurring_names(),
-            _ => unimplemented!(),
         }
     }
 
@@ -142,7 +137,6 @@ impl Core {
     ) -> bool {
         match (self, other) {
             (Core::Object(a), Core::Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),
-            _ => unimplemented!(),
         }
     }
 }
@@ -151,16 +145,6 @@ impl Display for Core {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         use Core::*;
         match self {
-            LambdaStar(params, body) => write!(
-                f,
-                "(λ ({}) {})",
-                params
-                    .iter()
-                    .map(|x| x.name())
-                    .collect::<Vec<_>>()
-                    .join(" "),
-                body
-            ),
             Object(obj) => write!(f, "{}", obj),
         }
     }
@@ -216,7 +200,7 @@ impl From<&Sexpr> for Core {
                             .collect(),
                         Core::from(rt),
                     ),
-                    ("lambda" | "λ", [Sexpr::List(params), body]) => Core::LambdaStar(
+                    ("lambda" | "λ", [Sexpr::List(params), body]) => cores::lambda_star(
                         params
                             .iter()
                             .map(|x| x.as_symbol().cloned().unwrap())
@@ -519,9 +503,6 @@ pub fn fresh_binder(ctx: &Ctx, expr: &Core, x: &Symbol) -> Symbol {
 pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
     use Core::*;
     match expr {
-        LambdaStar(params, body) => {
-            &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
-        }
         Object(obj) => obj.occurring_names(),
     }
 }

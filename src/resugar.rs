@@ -1,7 +1,7 @@
-use crate::basics::{Core, R};
+use crate::basics::Core;
 use crate::symbol::Symbol;
 use crate::types::cores;
-use crate::types::functions::{Fun, Lambda};
+use crate::types::functions::{Fun, Lambda, LambdaStar};
 use std::collections::HashSet;
 
 pub fn resugar(term: &Core) -> Core {
@@ -12,7 +12,6 @@ pub fn resugar_(term: &Core) -> (HashSet<Symbol>, Core) {
     use Core::*;
     match term {
         Object(obj) => obj.resugar(),
-        any_term => (HashSet::new(), any_term.clone()),
     }
 }
 
@@ -20,14 +19,15 @@ pub fn add_lambda(x: Symbol, term: Core) -> Core {
     match term {
         Core::Object(obj) => {
             if let Some(l) = obj.as_any().downcast_ref::<Lambda<Core>>() {
-                Core::LambdaStar(vec![x, l.arg_name.clone()], R::new(l.body.clone()))
+                cores::lambda_star(vec![x, l.arg_name.clone()], l.body.clone())
+            } else if let Some(l) = obj.as_any().downcast_ref::<LambdaStar>() {
+                let mut xs = Vec::with_capacity(l.params.len() + 1);
+                xs.push(x);
+                xs.extend(l.params.iter().cloned());
+                cores::lambda_star(xs, l.body.clone())
             } else {
                 Core::lambda(x, Core::Object(obj))
             }
-        }
-        Core::LambdaStar(mut xs, result) => {
-            xs.insert(0, x);
-            Core::LambdaStar(xs, result)
         }
     }
 }

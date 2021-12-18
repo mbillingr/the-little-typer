@@ -7,8 +7,6 @@ use crate::symbol::Symbol;
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
     use Core::*;
     match inp {
-        LambdaStar(_, _) => Err(Error::NotAType(inp.clone())),
-
         Object(obj) => obj.is_type(ctx, r),
     }
 }
@@ -16,25 +14,12 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
 pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
     use Core::*;
     match inp {
-        LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
-
         Object(obj) => obj.synth(ctx, r),
     }
 }
 
 pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
     match e {
-        Core::LambdaStar(params, b) => match &params[..] {
-            [] => panic!("nullary lambda"),
-            [x] => check(ctx, r, &Core::lambda(x.clone(), (**b).clone()), tv),
-            [x, xs @ ..] => check(
-                ctx,
-                r,
-                &Core::lambda(x.clone(), Core::LambdaStar(xs.to_vec(), b.clone())),
-                tv,
-            ),
-        },
-
         Core::Object(obj) => obj.check(ctx, r, tv),
     }
 }

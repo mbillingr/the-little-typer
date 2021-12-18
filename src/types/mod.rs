@@ -25,6 +25,12 @@ macro_rules! impl_core_defaults {
         }
     };
 
+    ($fields:tt, no_synth) => {
+        fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> crate::errors::Result<(Core, Core)> {
+            Err(Error::CantDetermineType(Core::new(self.clone())))
+        }
+    };
+
     ($fields:tt, check_by_synth) => {
         fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> crate::errors::Result<Core> {
             let (t_out, e_out) = self.synth(ctx, r)?;

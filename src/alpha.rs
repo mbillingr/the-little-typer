@@ -9,9 +9,6 @@ pub fn alpha_equiv_aux(lvl: usize, b1: &Bindings, b2: &Bindings, e1: &Core, e2: 
     use Core::*;
     match (e1, e2) {
         (Object(a), Object(b)) => a.alpha_equiv_aux(&**b, lvl, b1, b2),
-        (Object(_), _) | (_, Object(_)) => false,
-
-        _ => todo!("{:?} ?= {:?}", e1, e2),
     }
 }
 

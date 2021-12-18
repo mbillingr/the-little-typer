@@ -1,6 +1,6 @@
 use crate::alpha::alpha_equiv_aux;
 use crate::basics::{
-    fresh, occurring_binder_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value,
+    fresh, occurring_names, Closure, Core, CoreInterface, Ctx, Env, Renaming, Value,
     ValueInterface, N,
 };
 use crate::errors::Error;
@@ -8,8 +8,8 @@ use crate::normalize::now;
 use crate::symbol::Symbol;
 use crate::typechecker::check;
 use crate::types::functions::Pi;
-use crate::types::values;
 use crate::types::values::lambda;
+use crate::types::{cores, values};
 use crate::{alpha, errors, resugar};
 use std::any::Any;
 use std::collections::HashSet;
@@ -22,11 +22,20 @@ pub struct Lambda<B> {
     pub body: B,
 }
 
+/// Function with multiple arguments; desugars to nested `Lambda`s
+#[derive(Debug, Clone, PartialEq)]
+pub struct LambdaStar {
+    pub params: Vec<Symbol>,
+    pub body: Core,
+}
+
 impl CoreInterface for Lambda<Core> {
-    impl_core_defaults!((arg_name, body), as_any, same, no_type);
+    impl_core_defaults!((arg_name, body), as_any, same, no_type, no_synth);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
-        occurring_binder_names(&self.arg_name, &self.body)
+        let mut names = occurring_names(&self.body);
+        names.insert(self.arg_name.clone());
+        names
     }
 
     fn val_of(&self, env: &Env) -> Value {
@@ -38,10 +47,6 @@ impl CoreInterface for Lambda<Core> {
                 expr: self.body.clone(),
             },
         )
-    }
-
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {
-        Err(Error::CantDetermineType(Core::new(self.clone())))
     }
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> errors::Result<Core> {
@@ -87,9 +92,60 @@ impl CoreInterface for Lambda<Core> {
     }
 }
 
+impl CoreInterface for LambdaStar {
+    impl_core_defaults!((), as_any, same, no_type, no_synth, no_alpha_equiv);
+
+    fn occurring_names(&self) -> HashSet<Symbol> {
+        let mut names = occurring_names(&self.body);
+        for p in &self.params {
+            names.insert(p.clone());
+        }
+        names
+    }
+
+    fn val_of(&self, _env: &Env) -> Value {
+        panic!("Attempt to evaluate lambda* (should have been desugared to `Lambda`s)")
+    }
+
+    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> errors::Result<Core> {
+        match &self.params[..] {
+            [] => panic!("nullary lambda"),
+            [x] => check(ctx, r, &cores::lambda(x.clone(), self.body.clone()), tv),
+            [x, xs @ ..] => check(
+                ctx,
+                r,
+                &Core::lambda(
+                    x.clone(),
+                    cores::lambda_star(xs.to_vec(), self.body.clone()),
+                ),
+                tv,
+            ),
+        }
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
+    }
+}
+
 impl Display for Lambda<Core> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "(λ ({}) {})", self.arg_name.name(), self.body)
+    }
+}
+
+impl Display for LambdaStar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "(λ ({}) {})",
+            self.params
+                .iter()
+                .map(|x| x.name())
+                .collect::<Vec<_>>()
+                .join(" "),
+            self.body
+        )
     }
 }
 

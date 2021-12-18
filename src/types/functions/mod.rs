@@ -10,7 +10,7 @@ use crate::types::values::neutral;
 
 pub use app::{App, AppStar};
 pub use fun::Fun;
-pub use lambda::Lambda;
+pub use lambda::{Lambda, LambdaStar};
 pub use pi::{Pi, PiStar};
 
 pub fn do_ap(rator: &Value, rand: Value) -> Value {
