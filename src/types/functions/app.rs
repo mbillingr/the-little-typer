@@ -1,6 +1,8 @@
-use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value};
+use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::Error;
+use crate::normalize::val_in_ctx;
 use crate::symbol::Symbol;
+use crate::typechecker::synth;
 use crate::types::values::later;
 use crate::types::{cores, functions, values};
 use crate::{errors, resugar};
@@ -12,6 +14,13 @@ use std::fmt::{Display, Formatter};
 pub struct App {
     pub fun: Core,
     pub arg: Core,
+}
+
+/// N-ary function application; desugars to series of `App`s
+#[derive(Debug, Clone, PartialEq)]
+pub struct AppStar {
+    pub fun: Core,
+    pub args: Vec<Core>,
 }
 
 impl CoreInterface for App {
@@ -49,8 +58,56 @@ impl CoreInterface for App {
     }
 }
 
+impl CoreInterface for AppStar {
+    impl_core_defaults!((fun, arg), as_any, same, no_alpha_equiv, check_by_synth);
+
+    fn occurring_names(&self) -> HashSet<Symbol> {
+        let mut names = self.fun.occurring_names();
+        for arg in &self.args {
+            names = &names | &arg.occurring_names();
+        }
+        names
+    }
+
+    fn val_of(&self, _env: &Env) -> Value {
+        panic!("Attempt to evaluate n-ary application (should have been desugared to `App`)")
+    }
+
+    fn is_type(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<Core> {
+        match self.check(ctx, r, &values::universe()) {
+            Ok(t_out) => Ok(t_out),
+            Err(_) => Err(Error::NotAType(Core::new(self.clone()))),
+        }
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
+        match &self.args[..] {
+            [] => panic!("nullary application {}", self.fun),
+            [rand] => {
+                let (rator_t, rator_out) = synth(ctx, r, &self.fun)?;
+                val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand)
+            }
+            [_rand0, _rands @ ..] => todo!(),
+        }
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
+    }
+}
+
 impl Display for App {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "({} {})", self.fun, self.arg)
+    }
+}
+
+impl Display for AppStar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "({}", self.fun)?;
+        for arg in &self.args {
+            write!(f, " {}", arg)?;
+        }
+        write!(f, ")")
     }
 }

@@ -1,12 +1,11 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{fresh, Core, Ctx, Renaming, Value, ValueInterface};
+use crate::basics::{fresh, Core, Ctx, Renaming, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::cores;
 
 pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
-    use crate::types::values;
     use Core::*;
     match inp {
         PiStar(bindings, b) => match &bindings[..] {
@@ -35,11 +34,6 @@ pub fn is_type(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<Core> {
             }
         },
 
-        AppStar(_, _) => match check(ctx, r, inp, &values::universe()) {
-            Ok(t_out) => Ok(t_out),
-            Err(_) => Err(Error::NotAType(inp.clone())),
-        },
-
         LambdaStar(_, _) => Err(Error::NotAType(inp.clone())),
 
         Object(obj) => obj.is_type(ctx, r),
@@ -50,14 +44,6 @@ pub fn synth(ctx: &Ctx, r: &Renaming, inp: &Core) -> Result<(Core, Core)> {
     use Core::*;
     match inp {
         PiStar(_, _) => todo!(),
-        AppStar(rator, args) => match &args[..] {
-            [] => panic!("nullary application {}", rator),
-            [rand] => {
-                let (rator_t, rator_out) = synth(ctx, r, rator)?;
-                val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand)
-            }
-            [_rand0, _rands @ ..] => todo!(),
-        },
 
         LambdaStar(_, _) => Err(Error::CantDetermineType(inp.clone())),
 
@@ -78,7 +64,7 @@ pub fn check(ctx: &Ctx, r: &Renaming, e: &Core, tv: &Value) -> Result<Core> {
             ),
         },
 
-        Core::PiStar(_, _) | Core::AppStar(_, _) => {
+        Core::PiStar(_, _) => {
             let (t_out, e_out) = synth(ctx, r, e)?;
             same_type(ctx, &val_in_ctx(ctx, &t_out), tv)?;
             Ok(e_out)

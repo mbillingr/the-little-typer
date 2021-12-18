@@ -41,7 +41,6 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 pub enum Core {
     PiStar(Vec<(Symbol, Core)>, R<Core>),
     LambdaStar(Vec<Symbol>, R<Core>),
-    AppStar(R<Core>, Vec<Core>),
     Object(R<dyn CoreInterface>),
 }
 
@@ -51,7 +50,6 @@ impl PartialEq for Core {
         match (self, other) {
             (PiStar(a, r1), PiStar(b, r2)) => a == b && r1 == r2,
             (LambdaStar(a, r1), LambdaStar(b, r2)) => a == b && r1 == r2,
-            (AppStar(f1, a1), AppStar(f2, a2)) => f1 == f2 && a1 == a2,
             (Object(a), Object(b)) => R::ptr_eq(a, b) || a.same(&**b),
             _ => false,
         }
@@ -105,8 +103,8 @@ impl Core {
         cores::app(f, a)
     }
 
-    pub fn app_star(f: impl Into<R<Core>>, args: impl Into<Vec<Core>>) -> Self {
-        Core::AppStar(f.into(), args.into())
+    pub fn app_star(f: impl Into<Core>, args: impl Into<Vec<Core>>) -> Self {
+        cores::app_star(f.into(), args.into())
     }
 
     pub fn symbol(s: impl Into<Symbol>) -> Self {
@@ -171,15 +169,6 @@ impl Display for Core {
                     .collect::<Vec<_>>()
                     .join(" "),
                 body
-            ),
-            AppStar(func, args) => write!(
-                f,
-                "({} {})",
-                func,
-                args.iter()
-                    .map(ToString::to_string)
-                    .collect::<Vec<_>>()
-                    .join(" ")
             ),
             Object(obj) => write!(f, "{}", obj),
         }
@@ -248,7 +237,7 @@ impl From<&Sexpr> for Core {
                     (key, _) => todo!("({} ...)", key),
                 },
                 [f, args @ ..] => {
-                    Core::AppStar(R::new(Core::from(f)), args.iter().map(Core::from).collect())
+                    cores::app_star(Core::from(f), args.iter().map(Core::from).collect())
                 }
                 _ => unimplemented!("{:?}", list),
             },
@@ -546,9 +535,6 @@ pub fn occurring_names(expr: &Core) -> HashSet<Symbol> {
         LambdaStar(params, body) => {
             &params.iter().cloned().collect::<HashSet<_>>() | &occurring_names(body)
         }
-        AppStar(f, args) => args
-            .iter()
-            .fold(occurring_names(f), |a, b| &a | &occurring_names(b)),
         Object(obj) => obj.occurring_names(),
     }
 }

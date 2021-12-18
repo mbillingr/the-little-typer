@@ -2,7 +2,7 @@ use crate::basics::Core;
 use crate::symbol::Symbol;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
-use crate::types::functions::{App, Fun, Lambda, Pi};
+use crate::types::functions::{App, AppStar, Fun, Lambda, Pi};
 use crate::types::natural::{Add1, IndNat, Nat, WhichNat, Zero};
 use crate::types::pairs::{Cons, Pair, Sigma};
 use crate::types::reference::Ref;
@@ -69,6 +69,10 @@ pub fn lambda(x: impl Into<Symbol>, body: Core) -> Core {
 
 pub fn app(fun: Core, arg: Core) -> Core {
     Core::new(App { fun, arg })
+}
+
+pub fn app_star(fun: Core, args: Vec<Core>) -> Core {
+    Core::new(AppStar { fun, args })
 }
 
 pub fn refer(s: impl Into<Symbol>) -> Core {
