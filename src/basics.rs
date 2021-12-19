@@ -201,7 +201,7 @@ impl From<&Sexpr> for Core {
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
                     }
-                    ("Pi" | "Π", [Sexpr::List(params), rt]) => Core::pi_star(
+                    ("Pi" | "Π" | "∏", [Sexpr::List(params), rt]) => Core::pi_star(
                         params
                             .iter()
                             .map(|x| match x {

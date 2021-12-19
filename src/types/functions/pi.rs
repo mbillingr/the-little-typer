@@ -144,8 +144,28 @@ impl CoreInterface for PiStar {
         }
     }
 
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {
-        todo!()
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
+        match &self.binders[..] {
+            [] => unreachable!(),
+            [(x, a)] => Pi {
+                arg_name: x.clone(),
+                arg_type: a.clone(),
+                res_type: self.res_type.clone(),
+            }
+            .synth(ctx, r),
+            [(x, a), more @ ..] => {
+                let x_hat = ctx.fresh(x);
+                let a_out = a.check(ctx, r, &values::universe())?;
+                let ctx_hat = ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?;
+                let r_hat = r.extend(x.clone(), x_hat.clone());
+                let body = PiStar {
+                    binders: more.to_vec(),
+                    res_type: self.res_type.clone(),
+                };
+                let b_out = body.check(&ctx_hat, &r_hat, &values::universe())?;
+                Ok((cores::universe(), Core::pi(x_hat, a_out, b_out)))
+            }
+        }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

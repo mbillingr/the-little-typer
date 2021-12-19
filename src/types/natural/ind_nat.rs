@@ -167,11 +167,11 @@ impl NeutralInterface for NeutralIndNat {
             base: The(b_tv, b_v),
             step: The(s_tv, s_v),
         } = self;
-        Ok(
-            cores::ind_nat(tgt.read_back_neutral(ctx)?,
+        Ok(cores::ind_nat(
+            tgt.read_back_neutral(ctx)?,
             read_back(ctx, mot_tv, mot_v)?,
             read_back(ctx, b_tv, b_v)?,
-            read_back(ctx, s_tv, s_v)?
+            read_back(ctx, s_tv, s_v)?,
         ))
     }
 }

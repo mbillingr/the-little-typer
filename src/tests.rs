@@ -240,3 +240,42 @@ fn indnat_takes_neutral_targets() {
         ))
     )
 }
+
+#[test]
+fn function_type_expands_to_pi() {
+    assert_eq!(
+        rep(&CTX, &"(the U (-> Nat Nat))".parse().unwrap()),
+        Ok(the(universe(), pi("x", nat(), nat())))
+    )
+}
+
+#[test]
+fn cant_have_function_map_from_u_to_u() {
+    assert_eq!(
+        rep(&CTX, &"(the U (-> U U))".parse().unwrap()),
+        Err(Error::UhasNoType)
+    )
+}
+
+#[test]
+fn function_type_expands_to_pis() {
+    assert_eq!(
+        rep(&CTX, &"(-> Nat Nat Nat Nat Nat)".parse().unwrap()),
+        Ok(the(
+            universe(),
+            pi(
+                "x",
+                nat(),
+                pi("x₁", nat(), pi("x₂", nat(), pi("x₃", nat(), nat())))
+            )
+        ))
+    )
+}
+
+#[test]
+fn n_ary_pi_expands_to_sequence_of_unary_pies() {
+    assert_eq!(
+        rep(&CTX, &"(∏ ((x Nat) (y Nat)) Nat)".parse().unwrap()),
+        Ok(the(universe(), pi("x", nat(), pi("y", nat(), nat()))))
+    )
+}
