@@ -102,27 +102,14 @@ impl CoreInterface for Pair<Core> {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let a = ctx.fresh(&Symbol::new("a"));
         let a_out = self.0.check(ctx, r, &values::universe())?;
         let d_out = self.1.check(
-            &ctx.bind_free(
-                ctx.fresh(&Symbol::new("a")).clone(),
-                val_in_ctx(ctx, &a_out),
-            )?,
+            &ctx.bind_free(a.clone(), val_in_ctx(ctx, &a_out))?,
             r,
             &values::universe(),
         )?;
-        Ok((
-            cores::universe(),
-            cores::sigma(
-                ctx.bind_free(
-                    ctx.fresh(&Symbol::new("a")).clone(),
-                    val_in_ctx(ctx, &a_out),
-                )?
-                .fresh(&Symbol::new("a")),
-                a_out,
-                d_out,
-            ),
-        ))
+        Ok((cores::universe(), cores::sigma(a, a_out, d_out)))
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

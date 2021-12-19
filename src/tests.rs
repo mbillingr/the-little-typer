@@ -316,16 +316,53 @@ fn variables_must_be_bound() {
 
 #[test]
 fn the_normal_form_of_nat_is_nat() {
-    assert_eq!(
-        norm_type(&CTX, &"Nat".parse().unwrap()),
-        Ok(nat())
-    )
+    assert_eq!(norm_type(&CTX, &"Nat".parse().unwrap()), Ok(nat()))
 }
 
 #[test]
 fn pi_must_return_a_type() {
     assert_eq!(
-        rep(&CTX, &"(∏ ((x Nat)) x)".parse().unwrap()),
+        norm_type(&CTX, &"(∏ ((x Nat)) x)".parse().unwrap()),
         Err(Error::WrongType(nat(), universe()))
+    )
+}
+
+#[test]
+fn variables_must_be_bound_in_normal_type_too() {
+    assert_eq!(
+        norm_type(&CTX, &"x".parse().unwrap()),
+        Err(Error::UnknownVariable("x".into()))
+    )
+}
+
+#[test]
+fn atom_types_are_automatically_inferred() {
+    assert_eq!(
+        rep(&CTX, &"'a".parse().unwrap()),
+        Ok(the(atom(), quote("a")))
+    )
+}
+
+#[test]
+fn atom_can_be_optionally_annotated() {
+    assert_eq!(
+        rep(&CTX, &"(the Atom 'a)".parse().unwrap()),
+        Ok(the(atom(), quote("a")))
+    )
+}
+
+#[test]
+fn atom_is_a_type() {
+    assert_eq!(
+        rep(&CTX, &"Atom".parse().unwrap()),
+        Ok(the(universe(), atom()))
+    )
+}
+
+#[test]
+fn pair_desugars_to_sigma() {
+    assert_eq!(
+        rep(&CTX, &"(Pair Atom Atom)".parse().unwrap()),
+        Ok(the(universe(), sigma("a", atom(), atom())))
     )
 }
