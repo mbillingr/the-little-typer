@@ -185,7 +185,7 @@ impl From<&Sexpr> for Core {
             },
             Sexpr::SmallNat(x) => Core::nat(*x),
             Sexpr::List(list) => match &list[..] {
-                [Sexpr::Symbol(s), args @ ..] if !is_var_name(s) => match (s.name(), args) {
+                [op @ Sexpr::Symbol(s), args @ ..] if !is_var_name(s) => match (s.name(), args) {
                     ("the", [t, v]) => Core::the(Core::from(t), Core::from(v)),
                     ("add1", [n]) => cores::add1(Core::from(n)),
                     ("which-Nat", [target, base, step]) => {
@@ -223,7 +223,9 @@ impl From<&Sexpr> for Core {
                     ),
                     ("Pair", [a, d]) => cores::pair(Core::from(a), Core::from(d)),
                     ("cons", [car, cdr]) => cores::cons(Core::from(car), Core::from(cdr)),
-                    (key, _) => todo!("({} ...)", key),
+                    (_, args) => {
+                        cores::app_star(Core::from(op), args.iter().map(Core::from).collect())
+                    }
                 },
                 [f, args @ ..] => {
                     cores::app_star(Core::from(f), args.iter().map(Core::from).collect())
@@ -245,12 +247,13 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
 
     fn apply(
         &self,
-        _ctx: &Ctx,
-        _r: &Renaming,
+        ctx: &Ctx,
+        r: &Renaming,
         rator_out: &Core,
         _rand: &Core,
     ) -> Result<(Core, Core)> {
-        Err(Error::NotAFunctionType((*rator_out).clone()))
+        let (t_out, _) = rator_out.synth(ctx, r)?;
+        Err(Error::NotAFunctionType(t_out))
     }
 
     fn now(&self) -> Option<Value> {

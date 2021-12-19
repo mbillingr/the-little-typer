@@ -1,6 +1,6 @@
 use crate::basics::{CoreInterface, Ctx};
 use crate::errors::Error;
-use crate::rep::rep;
+use crate::rep::{norm_type, rep};
 use crate::types::{cores::*, values};
 use lazy_static::lazy_static;
 
@@ -277,5 +277,55 @@ fn n_ary_pi_expands_to_sequence_of_unary_pies() {
     assert_eq!(
         rep(&CTX, &"(∏ ((x Nat) (y Nat)) Nat)".parse().unwrap()),
         Ok(the(universe(), pi("x", nat(), pi("y", nat(), nat()))))
+    )
+}
+
+#[test]
+fn zero_is_not_a_type() {
+    assert_eq!(
+        rep(&CTX, &"(the zero zero)".parse().unwrap()),
+        Err(Error::NotAType(zero()))
+    )
+}
+
+#[test]
+fn wrong_return_type_in_lambda() {
+    assert_eq!(
+        rep(&CTX, &"(the (-> Nat U) (lambda (x) x))".parse().unwrap())
+            .unwrap_err()
+            .to_string(),
+        "Expected type U but got Nat"
+    )
+}
+
+#[test]
+fn wrong_type_for_application() {
+    assert_eq!(
+        rep(&CTX, &"(zero zero)".parse().unwrap()),
+        Err(Error::NotAFunctionType(nat()))
+    )
+}
+
+#[test]
+fn variables_must_be_bound() {
+    assert_eq!(
+        rep(&CTX, &"x".parse().unwrap()),
+        Err(Error::UnknownVariable("x".into()))
+    )
+}
+
+#[test]
+fn the_normal_form_of_nat_is_nat() {
+    assert_eq!(
+        norm_type(&CTX, &"Nat".parse().unwrap()),
+        Ok(nat())
+    )
+}
+
+#[test]
+fn pi_must_return_a_type() {
+    assert_eq!(
+        rep(&CTX, &"(∏ ((x Nat)) x)".parse().unwrap()),
+        Err(Error::WrongType(nat(), universe()))
     )
 }

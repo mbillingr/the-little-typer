@@ -3,6 +3,11 @@ use crate::errors::Result;
 use crate::normalize::{read_back, val_in_ctx};
 use crate::typechecker::convert;
 
+pub fn norm_type(ctx: &Ctx, e: &Core) -> Result<Core> {
+    let e_out = e.is_type(ctx, &Renaming::new())?;
+    val_in_ctx(ctx, &e_out).read_back_type(ctx)
+}
+
 pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
     let r = &Renaming::new();
     let inp = e;
