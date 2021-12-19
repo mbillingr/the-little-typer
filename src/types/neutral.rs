@@ -1,6 +1,6 @@
 use crate::basics::{Core, Ctx, Value, ValueInterface, N};
 use crate::errors::Result;
-use crate::normalize::{now, read_back_neutral};
+use crate::normalize::now;
 use crate::types::universe::Universe;
 use std::any::Any;
 
@@ -31,11 +31,11 @@ impl ValueInterface for Neutral {
             .as_any()
             .downcast_ref::<Universe>()
             .is_some());
-        read_back_neutral(ctx, &self.kind)
+        self.kind.read_back_neutral(ctx)
     }
 
     fn read_back(&self, ctx: &Ctx, _tv: &Value, _v: &Value) -> Result<Core> {
-        read_back_neutral(ctx, &self.kind)
+        self.kind.read_back_neutral(ctx)
     }
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {

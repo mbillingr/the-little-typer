@@ -1,5 +1,7 @@
 use crate::alpha;
-use crate::basics::{Core, CoreInterface, Ctx, Env, is_var_name, NeutralInterface, Renaming, Value};
+use crate::basics::{
+    is_var_name, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value,
+};
 use crate::errors::{Error, Result};
 use crate::normalize::read_back_type;
 use crate::symbol::Symbol;

@@ -1,7 +1,9 @@
-use crate::basics::{Core, CoreInterface, Ctx, Env, N, NeutralInterface, Renaming, The, Value, ValueInterface};
+use crate::basics::{
+    Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface, N,
+};
 use crate::errors;
 use crate::errors::Error;
-use crate::normalize::{read_back, read_back_neutral, val_in_ctx};
+use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::values::later;
 use crate::types::{cores, functions, values};
@@ -118,7 +120,7 @@ impl NeutralInterface for NeutralApp {
         let fun = &self.0;
         let The(typ, val) = &self.1;
         Ok(Core::app(
-            read_back_neutral(ctx, fun)?,
+            fun.read_back_neutral(ctx)?,
             read_back(ctx, typ, val)?,
         ))
     }

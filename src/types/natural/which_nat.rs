@@ -1,7 +1,10 @@
-use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, N, NeutralInterface, Renaming, The, Value, ValueInterface};
+use crate::basics::{
+    Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface,
+    N,
+};
 use crate::errors;
 use crate::errors::Error;
-use crate::normalize::{now, read_back, read_back_neutral, read_back_type};
+use crate::normalize::{now, read_back, read_back_type};
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, MaybeTyped, Zero};
@@ -152,7 +155,7 @@ impl NeutralInterface for NeutralWhichNat {
     fn read_back_neutral(&self, ctx: &Ctx) -> errors::Result<Core> {
         let NeutralWhichNat(tgt, The(b_tv, b_v), The(s_tv, s_v)) = self;
         Ok(cores::which_nat(
-            read_back_neutral(ctx, tgt)?,
+            tgt.read_back_neutral(ctx)?,
             cores::the(read_back_type(ctx, b_tv)?, read_back(ctx, b_tv, b_v)?),
             read_back(ctx, s_tv, s_v)?,
         ))

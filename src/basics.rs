@@ -3,6 +3,9 @@ use crate::errors::{Error, Result};
 use crate::fresh::freshen;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
+use crate::types::functions::NeutralApp;
+use crate::types::natural::NeutralWhichNat;
+use crate::types::reference::NeutralVar;
 use crate::types::{cores, values};
 use sexpr_parser::parse;
 use std::any::Any;
@@ -10,9 +13,6 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 pub use std::sync::{Arc as R, Mutex, RwLock};
-use crate::types::functions::NeutralApp;
-use crate::types::natural::NeutralWhichNat;
-use crate::types::reference::NeutralVar;
 
 pub trait CoreInterface: Any + Debug + Display + Sync + Send {
     fn as_any(&self) -> &dyn Any;

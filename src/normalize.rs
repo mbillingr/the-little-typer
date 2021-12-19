@@ -1,4 +1,4 @@
-use crate::basics::{Core, CoreInterface, Ctx, Value, ValueInterface, N};
+use crate::basics::{Core, CoreInterface, Ctx, Value, ValueInterface};
 use crate::errors::Result;
 use std::borrow::Cow;
 
@@ -18,14 +18,10 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
     let nv = now(v);
 
     if let Some((_, ne)) = nv.as_neutral() {
-        read_back_neutral(ctx, ne)
+        ne.read_back_neutral(ctx)
     } else {
         ntv.read_back(ctx, tv, &nv)
     }
-}
-
-pub fn read_back_neutral(ctx: &Ctx, ne: &N) -> Result<Core> {
-    ne.read_back_neutral(ctx)
 }
 
 pub fn val_in_ctx(ctx: &Ctx, e: &Core) -> Value {

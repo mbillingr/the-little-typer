@@ -1,17 +1,15 @@
 use crate::alpha::alpha_equiv_aux;
-use crate::basics::{
-    Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface,
-};
+use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::functions::lambda::Lambda;
+use crate::types::reference::NeutralVar;
 use crate::types::values::later;
 use crate::types::{cores, functions, neutral, values};
 use crate::{alpha, errors, resugar};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
-use crate::types::reference::NeutralVar;
 
 #[derive(Debug, PartialEq)]
 pub struct Pi<T, C> {
