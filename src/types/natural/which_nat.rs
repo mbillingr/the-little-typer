@@ -8,7 +8,6 @@ use crate::normalize::{now, read_back};
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, MaybeTyped, Zero};
-use crate::types::neutral::Neutral;
 use crate::types::values::later;
 use crate::types::{cores, values};
 use std::collections::HashSet;
@@ -134,8 +133,8 @@ fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
         None => {}
     };
 
-    match now(&tgt_v).as_any().downcast_ref::<Neutral>() {
-        Some(Neutral { kind: ne, .. }) => {
+    match now(&tgt_v).as_neutral() {
+        Some((_, ne)) => {
             return values::neutral(
                 bt_v.clone(),
                 NeutralWhichNat(

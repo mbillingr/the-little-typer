@@ -1,11 +1,14 @@
-use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::basics::{
+    Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface,
+    N,
+};
 use crate::errors;
 use crate::errors::Error;
-use crate::normalize::{now, val_in_ctx};
+use crate::normalize::{now, read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, Zero};
-use crate::types::values::later;
+use crate::types::values::{add1, later};
 use crate::types::{cores, values};
 use std::collections::HashSet;
 use std::fmt::Formatter;
@@ -16,6 +19,14 @@ pub struct IndNat {
     motive: Core,
     base: Core,
     step: Core,
+}
+
+#[derive(Debug)]
+pub struct NeutralIndNat {
+    target: N,
+    motive: The,
+    base: The,
+    step: The,
 }
 
 impl IndNat {
@@ -111,7 +122,56 @@ fn do_ind_nat(tgt_v: Value, mot_v: Value, b_v: Value, s_v: Value) -> Value {
         None => {}
     };
 
-    todo!()
+    match now(&tgt_v).as_neutral() {
+        Some((_, ne)) => {
+            return values::neutral(
+                do_ap(&mot_v, tgt_v.clone()),
+                NeutralIndNat {
+                    target: ne.clone(),
+                    motive: The(
+                        pi_type!(((_x, values::nat())), values::universe()),
+                        mot_v.clone(),
+                    ),
+                    base: The(do_ap(&mot_v, values::zero()), b_v),
+                    step: The(
+                        values::pi(
+                            "n_minus_one",
+                            values::nat(),
+                            Closure::higher(move |n_minus_one| {
+                                let mot_v = mot_v.clone();
+                                values::pi(
+                                    "ih",
+                                    do_ap(&mot_v, n_minus_one.clone()),
+                                    Closure::higher(move |_ih| {
+                                        do_ap(&mot_v, add1(n_minus_one.clone()))
+                                    }),
+                                )
+                            }),
+                        ),
+                        s_v,
+                    ),
+                },
+            );
+        }
+        None => {}
+    };
 
-    //unreachable!("{:?}", now(&tgt_v))
+    unreachable!("{:?}", now(&tgt_v))
+}
+
+impl NeutralInterface for NeutralIndNat {
+    fn read_back_neutral(&self, ctx: &Ctx) -> errors::Result<Core> {
+        let NeutralIndNat {
+            target: tgt,
+            motive: The(mot_tv, mot_v),
+            base: The(b_tv, b_v),
+            step: The(s_tv, s_v),
+        } = self;
+        Ok(
+            cores::ind_nat(tgt.read_back_neutral(ctx)?,
+            read_back(ctx, mot_tv, mot_v)?,
+            read_back(ctx, b_tv, b_v)?,
+            read_back(ctx, s_tv, s_v)?
+        ))
+    }
 }

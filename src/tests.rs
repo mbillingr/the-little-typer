@@ -208,3 +208,35 @@ fn simple_use_of_ind_nat() {
         Ok(the(nat(), add1(add1(add1(zero())))))
     )
 }
+
+#[test]
+fn indnat_takes_neutral_targets() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (-> Nat Nat Nat)
+                   (lambda (x y)
+                      (ind-Nat x
+                               (lambda (x) Nat)
+                               y
+                               (lambda (n-1 ih) (add1 ih)))))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(
+            pi("x", nat(), pi("x₁", nat(), nat())),
+            lambda(
+                "x",
+                lambda(
+                    "y",
+                    ind_nat(
+                        refer("x"),
+                        lambda("x₁", nat()),
+                        refer("y"),
+                        lambda("n-1", lambda("ih", add1(refer("ih"))))
+                    )
+                )
+            )
+        ))
+    )
+}
