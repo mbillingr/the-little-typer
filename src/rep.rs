@@ -1,6 +1,6 @@
-use crate::basics::{Core, CoreInterface, Ctx, Renaming};
+use crate::basics::{Core, CoreInterface, Ctx, Renaming, ValueInterface};
 use crate::errors::Result;
-use crate::normalize::{read_back, read_back_type, val_in_ctx};
+use crate::normalize::{read_back, val_in_ctx};
 use crate::typechecker::convert;
 
 pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
@@ -10,7 +10,7 @@ pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
     let tv = val_in_ctx(ctx, &t_out);
     let v = val_in_ctx(ctx, &e_out);
     let vx = read_back(ctx, &tv, &v)?;
-    let tx = read_back_type(ctx, &tv)?;
+    let tx = tv.read_back_type(ctx)?;
     Ok(Core::the(tx, vx))
 }
 

@@ -1,9 +1,8 @@
 use crate::alpha;
 use crate::basics::{
-    is_var_name, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value,
+    is_var_name, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value, ValueInterface,
 };
 use crate::errors::{Error, Result};
-use crate::normalize::read_back_type;
 use crate::symbol::Symbol;
 use crate::types::{cores, values};
 use maplit::hashset;
@@ -41,7 +40,7 @@ impl CoreInterface for Ref {
             Ok(t_out) => Ok(t_out),
             Err(_) => ctx.var_type(&self.0).and_then(|other_tv| {
                 Err(Error::WrongType(
-                    read_back_type(ctx, &other_tv)?,
+                    other_tv.read_back_type(ctx)?,
                     cores::universe(),
                 ))
             }),
@@ -51,7 +50,7 @@ impl CoreInterface for Ref {
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
         let real_x = r.rename(&self.0);
         let xtv = ctx.var_type(&real_x)?;
-        Ok((read_back_type(ctx, &xtv)?, cores::refer(real_x)))
+        Ok((xtv.read_back_type(ctx)?, cores::refer(real_x)))
     }
 
     fn alpha_equiv_aux(

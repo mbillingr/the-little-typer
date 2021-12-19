@@ -4,7 +4,7 @@ use crate::basics::{
 };
 use crate::errors;
 use crate::errors::Error;
-use crate::normalize::{now, read_back, read_back_type};
+use crate::normalize::{now, read_back};
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, MaybeTyped, Zero};
@@ -156,7 +156,7 @@ impl NeutralInterface for NeutralWhichNat {
         let NeutralWhichNat(tgt, The(b_tv, b_v), The(s_tv, s_v)) = self;
         Ok(cores::which_nat(
             tgt.read_back_neutral(ctx)?,
-            cores::the(read_back_type(ctx, b_tv)?, read_back(ctx, b_tv, b_v)?),
+            cores::the(b_tv.read_back_type(ctx)?, read_back(ctx, b_tv, b_v)?),
             read_back(ctx, s_tv, s_v)?,
         ))
     }

@@ -9,10 +9,6 @@ pub fn now(v: &Value) -> Cow<Value> {
     }
 }
 
-pub fn read_back_type(ctx: &Ctx, tv: &Value) -> Result<Core> {
-    tv.read_back_type(ctx)
-}
-
 pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
     let ntv = now(tv);
     let nv = now(v);

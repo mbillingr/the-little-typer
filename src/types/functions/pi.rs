@@ -1,6 +1,6 @@
 use crate::alpha::alpha_equiv_aux;
 use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
-use crate::normalize::{read_back, read_back_type, val_in_ctx};
+use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::functions::lambda::Lambda;
 use crate::types::reference::NeutralVar;
@@ -189,18 +189,17 @@ impl ValueInterface for Pi<Value, Closure> {
     }
 
     fn read_back_type(&self, ctx: &Ctx) -> errors::Result<Core> {
-        let ae = read_back_type(ctx, &self.arg_type)?;
-        let x = &self.arg_name;
-        let x_hat = ctx.fresh(x);
+        let ae = self.arg_type.read_back_type(ctx)?;
+        let x_hat = ctx.fresh(&self.arg_name);
 
         let ctx_hat = ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap();
-        let r = read_back_type(
-            &ctx_hat,
-            &self.res_type.val_of(neutral::neutral(
+        let r = self
+            .res_type
+            .val_of(neutral::neutral(
                 self.arg_type.clone(),
                 NeutralVar(x_hat.clone()),
-            )),
-        )?;
+            ))
+            .read_back_type(&ctx_hat)?;
         Ok(Core::pi(x_hat, ae, r))
     }
 
@@ -230,18 +229,16 @@ impl ValueInterface for Pi<Value, Closure> {
 
     fn apply(
         &self,
-        _ctx: &Ctx,
-        _r: &Renaming,
+        ctx: &Ctx,
+        r: &Renaming,
         rator_out: &Core,
-        _rand: &Core,
+        rand: &Core,
     ) -> errors::Result<(Core, Core)> {
-        let ctx = _ctx;
-        let r = _r;
-        let e = _rand;
-        let tv = &self.arg_type;
-        let rand_out = e.check(ctx, r, tv)?;
+        let rand_out = rand.check(ctx, r, &self.arg_type)?;
         Ok((
-            read_back_type(_ctx, &self.res_type.val_of(val_in_ctx(_ctx, &rand_out)))?,
+            self.res_type
+                .val_of(val_in_ctx(ctx, &rand_out))
+                .read_back_type(ctx)?,
             Core::app((*rator_out).clone(), rand_out),
         ))
     }

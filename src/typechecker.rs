@@ -1,11 +1,11 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{Ctx, Value};
+use crate::basics::{Ctx, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::{read_back, read_back_type};
+use crate::normalize::read_back;
 
 pub fn same_type(ctx: &Ctx, given: &Value, expected: &Value) -> Result<()> {
-    let given_e = read_back_type(ctx, given)?;
-    let expected_e = read_back_type(ctx, expected)?;
+    let given_e = given.read_back_type(ctx)?;
+    let expected_e = expected.read_back_type(ctx)?;
     if is_alpha_equiv(&given_e, &expected_e) {
         Ok(())
     } else {
@@ -19,7 +19,7 @@ pub fn convert(ctx: &Ctx, tv: &Value, av: &Value, bv: &Value) -> Result<()> {
     if is_alpha_equiv(&a, &b) {
         Ok(())
     } else {
-        Err(Error::NotTheSame(read_back_type(ctx, tv)?, a, b))
+        Err(Error::NotTheSame(tv.read_back_type(ctx)?, a, b))
     }
 }
 

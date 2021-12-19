@@ -1,6 +1,5 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::read_back_type;
 use crate::symbol::Symbol;
 use crate::types::{cores, values};
 use std::any::Any;
@@ -25,7 +24,7 @@ impl ValueInterface for Universe {
     }
 
     fn read_back(&self, ctx: &Ctx, _tv: &Value, v: &Value) -> Result<Core> {
-        Ok(read_back_type(ctx, v)?)
+        Ok(v.read_back_type(ctx)?)
     }
 }
 

@@ -1,7 +1,7 @@
 use crate::alpha;
 use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
+use crate::normalize::{now, read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::reference::NeutralVar;
 use crate::types::values::later;
@@ -173,19 +173,15 @@ impl ValueInterface for Sigma<Value, Closure> {
     }
 
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
-        let a_e = read_back_type(ctx, &self.car_type)?;
-        let x = &self.arg_name;
-        let x_hat = ctx.fresh(x);
+        let a_e = self.car_type.read_back_type(ctx)?;
+        let x_hat = ctx.fresh(&self.arg_name);
         let ctx_hat = ctx.bind_free(x_hat.clone(), self.car_type.clone())?;
         Ok(cores::sigma(
             x_hat.clone(),
             a_e,
-            read_back_type(
-                &ctx_hat,
-                &self
-                    .cdr_type
-                    .val_of(values::neutral(self.car_type.clone(), NeutralVar(x_hat))),
-            )?,
+            self.cdr_type
+                .val_of(values::neutral(self.car_type.clone(), NeutralVar(x_hat)))
+                .read_back_type(&ctx_hat)?,
         ))
     }
 
