@@ -1,5 +1,7 @@
 use crate::alpha::alpha_equiv_aux;
-use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface, N};
+use crate::basics::{
+    Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface,
+};
 use crate::errors::Error;
 use crate::normalize::now;
 use crate::symbol::Symbol;
@@ -10,6 +12,7 @@ use crate::{alpha, errors, resugar};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
+use crate::types::reference::NeutralVar;
 
 /// An actual Function
 #[derive(Debug, Clone, PartialEq)]
@@ -58,8 +61,10 @@ impl CoreInterface for Lambda<Core> {
             let b_out = self.body.check(
                 &ctx.bind_free(x_hat.clone(), pi.arg_type.clone())?,
                 &r.extend(self.arg_name.clone(), x_hat.clone()),
-                &pi.res_type
-                    .val_of(values::neutral(pi.arg_type.clone(), N::Var(x_hat.clone()))),
+                &pi.res_type.val_of(values::neutral(
+                    pi.arg_type.clone(),
+                    NeutralVar(x_hat.clone()),
+                )),
             )?;
             Ok(Core::lambda(x_hat, b_out))
         } else {

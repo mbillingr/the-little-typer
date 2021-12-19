@@ -10,6 +10,9 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 pub use std::sync::{Arc as R, Mutex, RwLock};
+use crate::types::functions::NeutralApp;
+use crate::types::natural::NeutralWhichNat;
+use crate::types::reference::NeutralVar;
 
 pub trait CoreInterface: Any + Debug + Display + Sync + Send {
     fn as_any(&self) -> &dyn Any;
@@ -347,19 +350,29 @@ impl std::cmp::PartialEq for Closure {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum N {
-    Var(Symbol),
-    App(R<N>, The),
-    WhichNat(R<N>, The, The),
+pub trait NeutralInterface: Debug + Sync + Send {
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core>;
 }
 
+#[derive(Debug, Clone)]
+pub struct N(R<dyn NeutralInterface>);
+
 impl N {
-    pub fn app(f: N, typ: Value, val: Value) -> Self {
-        N::App(R::new(f), The(typ, val))
+    pub fn app(f: impl NeutralInterface + 'static, typ: Value, val: Value) -> Self {
+        N(R::new(NeutralApp(N(R::new(f)), The(typ, val))))
     }
-    pub fn which_nat(target: impl Into<R<N>>, base: The, step: The) -> Self {
-        N::WhichNat(target.into(), base, step)
+    pub fn which_nat(target: impl NeutralInterface + 'static, base: The, step: The) -> Self {
+        N(R::new(NeutralWhichNat(N(R::new(target)), base, step)))
+    }
+
+    pub fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        self.0.read_back_neutral(ctx)
+    }
+}
+
+impl<T: NeutralInterface + 'static> From<T> for N {
+    fn from(n: T) -> Self {
+        N(R::new(n))
     }
 }
 
@@ -432,8 +445,10 @@ impl Ctx {
             CtxImpl::Entry(x, Binder::Free(tv), next) => {
                 let ctx = next;
                 let mut env = ctx.to_env();
-                env.0
-                    .insert(x.clone(), values::neutral(tv.clone(), N::Var(x.clone())));
+                env.0.insert(
+                    x.clone(),
+                    values::neutral(tv.clone(), NeutralVar(x.clone())),
+                );
                 env
             }
             CtxImpl::Entry(_, Binder::Claim(_), next) => next.to_env(),

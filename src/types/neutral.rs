@@ -4,8 +4,11 @@ use crate::normalize::{now, read_back_neutral};
 use crate::types::universe::Universe;
 use std::any::Any;
 
-pub fn neutral(type_value: Value, kind: N) -> Value {
-    Value::new(Neutral { type_value, kind })
+pub fn neutral(type_value: Value, kind: impl Into<N>) -> Value {
+    Value::new(Neutral {
+        type_value,
+        kind: kind.into(),
+    })
 }
 
 #[derive(Debug)]

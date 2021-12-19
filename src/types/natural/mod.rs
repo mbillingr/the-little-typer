@@ -11,7 +11,7 @@ pub use add1::Add1;
 pub use ind_nat::IndNat;
 pub use nat::Nat;
 use std::collections::HashSet;
-pub use which_nat::WhichNat;
+pub use which_nat::{WhichNat, NeutralWhichNat};
 pub use zero::Zero;
 
 #[derive(Debug, Clone, PartialEq)]

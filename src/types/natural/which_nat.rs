@@ -1,9 +1,7 @@
-use crate::basics::{
-    Closure, Core, CoreInterface, Ctx, Env, Renaming, The, Value, ValueInterface, N,
-};
+use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, N, NeutralInterface, Renaming, The, Value, ValueInterface};
 use crate::errors;
 use crate::errors::Error;
-use crate::normalize::now;
+use crate::normalize::{now, read_back, read_back_neutral, read_back_type};
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, MaybeTyped, Zero};
@@ -19,6 +17,9 @@ pub struct WhichNat {
     base: MaybeTyped,
     step: Core,
 }
+
+#[derive(Debug)]
+pub struct NeutralWhichNat(pub N, pub The, pub The);
 
 impl WhichNat {
     pub fn typed(target: Core, base_t: Core, base: Core, step: Core) -> Self {
@@ -134,7 +135,7 @@ fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
         Some(Neutral { kind: ne, .. }) => {
             return values::neutral(
                 bt_v.clone(),
-                N::which_nat(
+                NeutralWhichNat(
                     ne.clone(),
                     The(bt_v.clone(), b_v),
                     The(pi_type!(((_n, values::nat())), { bt_v.clone() }), s_v),
@@ -145,4 +146,15 @@ fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
     };
 
     unreachable!("{:?}", now(&tgt_v))
+}
+
+impl NeutralInterface for NeutralWhichNat {
+    fn read_back_neutral(&self, ctx: &Ctx) -> errors::Result<Core> {
+        let NeutralWhichNat(tgt, The(b_tv, b_v), The(s_tv, s_v)) = self;
+        Ok(cores::which_nat(
+            read_back_neutral(ctx, tgt)?,
+            cores::the(read_back_type(ctx, b_tv)?, read_back(ctx, b_tv, b_v)?),
+            read_back(ctx, s_tv, s_v)?,
+        ))
+    }
 }

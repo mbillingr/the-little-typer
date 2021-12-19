@@ -1,5 +1,7 @@
 use crate::alpha::alpha_equiv_aux;
-use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface, N};
+use crate::basics::{
+    Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface,
+};
 use crate::normalize::{read_back, read_back_type, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::functions::lambda::Lambda;
@@ -9,6 +11,7 @@ use crate::{alpha, errors, resugar};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
+use crate::types::reference::NeutralVar;
 
 #[derive(Debug, PartialEq)]
 pub struct Pi<T, C> {
@@ -197,7 +200,7 @@ impl ValueInterface for Pi<Value, Closure> {
             &ctx_hat,
             &self.res_type.val_of(neutral::neutral(
                 self.arg_type.clone(),
-                N::Var(x_hat.clone()),
+                NeutralVar(x_hat.clone()),
             )),
         )?;
         Ok(Core::pi(x_hat, ae, r))
@@ -216,11 +219,11 @@ impl ValueInterface for Pi<Value, Closure> {
             &ctx.bind_free(x_hat.clone(), self.arg_type.clone()).unwrap(),
             &self.res_type.val_of(neutral::neutral(
                 self.arg_type.clone(),
-                N::Var(x_hat.clone()),
+                NeutralVar(x_hat.clone()),
             )),
             &functions::do_ap(
                 f,
-                neutral::neutral(self.arg_type.clone(), N::Var(x_hat.clone())),
+                neutral::neutral(self.arg_type.clone(), NeutralVar(x_hat.clone())),
             ),
         )?;
 

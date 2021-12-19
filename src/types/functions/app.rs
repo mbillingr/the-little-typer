@@ -1,7 +1,7 @@
-use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::basics::{Core, CoreInterface, Ctx, Env, N, NeutralInterface, Renaming, The, Value, ValueInterface};
 use crate::errors;
 use crate::errors::Error;
-use crate::normalize::val_in_ctx;
+use crate::normalize::{read_back, read_back_neutral, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::values::later;
 use crate::types::{cores, functions, values};
@@ -14,6 +14,9 @@ pub struct App {
     pub fun: Core,
     pub arg: Core,
 }
+
+#[derive(Debug)]
+pub struct NeutralApp(pub N, pub The);
 
 /// N-ary function application; desugars to series of `App`s
 #[derive(Debug, Clone, PartialEq)]
@@ -107,5 +110,16 @@ impl Display for AppStar {
             write!(f, " {}", arg)?;
         }
         write!(f, ")")
+    }
+}
+
+impl NeutralInterface for NeutralApp {
+    fn read_back_neutral(&self, ctx: &Ctx) -> errors::Result<Core> {
+        let fun = &self.0;
+        let The(typ, val) = &self.1;
+        Ok(Core::app(
+            read_back_neutral(ctx, fun)?,
+            read_back(ctx, typ, val)?,
+        ))
     }
 }

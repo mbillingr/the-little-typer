@@ -1,5 +1,6 @@
 use crate::alpha;
-use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface, N};
+use crate::basics::{
+    Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, read_back_type, val_in_ctx};
 use crate::symbol::Symbol;
@@ -8,6 +9,7 @@ use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
+use crate::types::reference::NeutralVar;
 
 #[derive(Debug, PartialEq)]
 pub struct Sigma<T, C> {
@@ -183,7 +185,7 @@ impl ValueInterface for Sigma<Value, Closure> {
                 &ctx_hat,
                 &self
                     .cdr_type
-                    .val_of(values::neutral(self.car_type.clone(), N::Var(x_hat))),
+                    .val_of(values::neutral(self.car_type.clone(), NeutralVar(x_hat))),
             )?,
         ))
     }

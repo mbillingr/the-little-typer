@@ -3,12 +3,12 @@ mod fun;
 mod lambda;
 mod pi;
 
-use crate::basics::{Closure, Value, ValueInterface, N};
+use crate::basics::{Closure, The, Value, ValueInterface};
 use crate::normalize::now;
 use crate::types::neutral::Neutral;
 use crate::types::values::neutral;
 
-pub use app::{App, AppStar};
+pub use app::{App, AppStar, NeutralApp};
 pub use fun::Fun;
 pub use lambda::{Lambda, LambdaStar};
 pub use pi::{Pi, PiStar};
@@ -27,7 +27,7 @@ pub fn do_ap(rator: &Value, rand: Value) -> Value {
             {
                 neutral(
                     pi.res_type.val_of(rand.clone()),
-                    N::app(neu.kind.clone(), pi.arg_type.clone(), rand),
+                    NeutralApp(neu.kind.clone(), The(pi.arg_type.clone(), rand)),
                 )
             } else {
                 todo!()

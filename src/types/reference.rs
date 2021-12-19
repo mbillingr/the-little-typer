@@ -1,5 +1,5 @@
 use crate::alpha;
-use crate::basics::{is_var_name, Core, CoreInterface, Ctx, Env, Renaming, Value};
+use crate::basics::{Core, CoreInterface, Ctx, Env, is_var_name, NeutralInterface, Renaming, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::read_back_type;
 use crate::symbol::Symbol;
@@ -11,6 +11,9 @@ use std::fmt::Formatter;
 /// Quotations are atoms
 #[derive(Debug, Clone, PartialEq)]
 pub struct Ref(Symbol);
+
+#[derive(Debug)]
+pub struct NeutralVar(pub Symbol);
 
 impl Ref {
     pub fn new(s: impl Into<Symbol>) -> Self {
@@ -80,5 +83,11 @@ impl CoreInterface for Ref {
 impl std::fmt::Display for Ref {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.name())
+    }
+}
+
+impl NeutralInterface for NeutralVar {
+    fn read_back_neutral(&self, _ctx: &Ctx) -> Result<Core> {
+        Ok(cores::refer(self.0.clone()))
     }
 }
