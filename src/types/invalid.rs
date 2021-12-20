@@ -1,9 +1,9 @@
+use crate::alpha;
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, R};
 use crate::errors::{Error, Result};
 use crate::symbol::Symbol;
 use std::collections::HashSet;
 use std::fmt::Formatter;
-use crate::alpha;
 
 /// The type of all types
 #[derive(Debug, Clone)]

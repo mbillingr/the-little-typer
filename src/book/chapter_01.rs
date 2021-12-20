@@ -81,16 +81,20 @@ fn test_039_cdr_gets_second_element_of_pair() {
 #[test]
 fn test_040_nested_cons() {
     in_context(&CTX)
-        .core("(the (Pair (Pair Atom Atom) Atom)
-                    (cons (cons 'aubergine 'courgette) 'tomato))")
+        .core(
+            "(the (Pair (Pair Atom Atom) Atom)
+                    (cons (cons 'aubergine 'courgette) 'tomato))",
+        )
         .checks()
 }
 
 #[test]
 fn test_041_access_nested_cons() {
     in_context(&CTX)
-        .core("(car (cdr (the (Pair Atom (Pair Atom Atom))
-                              (cons 'ratatouille (cons 'baguette 'olive-oil)))))")
+        .core(
+            "(car (cdr (the (Pair Atom (Pair Atom Atom))
+                              (cons 'ratatouille (cons 'baguette 'olive-oil)))))",
+        )
         .and("'baguette")
         .are_the_same("Atom");
 }
@@ -98,8 +102,10 @@ fn test_041_access_nested_cons() {
 #[test]
 fn test_056_only_the_normal_form_matters_for_sameness() {
     in_context(&CTX)
-        .core("(car (the (Pair U Atom) (cons Atom 'olive)))").check()
-        .and("(cdr (the (Pair Atom U) (cons 'oil Atom)))").check()
+        .core("(car (the (Pair U Atom) (cons Atom 'olive)))")
+        .check()
+        .and("(cdr (the (Pair Atom U) (cons 'oil Atom)))")
+        .check()
         .are_the_same_type();
 }
 
@@ -137,4 +143,14 @@ fn test_076_zero_is_a_nat() {
 #[should_panic]
 fn test_077_identifiers_must_be_claimed_before_definition() {
     in_context(&CTX).define("one", "(add1 zero)");
+}
+
+#[test]
+fn test_079_identifiers_can_be_defined_after_claiming() {
+    in_context(&CTX)
+        .claim("one", "Nat")
+        .define("one", "(add1 zero)")
+        .core("one")
+        .and("1")
+        .are_the_same("Nat");
 }

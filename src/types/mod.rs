@@ -127,13 +127,13 @@ mod atom;
 pub mod cores;
 mod delay;
 pub mod functions;
+mod invalid;
 pub mod natural;
 mod neutral;
 mod pairs;
 pub mod reference;
 mod universe;
 pub mod values;
-mod invalid;
 
 fn is_type_with_fresh_binding<T: CoreInterface>(
     ctx: &Ctx,
