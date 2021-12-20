@@ -17,35 +17,56 @@ fn test_002_a_quote_is_an_atom() {
 fn test_019_the_result_of_cons_is_a_pair() {
     in_context(&CTX)
         .core("(the (Pair Atom Atom) (cons 'ratatouille 'baguette))")
-        .check();
+        .checks();
 }
 
 #[test]
 fn test_022_024_sameness_of_pairs() {
-    in_context(&CTX).check_same(
-        "(Pair Atom Atom)",
-        "(cons 'ratatouille 'baguette)",
-        "(cons 'ratatouille 'baguette)",
-    );
-    in_context(&CTX).check_not_same(
-        "(Pair Atom Atom)",
-        "(cons 'ratatouille 'baguette)",
-        "(cons 'baguette 'baguette)",
-    );
+    in_context(&CTX)
+        .core("(cons 'ratatouille 'baguette)")
+        .and("(cons 'ratatouille 'baguette)")
+        .are_the_same("(Pair Atom Atom)");
+    in_context(&CTX)
+        .core("(cons 'ratatouille 'baguette)")
+        .and("(cons 'baguette 'baguette)")
+        .are_not_the_same("(Pair Atom Atom)");
 }
 
 #[test]
 fn test_026_a_pair_of_two_atoms_is_a_type() {
-    assert!(in_context(&CTX).core("(Pair Atom Atom)",).is_a_type());
+    in_context(&CTX).core("(Pair Atom Atom)").is_a_type();
 }
 
 #[test]
 fn test_the_law_of_atom() {
-    assert!(in_context(&CTX).core("Atom",).is_a_type());
+    in_context(&CTX).core("Atom").is_a_type();
 }
 
 #[test]
 fn test_031_032_compare_types() {
-    in_context(&CTX).check_not_same_type("Atom", "(Pair Atom Atom)");
-    in_context(&CTX).check_same_type("(Pair Atom Atom)", "(Pair Atom Atom)");
+    in_context(&CTX)
+        .core("Atom")
+        .and("(Pair Atom Atom)")
+        .are_not_the_same_type();
+    in_context(&CTX)
+        .core("(Pair Atom Atom)")
+        .and("(Pair Atom Atom)")
+        .are_the_same_type();
+}
+
+#[test]
+#[should_panic(expected = "NotAType")]
+fn test_033_compare_over_non_type() {
+    in_context(&CTX)
+        .core("'peche")
+        .and("'peche")
+        .are_the_same("'fruit");
+}
+
+#[test]
+fn test_038_car_gets_first_element_of_pair() {
+    in_context(&CTX)
+        .core("(car (the (Pair Atom Atom) (cons 'ratatouille 'baguette)))")
+        .and("'ratatouille")
+        .are_the_same("Atom");
 }
