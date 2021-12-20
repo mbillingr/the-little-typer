@@ -4,7 +4,7 @@ use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
 use crate::types::natural::{Add1, IndNat, Nat, WhichNat, Zero};
-use crate::types::pairs::{Cons, Pair, Sigma, SigmaStar};
+use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
 use crate::types::universe::Universe;
 
@@ -108,4 +108,12 @@ pub fn pair(a: Core, d: Core) -> Core {
 
 pub fn cons(car: Core, cdr: Core) -> Core {
     Core::new(Cons(car, cdr))
+}
+
+pub fn car(cons: Core) -> Core {
+    Core::new(Car(cons))
+}
+
+pub fn cdr(cons: Core) -> Core {
+    Core::new(Cdr(cons))
 }

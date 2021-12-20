@@ -27,9 +27,14 @@ pub struct SigmaStar {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Pair<T>(pub T, pub T);
 
-/// pairs
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cons<T>(pub T, pub T);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Car<T>(pub T);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Cdr<T>(pub T);
 
 impl CoreInterface for Sigma<Core, Core> {
     impl_core_defaults!((arg_name, car_type, cdr_type), as_any, same, check_by_synth);
@@ -200,6 +205,68 @@ impl CoreInterface for Cons<Core> {
     }
 }
 
+impl CoreInterface for Car<Core> {
+    impl_core_defaults!((0), as_any, same, occurring_names, alpha_equiv, no_type);
+
+    fn val_of(&self, env: &Env) -> Value {
+        do_car(&later(env.clone(), self.0.clone()))
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        match self.0.synth(ctx, r)? {
+            (p_t, p_out) => {
+                let val = val_in_ctx(ctx, &p_t);
+                match val.try_as::<Sigma<Value, Closure>>() {
+                    Some(Sigma { car_type: a, .. }) => {
+                        Ok((a.read_back_type(ctx)?, cores::car(p_out)))
+                    }
+                    _ => Err(Error::NotASigmaType(val.read_back_type(ctx).unwrap())),
+                }
+            }
+        }
+    }
+
+    fn check(&self, _ctx: &Ctx, _r: &Renaming, _tv: &Value) -> Result<Core> {
+        todo!()
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
+    }
+}
+
+impl CoreInterface for Cdr<Core> {
+    impl_core_defaults!((0), as_any, same, occurring_names, alpha_equiv, no_type);
+
+    fn val_of(&self, env: &Env) -> Value {
+        do_cdr(&later(env.clone(), self.0.clone()))
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        match self.0.synth(ctx, r)? {
+            (p_t, p_out) => {
+                let val = val_in_ctx(ctx, &p_t);
+                match val.try_as::<Sigma<Value, Closure>>() {
+                    Some(Sigma { cdr_type: c, .. }) => Ok((
+                        c.val_of(do_car(&val_in_ctx(ctx, &p_out)))
+                            .read_back_type(ctx)?,
+                        cores::cdr(p_out),
+                    )),
+                    _ => Err(Error::NotASigmaType(val.read_back_type(ctx).unwrap())),
+                }
+            }
+        }
+    }
+
+    fn check(&self, _ctx: &Ctx, _r: &Renaming, _tv: &Value) -> Result<Core> {
+        todo!()
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
+    }
+}
+
 impl ValueInterface for Sigma<Value, Closure> {
     fn as_any(&self) -> &dyn Any {
         self
@@ -294,6 +361,18 @@ impl Display for Pair<Core> {
 impl Display for Cons<Core> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "(cons {} {})", self.0, self.1)
+    }
+}
+
+impl Display for Car<Core> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(car {})", self.0)
+    }
+}
+
+impl Display for Cdr<Core> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(cdr {})", self.0)
     }
 }
 

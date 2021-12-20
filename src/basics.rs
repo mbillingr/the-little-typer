@@ -216,6 +216,8 @@ impl From<&Sexpr> for Core {
                     }
                     ("Pair", [a, d]) => cores::pair(Core::from(a), Core::from(d)),
                     ("cons", [car, cdr]) => cores::cons(Core::from(car), Core::from(cdr)),
+                    ("car", [cons]) => cores::car(Core::from(cons)),
+                    ("cdr", [cons]) => cores::cdr(Core::from(cons)),
                     (_, args) => {
                         cores::app_star(Core::from(op), args.iter().map(Core::from).collect())
                     }
@@ -300,6 +302,10 @@ pub struct Value(R<dyn ValueInterface>);
 impl Value {
     pub fn new(obj: impl ValueInterface) -> Self {
         Value(R::new(obj))
+    }
+
+    pub fn try_as<T: 'static>(&self) -> Option<&T> {
+        self.as_any().downcast_ref::<T>()
     }
 }
 

@@ -377,3 +377,43 @@ fn nary_sigma_desugars_to_nested_sigmas() {
         ))
     )
 }
+
+#[test]
+fn cons_builds_sigma_but_can_be_annotated_as_pair() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(the (Pair Atom Atom) (cons 'olive 'oil))".parse().unwrap()
+        ),
+        Ok(the(
+            sigma("x", atom(), atom()),
+            cons(quote("olive"), quote("oil"))
+        ))
+    )
+}
+
+#[test]
+fn car_gets_a_pairs_first_element() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(car (the (Pair Atom Atom) (cons 'olive 'oil)))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(atom(), quote("olive"),))
+    )
+}
+
+#[test]
+fn cdr_gets_a_pairs_second_element() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"(cdr (the (Pair Atom Atom) (cons 'olive 'oil)))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(atom(), quote("oil"),))
+    )
+}
