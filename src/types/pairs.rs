@@ -1,4 +1,5 @@
 use crate::alpha;
+use crate::alpha::alpha_equiv_aux;
 use crate::basics::{
     Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value, ValueInterface, N,
 };
@@ -79,12 +80,19 @@ impl CoreInterface for Sigma<Core, Core> {
     fn alpha_equiv_aux(
         &self,
         other: &dyn CoreInterface,
-        _lvl: usize,
-        _b1: &alpha::Bindings,
-        _b2: &alpha::Bindings,
+        lvl: usize,
+        b1: &alpha::Bindings,
+        b2: &alpha::Bindings,
     ) -> bool {
-        if let Some(_other) = other.as_any().downcast_ref::<Self>() {
-            todo!()
+        if let Some(other) = other.as_any().downcast_ref::<Self>() {
+            alpha_equiv_aux(lvl, b1, b2, &self.car_type, &other.car_type)
+                && alpha_equiv_aux(
+                    1 + lvl,
+                    &b1.bind(&self.arg_name, lvl),
+                    &b2.bind(&other.arg_name, lvl),
+                    &self.cdr_type,
+                    &other.cdr_type,
+                )
         } else {
             false
         }

@@ -21,6 +21,14 @@ impl<'a> Checker<'a> {
         }
     }
 
+    fn check_same_type(&self, a: &'static str, b: &'static str) {
+        self.check_same("U", a, b)
+    }
+
+    fn check_not_same_type(&self, a: &'static str, b: &'static str) {
+        self.check_not_same("U", a, b)
+    }
+
     fn check_same(&self, t: &'static str, a: &'static str, b: &'static str) {
         let t = t.parse().unwrap();
         let a = a.parse().unwrap();
@@ -45,23 +53,17 @@ struct CoreChecker<'a> {
 }
 
 impl CoreChecker<'_> {
+    fn is_a_type(&self) -> bool {
+        self.expr.is_type(self.ctx, &Renaming::new()).unwrap();
+        true
+    }
     fn is_a(&self, t: &Core) -> bool {
-        let ctx_argument = self.ctx;
-        let r = &Renaming::new();
-        let inp = t;
-        let t_out = inp.is_type(ctx_argument, r).unwrap();
+        let t_out = t.is_type(self.ctx, &Renaming::new()).unwrap();
         let tv = val_in_ctx(self.ctx, &t_out);
-        let ctx_argument = self.ctx;
-        let r = &Renaming::new();
-        let e = &self.expr;
-        let tv_argument = &tv;
-        e.check(ctx_argument, r, tv_argument).is_ok()
+        self.expr.check(self.ctx, &Renaming::new(), &tv).is_ok()
     }
 
     fn check(&self) {
-        let ctx_argument = self.ctx;
-        let r = &Renaming::new();
-        let inp = &self.expr;
-        inp.synth(ctx_argument, r).unwrap();
+        self.expr.synth(self.ctx, &Renaming::new()).unwrap();
     }
 }

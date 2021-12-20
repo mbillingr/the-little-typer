@@ -33,3 +33,19 @@ fn test_022_024_sameness_of_pairs() {
         "(cons 'baguette 'baguette)",
     );
 }
+
+#[test]
+fn test_026_a_pair_of_two_atoms_is_a_type() {
+    assert!(in_context(&CTX).core("(Pair Atom Atom)",).is_a_type());
+}
+
+#[test]
+fn test_the_law_of_atom() {
+    assert!(in_context(&CTX).core("Atom",).is_a_type());
+}
+
+#[test]
+fn test_031_032_compare_types() {
+    in_context(&CTX).check_not_same_type("Atom", "(Pair Atom Atom)");
+    in_context(&CTX).check_same_type("(Pair Atom Atom)", "(Pair Atom Atom)");
+}
