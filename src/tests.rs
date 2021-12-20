@@ -446,3 +446,27 @@ fn sigma_with_neutrals() {
         ))
     )
 }
+
+#[test]
+fn the_normal_form_of_sigma_is_unary() {
+    assert_eq!(
+        norm_type(&CTX, &"(Σ ((x Nat) (y Nat)) Nat)".parse().unwrap()),
+        Ok(sigma("x", nat(), sigma("y", nat(), nat())))
+    )
+}
+
+#[test]
+fn argument_to_car_must_be_a_pair() {
+    assert_eq!(
+        rep(&CTX, &"(car zero)".parse().unwrap()),
+        Err(Error::NotASigmaType(nat()))
+    )
+}
+
+#[test]
+fn argument_to_cdr_must_be_a_pair() {
+    assert_eq!(
+        rep(&CTX, &"(cdr zero)".parse().unwrap()),
+        Err(Error::NotASigmaType(nat()))
+    )
+}
