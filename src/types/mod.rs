@@ -1,3 +1,7 @@
+use crate::basics::{Core, CoreInterface, Ctx, Renaming};
+use crate::errors;
+use crate::normalize::val_in_ctx;
+use crate::symbol::Symbol;
 macro_rules! pi_type {
     ((), $ret:expr) => {$ret};
 
@@ -129,3 +133,18 @@ mod pairs;
 pub mod reference;
 mod universe;
 pub mod values;
+
+fn check_with_fresh_binding<T: CoreInterface>(
+    ctx: &Ctx,
+    r: &Renaming,
+    x: &Symbol,
+    x_type: &Core,
+    body: &T,
+) -> errors::Result<(Symbol, Core, Core)> {
+    let x_hat = ctx.fresh(x);
+    let a_out = x_type.check(ctx, r, &values::universe())?;
+    let ctx_hat = ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?;
+    let r_hat = r.extend(x.clone(), x_hat.clone());
+    let b_out = body.check(&ctx_hat, &r_hat, &values::universe())?;
+    Ok((x_hat, a_out, b_out))
+}

@@ -5,7 +5,7 @@ use crate::normalize::{now, read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::reference::NeutralVar;
 use crate::types::values::later;
-use crate::types::{cores, values};
+use crate::types::{check_with_fresh_binding, cores, values};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
@@ -15,6 +15,12 @@ pub struct Sigma<T, C> {
     pub arg_name: Symbol,
     pub car_type: T,
     pub cdr_type: C,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct SigmaStar {
+    pub binders: Vec<(Symbol, Core)>,
+    pub cdr_type: Core,
 }
 
 /// The type of pairs
@@ -49,8 +55,10 @@ impl CoreInterface for Sigma<Core, Core> {
         todo!()
     }
 
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
-        todo!()
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let (x_hat, a_out, d_out) =
+            check_with_fresh_binding(ctx, r, &self.arg_name, &self.car_type, &self.cdr_type)?;
+        Ok((cores::universe(), cores::sigma(x_hat, a_out, d_out)))
     }
 
     fn alpha_equiv_aux(
@@ -75,6 +83,48 @@ impl CoreInterface for Sigma<Core, Core> {
         } else {
             (&a_t.0 | &d_t.0, cores::pair(a_t.1, d_t.1))
         }
+    }
+}
+
+impl CoreInterface for SigmaStar {
+    impl_core_defaults!((), as_any, same, check_by_synth, no_alpha_equiv);
+
+    fn occurring_names(&self) -> HashSet<Symbol> {
+        todo!()
+    }
+
+    fn val_of(&self, _env: &Env) -> Value {
+        panic!("Attempt to evaluate Sigma* (should have been desugared to `Sigma`s)")
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        todo!()
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        match &self.binders[..] {
+            [] => unreachable!(),
+            [(x, a)] => Sigma {
+                arg_name: x.clone(),
+                car_type: a.clone(),
+                cdr_type: self.cdr_type.clone(),
+            }
+            .synth(ctx, r),
+            [(x, a), more @ ..] => {
+                let body = SigmaStar {
+                    binders: more.to_vec(),
+                    cdr_type: self.cdr_type.clone(),
+                };
+
+                let (x_hat, a_out, d_out) = check_with_fresh_binding(ctx, r, x, a, &body)?;
+
+                Ok((cores::universe(), cores::sigma(x_hat, a_out, d_out)))
+            }
+        }
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
     }
 }
 
@@ -221,6 +271,17 @@ impl Display for Sigma<Core, Core> {
             self.car_type,
             self.cdr_type
         )
+    }
+}
+
+impl Display for SigmaStar {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let b: Vec<_> = self
+            .binders
+            .iter()
+            .map(|(x, t)| format!("({} {})", x.name(), t))
+            .collect();
+        write!(f, "(Σ ({}) {})", b.join(" "), self.cdr_type)
     }
 }
 

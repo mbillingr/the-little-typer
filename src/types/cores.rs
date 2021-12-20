@@ -4,7 +4,7 @@ use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
 use crate::types::natural::{Add1, IndNat, Nat, WhichNat, Zero};
-use crate::types::pairs::{Cons, Pair, Sigma};
+use crate::types::pairs::{Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
 use crate::types::universe::Universe;
 
@@ -92,6 +92,13 @@ pub fn sigma(x: impl Into<Symbol>, car_type: Core, cdr_type: Core) -> Core {
         arg_name: x.into(),
         car_type,
         cdr_type,
+    })
+}
+
+pub fn sigma_star(binders: Vec<(Symbol, Core)>, res_type: Core) -> Core {
+    Core::new(SigmaStar {
+        binders,
+        cdr_type: res_type,
     })
 }
 

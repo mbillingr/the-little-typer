@@ -366,3 +366,14 @@ fn pair_desugars_to_sigma() {
         Ok(the(universe(), sigma("a", atom(), atom())))
     )
 }
+
+#[test]
+fn nary_sigma_desugars_to_nested_sigmas() {
+    assert_eq!(
+        rep(&CTX, &"(Σ ((x Nat) (y Atom)) Nat)".parse().unwrap()),
+        Ok(the(
+            universe(),
+            sigma("x", nat(), sigma("y", atom(), nat()))
+        ))
+    )
+}

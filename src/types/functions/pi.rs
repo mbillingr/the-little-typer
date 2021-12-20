@@ -5,7 +5,7 @@ use crate::symbol::Symbol;
 use crate::types::functions::lambda::Lambda;
 use crate::types::reference::NeutralVar;
 use crate::types::values::later;
-use crate::types::{cores, functions, neutral, values};
+use crate::types::{check_with_fresh_binding, cores, functions, neutral, values};
 use crate::{alpha, errors, resugar};
 use std::any::Any;
 use std::collections::HashSet;
@@ -64,11 +64,8 @@ impl CoreInterface for Pi<Core, Core> {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
-        let x_hat = ctx.fresh(&self.arg_name);
-        let a_out = self.arg_type.check(ctx, r, &values::universe())?;
-        let ctx_hat = ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?;
-        let r_hat = r.extend(self.arg_name.clone(), x_hat.clone());
-        let b_out = self.res_type.check(&ctx_hat, &r_hat, &values::universe())?;
+        let (x_hat, a_out, b_out) =
+            check_with_fresh_binding(ctx, r, &self.arg_name, &self.arg_type, &self.res_type)?;
         Ok((cores::universe(), Core::pi(x_hat, a_out, b_out)))
     }
 
@@ -154,15 +151,13 @@ impl CoreInterface for PiStar {
             }
             .synth(ctx, r),
             [(x, a), more @ ..] => {
-                let x_hat = ctx.fresh(x);
-                let a_out = a.check(ctx, r, &values::universe())?;
-                let ctx_hat = ctx.bind_free(x_hat.clone(), val_in_ctx(ctx, &a_out))?;
-                let r_hat = r.extend(x.clone(), x_hat.clone());
                 let body = PiStar {
                     binders: more.to_vec(),
                     res_type: self.res_type.clone(),
                 };
-                let b_out = body.check(&ctx_hat, &r_hat, &values::universe())?;
+
+                let (x_hat, a_out, b_out) = check_with_fresh_binding(ctx, r, x, a, &body)?;
+
                 Ok((cores::universe(), Core::pi(x_hat, a_out, b_out)))
             }
         }

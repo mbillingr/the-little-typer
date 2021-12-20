@@ -201,19 +201,9 @@ impl From<&Sexpr> for Core {
                     ("->", [ts @ .., rt]) => {
                         Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt))
                     }
-                    ("Pi" | "Π" | "∏", [Sexpr::List(params), rt]) => Core::pi_star(
-                        params
-                            .iter()
-                            .map(|x| match x {
-                                Sexpr::List(x) => match &x[..] {
-                                    [Sexpr::Symbol(name), typ] => (name.clone(), Core::from(typ)),
-                                    _ => unimplemented!(),
-                                },
-                                _ => unimplemented!(),
-                            })
-                            .collect(),
-                        Core::from(rt),
-                    ),
+                    ("Pi" | "Π" | "∏", [Sexpr::List(params), rt]) => {
+                        Core::pi_star(parse_binders(params), Core::from(rt))
+                    }
                     ("lambda" | "λ", [Sexpr::List(params), body]) => cores::lambda_star(
                         params
                             .iter()
@@ -221,6 +211,9 @@ impl From<&Sexpr> for Core {
                             .collect(),
                         Core::from(body).into(),
                     ),
+                    ("Sigma" | "Σ", [Sexpr::List(params), rt]) => {
+                        cores::sigma_star(parse_binders(params), Core::from(rt))
+                    }
                     ("Pair", [a, d]) => cores::pair(Core::from(a), Core::from(d)),
                     ("cons", [car, cdr]) => cores::cons(Core::from(car), Core::from(cdr)),
                     (_, args) => {
@@ -234,6 +227,36 @@ impl From<&Sexpr> for Core {
             },
         }
     }
+}
+
+impl<'a, A: From<&'a Sexpr>, B: From<&'a Sexpr>> From<&'a Sexpr> for (A, B) {
+    fn from(sexpr: &'a Sexpr) -> Self {
+        match sexpr {
+            Sexpr::List(x) => match &x[..] {
+                [a, b] => return (A::from(a), B::from(b)),
+                _ => {}
+            },
+            _ => {}
+        }
+        panic!("expected list of length 2, got {}", sexpr)
+    }
+}
+
+impl From<&Sexpr> for Symbol {
+    fn from(sexpr: &Sexpr) -> Self {
+        match sexpr {
+            Sexpr::Symbol(name) => name.clone(),
+            _ => panic!("expected symbol, got {}", sexpr),
+        }
+    }
+}
+
+fn parse_binders(exprs: &[Sexpr]) -> Vec<(Symbol, Core)> {
+    parse_sexpr_list(exprs)
+}
+
+fn parse_sexpr_list<'a, T: From<&'a Sexpr>>(exprs: &'a [Sexpr]) -> Vec<T> {
+    exprs.iter().map(Into::into).collect()
 }
 
 pub trait ValueInterface: Any + Debug + Sync + Send {
