@@ -1,4 +1,4 @@
-use crate::basics::{Core, Ctx, Value};
+use crate::basics::{Core, Ctx, Value, R};
 use crate::symbol::Symbol;
 use std::fmt::{Display, Formatter};
 
@@ -6,6 +6,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
+    InvalidSyntax(R<str>),
+
     CantDetermineType(Core),
     InvalidAtom(Symbol),
     WrongType(Core, Core),
@@ -26,6 +28,7 @@ pub enum Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Error::InvalidSyntax(x) => write!(f, "Invalid syntax: {}", x),
             Error::CantDetermineType(e) => write!(f, "Can't determine type of {}", e),
             Error::InvalidAtom(s) => write!(f, "Invalid atom: {}", s.name()),
             Error::WrongType(actual, expected) => {

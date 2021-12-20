@@ -21,6 +21,10 @@ impl<'a> Checker<'a> {
             expr: s.parse().unwrap(),
         }
     }
+
+    fn define(self, name: &str, expr: &str) -> Self {
+        todo!()
+    }
 }
 
 struct CoreChecker<'a> {
@@ -42,14 +46,31 @@ impl<'a> CoreChecker<'a> {
         true
     }
 
-    fn is_a(&self, t: &Core) -> bool {
+    fn is_a(&self, t: &'static str) -> bool {
+        let t: Core = t.parse().unwrap();
         let t_out = t.is_type(self.ctx, &Renaming::new()).unwrap();
         let tv = val_in_ctx(self.ctx, &t_out);
-        self.expr.check(self.ctx, &Renaming::new(), &tv).is_ok()
+        self.expr.check(self.ctx, &Renaming::new(), &tv).unwrap();
+        true
+    }
+
+    fn is_not_a(&self, t: &'static str) -> bool {
+        let t: Core = t.parse().unwrap();
+        let t_out = t.is_type(self.ctx, &Renaming::new()).unwrap();
+        let tv = val_in_ctx(self.ctx, &t_out);
+        match self.expr.check(self.ctx, &Renaming::new(), &tv) {
+            Err(_) => true,
+            other => panic!("{:?}", other),
+        }
     }
 
     fn checks(&self) {
         self.expr.synth(self.ctx, &Renaming::new()).unwrap();
+    }
+
+    fn check(self) -> Self {
+        self.expr.synth(self.ctx, &Renaming::new()).unwrap();
+        self
     }
 }
 
@@ -81,5 +102,11 @@ impl<'a> TwoCoreChecker<'a> {
             Err(Error::NotTheSame(_, _, _)) => {}
             other => panic!("{:?}", other),
         }
+    }
+
+    fn check(self) -> Self {
+        self.expr1.synth(self.ctx, &Renaming::new()).unwrap();
+        self.expr2.synth(self.ctx, &Renaming::new()).unwrap();
+        self
     }
 }

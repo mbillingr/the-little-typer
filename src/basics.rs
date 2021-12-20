@@ -175,6 +175,7 @@ impl FromStr for Core {
 impl From<&Sexpr> for Core {
     fn from(sexpr: &Sexpr) -> Self {
         match sexpr {
+            Sexpr::Invalid(s) => cores::invalid_syntax(s),
             Sexpr::Symbol(s) => match s.name() {
                 "U" => cores::universe(),
                 "Nat" => cores::nat(),

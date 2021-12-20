@@ -3,10 +3,15 @@ use crate::symbol::Symbol;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
+use crate::types::invalid::Invalid;
 use crate::types::natural::{Add1, IndNat, Nat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
 use crate::types::universe::Universe;
+
+pub fn invalid_syntax(s: &str) -> Core {
+    Core::new(Invalid(s.into()))
+}
 
 pub fn the(typ: Core, exp: Core) -> Core {
     Core::new(The { typ, exp })

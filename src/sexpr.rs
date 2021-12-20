@@ -4,6 +4,7 @@ use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
 pub enum Sexpr {
+    Invalid(String),
     SmallNat(u64),
     Symbol(Symbol),
     List(Vec<Sexpr>),
@@ -27,30 +28,31 @@ impl SexprFactory for Sexpr {
         Sexpr::SmallNat(x)
     }
 
-    fn float(_: f64) -> Self::Sexpr {
-        unimplemented!()
+    fn float(x: f64) -> Self::Sexpr {
+        Sexpr::Invalid(x.to_string())
     }
 
     fn symbol(s: &str) -> Self::Sexpr {
         Sexpr::Symbol(Symbol::new(s))
     }
 
-    fn string(_: &str) -> Self::Sexpr {
-        unimplemented!()
+    fn string(s: &str) -> Self::Sexpr {
+        Sexpr::Invalid(format!("\"{}\"", s))
     }
 
     fn list(items: Vec<Self::Sexpr>) -> Self::Sexpr {
         Sexpr::List(items)
     }
 
-    fn pair(_: Self::Sexpr, _: Self::Sexpr) -> Self::Sexpr {
-        unimplemented!()
+    fn pair(a: Self::Sexpr, d: Self::Sexpr) -> Self::Sexpr {
+        Sexpr::Invalid(format!("({} . {})", a, d))
     }
 }
 
 impl Display for Sexpr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
+            Sexpr::Invalid(s) => write!(f, "{}", s),
             Sexpr::SmallNat(x) => write!(f, "{}", x),
             Sexpr::Symbol(s) => write!(f, "{}", s.name()),
             Sexpr::List(l) => {
