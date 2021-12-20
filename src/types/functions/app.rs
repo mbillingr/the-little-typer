@@ -80,7 +80,8 @@ impl CoreInterface for AppStar {
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<Core> {
         match self.check(ctx, r, &values::universe()) {
             Ok(t_out) => Ok(t_out),
-            Err(_) => Err(Error::NotAType(Core::new(self.clone()))),
+            //Err(_) => Err(Error::NotAType(Core::new(self.clone()))),
+            Err(e) => Err(e),
         }
     }
 

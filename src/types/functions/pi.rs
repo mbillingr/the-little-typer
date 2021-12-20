@@ -5,7 +5,9 @@ use crate::symbol::Symbol;
 use crate::types::functions::lambda::Lambda;
 use crate::types::reference::NeutralVar;
 use crate::types::values::later;
-use crate::types::{check_with_fresh_binding, cores, functions, neutral, values};
+use crate::types::{
+    check_with_fresh_binding, cores, functions, is_type_with_fresh_binding, neutral, values,
+};
 use crate::{alpha, errors, resugar};
 use std::any::Any;
 use std::collections::HashSet;
@@ -45,22 +47,9 @@ impl CoreInterface for Pi<Core, Core> {
     }
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<Core> {
-        let a_out = self.arg_type.is_type(ctx, r)?;
-        let a_outv = val_in_ctx(ctx, &a_out);
-        let b_out = self.res_type.is_type(
-            &ctx.bind_free(ctx.fresh(&self.arg_name), a_outv.clone())?,
-            &r.extend(
-                self.arg_name.clone(),
-                ctx.bind_free(ctx.fresh(&self.arg_name), a_outv.clone())?
-                    .fresh(&self.arg_name),
-            ),
-        )?;
-        Ok(Core::pi(
-            ctx.bind_free(ctx.fresh(&self.arg_name), a_outv)?
-                .fresh(&self.arg_name),
-            a_out,
-            b_out,
-        ))
+        let (y, a_out, b_out) =
+            is_type_with_fresh_binding(ctx, r, &self.arg_name, &self.arg_type, &self.res_type)?;
+        Ok(Core::pi(y, a_out, b_out))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
@@ -118,24 +107,17 @@ impl CoreInterface for PiStar {
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<Core> {
         match &self.binders[..] {
             [] => unimplemented!(),
-            [(x, a)] => {
-                let y = ctx.fresh(x);
-                let a_out = a.is_type(ctx, r)?;
-                let a_outv = val_in_ctx(ctx, &a_out);
-                let b_out = self.res_type.is_type(
-                    &ctx.bind_free(y.clone(), a_outv)?,
-                    &r.extend(x.clone(), y.clone()),
-                )?;
-                Ok(cores::pi(y, a_out, b_out))
+            [(x, a)] => Pi {
+                arg_name: x.clone(),
+                arg_type: a.clone(),
+                res_type: self.res_type.clone(),
             }
+            .is_type(ctx, r),
             [(x, a), more @ ..] => {
-                let z = ctx.fresh(x);
-                let a_out = a.is_type(ctx, r)?;
-                let a_outv = val_in_ctx(ctx, &a_out);
-                let b_out = cores::pi_star(more.to_vec(), self.res_type.clone()).is_type(
-                    &ctx.bind_free(z.clone(), a_outv)?,
-                    &r.extend(x.clone(), z.clone()),
-                )?;
+                let body = cores::pi_star(more.to_vec(), self.res_type.clone());
+
+                let (z, a_out, b_out) = is_type_with_fresh_binding(ctx, r, x, a, &body)?;
+
                 Ok(cores::pi(z, a_out, b_out))
             }
         }

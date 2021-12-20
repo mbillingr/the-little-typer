@@ -417,3 +417,32 @@ fn cdr_gets_a_pairs_second_element() {
         Ok(the(atom(), quote("oil"),))
     )
 }
+
+#[test]
+fn sigma_with_neutrals() {
+    assert_eq!(
+        rep(
+            &CTX,
+            &"
+(the (Π ((f (-> Nat U))
+         (p (Σ ((n Nat))
+               (f n))))
+        (f (car p)))
+     (λ (f p) (cdr p)))"
+                .parse()
+                .unwrap()
+        ),
+        Ok(the(
+            pi(
+                "f",
+                pi("x", nat(), universe()),
+                pi(
+                    "p",
+                    sigma("n", nat(), app(refer("f"), refer("n"))),
+                    app(refer("f"), car(refer("p")))
+                )
+            ),
+            lambda("f", lambda("p", cdr(refer("p"))))
+        ))
+    )
+}

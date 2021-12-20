@@ -134,6 +134,23 @@ pub mod reference;
 mod universe;
 pub mod values;
 
+fn is_type_with_fresh_binding<T: CoreInterface>(
+    ctx: &Ctx,
+    r: &Renaming,
+    x: &Symbol,
+    x_type: &Core,
+    body: &T,
+) -> errors::Result<(Symbol, Core, Core)> {
+    let x_hat = ctx.fresh(x);
+    let a_out = x_type.is_type(ctx, r)?;
+    let a_outv = val_in_ctx(ctx, &a_out);
+    let b_out = body.is_type(
+        &ctx.bind_free(x_hat.clone(), a_outv)?,
+        &r.extend(x.clone(), x_hat.clone()),
+    )?;
+    Ok((x_hat, a_out, b_out))
+}
+
 fn check_with_fresh_binding<T: CoreInterface>(
     ctx: &Ctx,
     r: &Renaming,

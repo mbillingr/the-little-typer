@@ -1,11 +1,13 @@
 use crate::alpha;
-use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::basics::{
+    Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value, ValueInterface, N,
+};
 use crate::errors::{Error, Result};
 use crate::normalize::{now, read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::reference::NeutralVar;
 use crate::types::values::later;
-use crate::types::{check_with_fresh_binding, cores, values};
+use crate::types::{check_with_fresh_binding, cores, is_type_with_fresh_binding, values};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
@@ -36,6 +38,12 @@ pub struct Car<T>(pub T);
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cdr<T>(pub T);
 
+#[derive(Debug)]
+pub struct NeutralCar(pub N);
+
+#[derive(Debug)]
+pub struct NeutralCdr(pub N);
+
 impl CoreInterface for Sigma<Core, Core> {
     impl_core_defaults!((arg_name, car_type, cdr_type), as_any, same, check_by_synth);
 
@@ -56,8 +64,10 @@ impl CoreInterface for Sigma<Core, Core> {
         )
     }
 
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        todo!()
+    fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
+        let (y, a_out, b_out) =
+            is_type_with_fresh_binding(ctx, r, &self.arg_name, &self.car_type, &self.cdr_type)?;
+        Ok(cores::sigma(y, a_out, b_out))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
@@ -102,8 +112,26 @@ impl CoreInterface for SigmaStar {
         panic!("Attempt to evaluate Sigma* (should have been desugared to `Sigma`s)")
     }
 
-    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
-        todo!()
+    fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
+        match &self.binders[..] {
+            [] => unimplemented!(),
+            [(x, a)] => Sigma {
+                arg_name: x.clone(),
+                car_type: a.clone(),
+                cdr_type: self.cdr_type.clone(),
+            }
+            .is_type(ctx, r),
+            [(x, a), more @ ..] => {
+                let body = SigmaStar {
+                    binders: more.to_vec(),
+                    cdr_type: self.cdr_type.clone(),
+                };
+
+                let (z, a_out, d_out) = check_with_fresh_binding(ctx, r, x, a, &body)?;
+
+                Ok(cores::sigma(z, a_out, d_out))
+            }
+        }
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
@@ -206,10 +234,21 @@ impl CoreInterface for Cons<Core> {
 }
 
 impl CoreInterface for Car<Core> {
-    impl_core_defaults!((0), as_any, same, occurring_names, alpha_equiv, no_type);
+    impl_core_defaults!(
+        (0),
+        as_any,
+        same,
+        occurring_names,
+        check_by_synth,
+        alpha_equiv
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         do_car(&later(env.clone(), self.0.clone()))
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        todo!()
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
@@ -226,20 +265,27 @@ impl CoreInterface for Car<Core> {
         }
     }
 
-    fn check(&self, _ctx: &Ctx, _r: &Renaming, _tv: &Value) -> Result<Core> {
-        todo!()
-    }
-
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
         todo!()
     }
 }
 
 impl CoreInterface for Cdr<Core> {
-    impl_core_defaults!((0), as_any, same, occurring_names, alpha_equiv, no_type);
+    impl_core_defaults!(
+        (0),
+        as_any,
+        same,
+        occurring_names,
+        check_by_synth,
+        alpha_equiv
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         do_cdr(&later(env.clone(), self.0.clone()))
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        todo!()
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
@@ -256,10 +302,6 @@ impl CoreInterface for Cdr<Core> {
                 }
             }
         }
-    }
-
-    fn check(&self, _ctx: &Ctx, _r: &Renaming, _tv: &Value) -> Result<Core> {
-        todo!()
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
@@ -377,19 +419,53 @@ impl Display for Cdr<Core> {
 }
 
 fn do_car(pv: &Value) -> Value {
-    match now(pv).as_any().downcast_ref::<Cons<Value>>() {
+    let npv = now(pv);
+
+    match npv.try_as::<Cons<Value>>() {
         Some(Cons(a, _)) => return a.clone(),
         None => {}
     }
 
-    todo!()
+    match npv.as_neutral() {
+        Some((p, ne)) => match now(p).try_as::<Sigma<Value, Closure>>() {
+            Some(s) => return values::neutral(s.car_type.clone(), NeutralCar(ne.clone())),
+            None => {}
+        },
+        None => {}
+    }
+
+    unreachable!("{:?}", npv)
 }
 
 fn do_cdr(pv: &Value) -> Value {
-    match now(pv).as_any().downcast_ref::<Cons<Value>>() {
+    let npv = now(pv);
+
+    match npv.as_any().downcast_ref::<Cons<Value>>() {
         Some(Cons(_, d)) => return d.clone(),
         None => {}
     }
 
-    todo!()
+    match npv.as_neutral() {
+        Some((p, ne)) => match now(p).try_as::<Sigma<Value, Closure>>() {
+            Some(s) => {
+                return values::neutral(s.cdr_type.val_of(do_car(pv)), NeutralCdr(ne.clone()))
+            }
+            None => {}
+        },
+        None => {}
+    }
+
+    unreachable!("{:?}", npv)
+}
+
+impl NeutralInterface for NeutralCar {
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        Ok(cores::car(self.0.read_back_neutral(ctx)?))
+    }
+}
+
+impl NeutralInterface for NeutralCdr {
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        Ok(cores::cdr(self.0.read_back_neutral(ctx)?))
+    }
 }
