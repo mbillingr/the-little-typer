@@ -1,6 +1,4 @@
-use crate::basics::{
-    Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface, N,
-};
+use crate::basics::{Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, N};
 use crate::errors;
 use crate::errors::Error;
 use crate::normalize::{read_back, val_in_ctx};

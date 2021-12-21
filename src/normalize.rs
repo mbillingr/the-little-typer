@@ -1,11 +1,8 @@
-use crate::basics::{Core, CoreInterface, Ctx, Value, ValueInterface};
+use crate::basics::{Core, CoreInterface, Ctx, Value};
 use crate::errors::Result;
 
 pub fn now(v: &Value) -> &Value {
-    match v.now() {
-        None => v,
-        Some(x) => x,
-    }
+    v.now()
 }
 
 pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {

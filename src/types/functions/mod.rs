@@ -3,7 +3,7 @@ mod fun;
 mod lambda;
 mod pi;
 
-use crate::basics::{Closure, The, Value, ValueInterface};
+use crate::basics::{Closure, The, Value};
 use crate::normalize::now;
 use crate::types::neutral::Neutral;
 use crate::types::values::neutral;

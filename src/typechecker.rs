@@ -1,5 +1,5 @@
 use crate::alpha::is_alpha_equiv;
-use crate::basics::{Ctx, Value, ValueInterface};
+use crate::basics::{Ctx, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::read_back;
 

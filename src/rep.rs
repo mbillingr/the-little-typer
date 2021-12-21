@@ -1,4 +1,4 @@
-use crate::basics::{Core, CoreInterface, Ctx, Renaming, ValueInterface};
+use crate::basics::{Core, CoreInterface, Ctx, Renaming};
 use crate::errors::Result;
 use crate::normalize::{read_back, val_in_ctx};
 use crate::typechecker::convert;

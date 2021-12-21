@@ -1,6 +1,6 @@
 use crate::alpha;
 use crate::basics::{
-    is_var_name, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value, ValueInterface,
+    is_var_name, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value,
 };
 use crate::errors::{Error, Result};
 use crate::symbol::Symbol;

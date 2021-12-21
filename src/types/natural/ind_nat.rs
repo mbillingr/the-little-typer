@@ -1,6 +1,5 @@
 use crate::basics::{
-    Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface,
-    N,
+    Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, N,
 };
 use crate::errors;
 use crate::errors::Error;

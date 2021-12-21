@@ -314,26 +314,24 @@ impl Value {
     pub fn try_as<T: 'static>(&self) -> Option<&T> {
         self.as_any().downcast_ref::<T>()
     }
-}
 
-impl ValueInterface for Value {
-    fn as_any(&self) -> &dyn Any {
+    pub fn as_any(&self) -> &dyn Any {
         self.0.as_any()
     }
 
-    fn same(&self, other: &dyn ValueInterface) -> bool {
+    pub fn same(&self, other: &dyn ValueInterface) -> bool {
         self.0.same(other)
     }
 
-    fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
+    pub fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
         self.0.read_back_type(ctx)
     }
 
-    fn read_back(&self, ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
+    pub fn read_back(&self, ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
         self.0.read_back(ctx, tv, v)
     }
 
-    fn apply(
+    pub fn apply(
         &self,
         ctx: &Ctx,
         r: &Renaming,
@@ -343,11 +341,14 @@ impl ValueInterface for Value {
         self.0.apply(ctx, r, rator_out, rand)
     }
 
-    fn now(&self) -> Option<&Value> {
-        self.0.now()
+    pub fn now(&self) -> &Value {
+        match self.0.now() {
+            None => return self,
+            Some(x) => return x,
+        }
     }
 
-    fn as_neutral(&self) -> Option<(&Value, &N)> {
+    pub fn as_neutral(&self) -> Option<(&Value, &N)> {
         self.0.as_neutral()
     }
 }
