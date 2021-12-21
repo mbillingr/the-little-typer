@@ -84,12 +84,18 @@ impl CoreInterface for AppStar {
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> errors::Result<(Core, Core)> {
-        let inp = &self.fun;
-        let (rator_t, rator_out) = inp.synth(ctx, r)?;
+        let (rator_t, rator_out) = self.fun.synth(ctx, r)?;
         match &self.args[..] {
             [] => Err(Error::WrongArity(Core::app_star(rator_out, vec![]))),
             [rand] => val_in_ctx(ctx, &rator_t).apply(ctx, r, &rator_out, rand),
-            [_rand0, _rands @ ..] => todo!(),
+            [rands @ .., rand] => {
+                let (app0_t, app0) = AppStar {
+                    fun: self.fun.clone(),
+                    args: rands.to_vec(),
+                }
+                .synth(ctx, r)?;
+                val_in_ctx(ctx, &app0_t).apply(ctx, r, &app0, rand)
+            }
         }
     }
 

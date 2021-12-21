@@ -5,9 +5,10 @@ use crate::rep;
 use crate::types::cores;
 
 mod chapter_01;
+mod chapter_02;
 
-fn in_context(ctx: &Ctx) -> Checker {
-    Checker { ctx: ctx.clone() }
+fn with_empty_context() -> Checker {
+    Checker { ctx: Ctx::new() }
 }
 
 struct Checker {
@@ -15,9 +16,9 @@ struct Checker {
 }
 
 impl Checker {
-    fn core(self, s: &'static str) -> CoreChecker {
+    fn core(&self, s: &'static str) -> CoreChecker {
         CoreChecker {
-            ctx: self.ctx,
+            ctx: self.ctx.clone(),
             expr: s.parse().unwrap(),
         }
     }
