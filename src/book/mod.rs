@@ -22,11 +22,11 @@ impl Checker {
         }
     }
 
-    fn claim(mut self, name: &str, expr: &str) -> Self {
+    fn claim(self, _name: &str, _expr: &str) -> Self {
         todo!()
     }
 
-    fn define(mut self, name: &str, expr: &str) -> Self {
+    fn define(self, _name: &str, _expr: &str) -> Self {
         todo!()
     }
 }
