@@ -20,8 +20,7 @@ pub fn do_ap(rator: &Value, rand: Value) -> Value {
 
     match rator.try_as::<Neutral>() {
         Some(neu) => {
-            if let Some(pi) = neu.type_value.try_as::<Pi<Value, Closure>>()
-            {
+            if let Some(pi) = neu.type_value.try_as::<Pi<Value, Closure>>() {
                 neutral(
                     pi.res_type.val_of(rand.clone()),
                     NeutralApp(neu.kind.clone(), The(pi.arg_type.clone(), rand)),

@@ -9,9 +9,7 @@ pub fn norm_type(ctx: &Ctx, e: &Core) -> Result<Core> {
 }
 
 pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
-    let r = &Renaming::new();
-    let inp = e;
-    let (t_out, e_out) = inp.synth(ctx, r)?;
+    let (t_out, e_out) = e.synth(ctx, &Renaming::new())?;
     let tv = val_in_ctx(ctx, &t_out);
     let v = val_in_ctx(ctx, &e_out);
     let vx = read_back(ctx, &tv, &v)?;
@@ -20,18 +18,10 @@ pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
 }
 
 pub fn check_same(ctx: &Ctx, t: &Core, a: &Core, b: &Core) -> Result<()> {
-    let r = &Renaming::new();
-    let inp = t;
-    let t_out = inp.is_type(ctx, r)?;
+    let t_out = t.is_type(ctx, &Renaming::new())?;
     let tv = val_in_ctx(ctx, &t_out);
-    let r = &Renaming::new();
-    let e = a;
-    let tv_argument = &tv;
-    let a_out = e.check(ctx, r, tv_argument)?;
-    let r = &Renaming::new();
-    let e = b;
-    let tv_argument = &tv;
-    let b_out = e.check(ctx, r, tv_argument)?;
+    let a_out = a.check(ctx, &Renaming::new(), &tv)?;
+    let b_out = b.check(ctx, &Renaming::new(), &tv)?;
     let av = val_in_ctx(ctx, &a_out);
     let bv = val_in_ctx(ctx, &b_out);
     convert(ctx, &tv, &av, &bv)
