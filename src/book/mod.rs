@@ -22,12 +22,16 @@ impl Checker {
         }
     }
 
-    fn claim(self, _name: &str, _expr: &str) -> Self {
-        todo!()
+    fn claim(mut self, name: &str, expr: &str) -> Self {
+        let t: Core = expr.parse().unwrap();
+        self.ctx = self.ctx.claim(name, t).unwrap();
+        self
     }
 
-    fn define(self, _name: &str, _expr: &str) -> Self {
-        todo!()
+    fn define(mut self, name: &str, expr: &str) -> Self {
+        let v: Core = expr.parse().unwrap();
+        self.ctx = self.ctx.define(name, v).unwrap();
+        self
     }
 }
 

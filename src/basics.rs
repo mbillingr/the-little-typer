@@ -13,6 +13,7 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 pub use std::sync::{Arc as R, Mutex, RwLock};
+use crate::normalize::val_in_ctx;
 
 pub trait CoreInterface: Any + Debug + Display + Sync + Send {
     fn as_any(&self) -> &dyn Any;
@@ -426,6 +427,17 @@ pub enum CtxImpl {
 impl Ctx {
     pub fn new() -> Self {
         Ctx(R::new(CtxImpl::Nil))
+    }
+
+    pub fn claim(&self, name: impl Into<Symbol>, t: Core) -> Result<Self> {
+        let t_out = t.is_type(self, &Renaming::new())?;
+        let tv = val_in_ctx(self, &t_out);
+        todo!()
+    }
+
+    pub fn define(&self, name: impl Into<Symbol>, v: Core) -> Result<Self> {
+        //let v_out = v.check(self, &Renaming::new(), &tv)
+        todo!()
     }
 
     pub fn fresh(&self, x: &Symbol) -> Symbol {
