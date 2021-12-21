@@ -1,5 +1,5 @@
 use crate::basics::Ctx;
-use crate::book::in_context;
+use crate::book::{in_context, ResultAssertions, ResultBoolAssertions};
 
 use lazy_static::lazy_static;
 
@@ -24,11 +24,13 @@ fn test_022_024_sameness_of_pairs() {
     in_context(&CTX)
         .core("(cons 'ratatouille 'baguette)")
         .and("(cons 'ratatouille 'baguette)")
-        .are_the_same("(Pair Atom Atom)");
+        .are_the_same("(Pair Atom Atom)")
+        .assert(true);
     in_context(&CTX)
         .core("(cons 'ratatouille 'baguette)")
         .and("(cons 'baguette 'baguette)")
-        .are_not_the_same("(Pair Atom Atom)");
+        .are_the_same("(Pair Atom Atom)")
+        .assert(false);
 }
 
 #[test]
@@ -54,12 +56,13 @@ fn test_031_032_compare_types() {
 }
 
 #[test]
-#[should_panic(expected = "NotAType")]
+//#[should_panic(expected = "NotAType")]
 fn test_033_compare_over_non_type() {
     in_context(&CTX)
         .core("'peche")
         .and("'peche")
-        .are_the_same("'fruit");
+        .are_the_same("'fruit")
+        .assert_err();
 }
 
 #[test]
@@ -67,7 +70,8 @@ fn test_038_car_gets_first_element_of_pair() {
     in_context(&CTX)
         .core("(car (the (Pair Atom Atom) (cons 'ratatouille 'baguette)))")
         .and("'ratatouille")
-        .are_the_same("Atom");
+        .are_the_same("Atom")
+        .assert(true);
 }
 
 #[test]
@@ -75,7 +79,8 @@ fn test_039_cdr_gets_second_element_of_pair() {
     in_context(&CTX)
         .core("(cdr (the (Pair Atom Atom) (cons 'ratatouille 'baguette)))")
         .and("'baguette")
-        .are_the_same("Atom");
+        .are_the_same("Atom")
+        .assert(true);
 }
 
 #[test]
@@ -96,7 +101,8 @@ fn test_041_access_nested_cons() {
                               (cons 'ratatouille (cons 'baguette 'olive-oil)))))",
         )
         .and("'baguette")
-        .are_the_same("Atom");
+        .are_the_same("Atom")
+        .assert_ok();
 }
 
 #[test]
@@ -131,7 +137,11 @@ fn test_068_0_is_a_nat() {
 
 #[test]
 fn test_072_different_nats_are_not_the_same() {
-    in_context(&CTX).core("0").and("26").are_not_the_same("Nat");
+    in_context(&CTX)
+        .core("0")
+        .and("26")
+        .are_the_same("Nat")
+        .assert(false);
 }
 
 #[test]
@@ -140,9 +150,8 @@ fn test_076_zero_is_a_nat() {
 }
 
 #[test]
-#[should_panic]
 fn test_077_identifiers_must_be_claimed_before_definition() {
-    in_context(&CTX).define("one", "(add1 zero)");
+    in_context(&CTX).define("one", "(add1 zero)").assert_err();
 }
 
 #[test]
@@ -150,7 +159,9 @@ fn test_079_identifiers_can_be_defined_after_claiming() {
     in_context(&CTX)
         .claim("one", "Nat")
         .define("one", "(add1 zero)")
+        .unwrap()
         .core("one")
         .and("1")
-        .are_the_same("Nat");
+        .are_the_same("Nat")
+        .assert(true);
 }

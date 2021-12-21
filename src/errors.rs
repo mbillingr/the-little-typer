@@ -8,6 +8,11 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub enum Error {
     InvalidSyntax(R<str>),
 
+    ClaimedName(Symbol),
+    UnclaimedName(Symbol),
+    DefinedName(Symbol),
+    UnknownVariable(Symbol),
+
     CantDetermineType(Core),
     InvalidAtom(Symbol),
     WrongType(Core, Core),
@@ -17,7 +22,6 @@ pub enum Error {
     NotAFunctionType(Core),
     NotAFunction(Core),
     NotASigmaType(Core),
-    UnknownVariable(Symbol),
     NotTheSame(Core, Core, Core),
     WrongArity(Core),
 
@@ -29,6 +33,9 @@ impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::InvalidSyntax(x) => write!(f, "Invalid syntax: {}", x),
+            Error::ClaimedName(name) => write!(f, "Name is already claimed: {}", name.name()),
+            Error::UnclaimedName(name) => write!(f, "Name has not been claimed: {}", name.name()),
+            Error::DefinedName(name) => write!(f, "Name is already defined: {}", name.name()),
             Error::CantDetermineType(e) => write!(f, "Can't determine type of {}", e),
             Error::InvalidAtom(s) => write!(f, "Invalid atom: {}", s.name()),
             Error::WrongType(actual, expected) => {

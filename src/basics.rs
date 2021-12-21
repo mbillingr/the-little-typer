@@ -1,6 +1,7 @@
 use crate::alpha;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
+use crate::normalize::val_in_ctx;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
 use crate::types::functions::NeutralApp;
@@ -13,7 +14,6 @@ use std::collections::{HashMap, HashSet};
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 pub use std::sync::{Arc as R, Mutex, RwLock};
-use crate::normalize::val_in_ctx;
 
 pub trait CoreInterface: Any + Debug + Display + Sync + Send {
     fn as_any(&self) -> &dyn Any;
@@ -430,14 +430,31 @@ impl Ctx {
     }
 
     pub fn claim(&self, name: impl Into<Symbol>, t: Core) -> Result<Self> {
+        let name = name.into();
+        match self.0.assv(&name) {
+            Some((_, Binder::Claim(_))) => return Err(Error::ClaimedName(name)),
+            Some((_, Binder::Def(_, _))) => return Err(Error::DefinedName(name)),
+            Some((_, Binder::Free(_))) => unreachable!("claims are only allowed in the global context, and there should never be free variables"),
+            None => {},
+        };
+
         let t_out = t.is_type(self, &Renaming::new())?;
         let tv = val_in_ctx(self, &t_out);
-        todo!()
+        Ok(self.extend(name, Binder::Claim(tv)))
     }
 
     pub fn define(&self, name: impl Into<Symbol>, v: Core) -> Result<Self> {
-        //let v_out = v.check(self, &Renaming::new(), &tv)
-        todo!()
+        let name = name.into();
+        let tv = match self.0.assv(&name) {
+            Some((_, Binder::Claim(tv))) => tv,
+            Some((_, Binder::Def(_, _))) => return Err(Error::DefinedName(name)),
+            Some((_, Binder::Free(_))) => unreachable!("definitions are only allowed in the global context, and there should never be free variables"),
+            None => return Err(Error::UnclaimedName(name)),
+        };
+
+        let v_out = v.check(self, &Renaming::new(), &tv)?;
+        let vv = val_in_ctx(self, &v_out);
+        Ok(self.extend(name, Binder::Def(tv.clone(), vv)))
     }
 
     pub fn fresh(&self, x: &Symbol) -> Symbol {
@@ -452,12 +469,12 @@ impl Ctx {
         if self.0.assv(&x).is_some() {
             Err(Error::AlreadyBound(x.clone(), self.clone()))
         } else {
-            Ok(Ctx(R::new(CtxImpl::Entry(
-                x,
-                Binder::Free(tv),
-                self.clone(),
-            ))))
+            Ok(self.extend(x, Binder::Free(tv)))
         }
+    }
+
+    fn extend(&self, name: impl Into<Symbol>, binder: Binder) -> Self {
+        Ctx(R::new(CtxImpl::Entry(name.into(), binder, self.clone())))
     }
 
     pub fn names_only(&self) -> HashSet<Symbol> {

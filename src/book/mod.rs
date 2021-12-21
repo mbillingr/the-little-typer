@@ -1,5 +1,5 @@
 use crate::basics::{Core, CoreInterface, Ctx, Renaming};
-use crate::errors::Error;
+use crate::errors::{Error, Result};
 use crate::normalize::val_in_ctx;
 use crate::rep;
 use crate::types::cores;
@@ -28,10 +28,10 @@ impl Checker {
         self
     }
 
-    fn define(mut self, name: &str, expr: &str) -> Self {
+    fn define(mut self, name: &str, expr: &str) -> Result<Self> {
         let v: Core = expr.parse().unwrap();
-        self.ctx = self.ctx.define(name, v).unwrap();
-        self
+        self.ctx = self.ctx.define(name, v)?;
+        Ok(self)
     }
 }
 
@@ -89,18 +89,15 @@ struct TwoCoreChecker {
 }
 
 impl TwoCoreChecker {
-    fn are_the_same(&self, t: &'static str) {
-        let t = t.parse().unwrap();
-        rep::check_same(&self.ctx, &t, &self.expr1, &self.expr2).unwrap();
-    }
-
-    fn are_not_the_same(&self, t: &'static str) {
+    fn are_the_same(&self, t: &'static str) -> Result<bool> {
         let t = t.parse().unwrap();
         match rep::check_same(&self.ctx, &t, &self.expr1, &self.expr2) {
-            Err(Error::NotTheSame(_, _, _)) => {}
-            other => panic!("{:?}", other),
+            Ok(_) => Ok(true),
+            Err(Error::NotTheSame(_, _, _)) => Ok(false),
+            Err(e) => Err(e),
         }
     }
+
     fn are_the_same_type(&self) {
         rep::check_same(&self.ctx, &cores::universe(), &self.expr1, &self.expr2).unwrap();
     }
@@ -116,5 +113,35 @@ impl TwoCoreChecker {
         self.expr1.synth(&self.ctx, &Renaming::new()).unwrap();
         self.expr2.synth(&self.ctx, &Renaming::new()).unwrap();
         self
+    }
+}
+
+trait ResultAssertions {
+    fn assert_ok(self);
+    fn assert_err(self);
+}
+
+impl<T> ResultAssertions for Result<T> {
+    fn assert_ok(self) {
+        self.unwrap();
+    }
+    fn assert_err(self) {
+        if self.is_ok() {
+            panic!("Expected error, but was ok")
+        }
+    }
+}
+
+trait ResultBoolAssertions {
+    fn assert(self, value: bool);
+}
+
+impl ResultBoolAssertions for Result<bool> {
+    fn assert(self, value: bool) {
+        match self {
+            Ok(b) if b == value => {}
+            Ok(b) => panic!("expected {}, got {}", value, b),
+            Err(e) => panic!("{}", e),
+        }
     }
 }
