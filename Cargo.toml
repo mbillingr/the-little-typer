@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+lazy-init = "0.5"
 lazy_static = "1.4"
 maplit = "1.0"
 sexpr_parser = "0.1"

@@ -1,39 +1,36 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Value, ValueInterface, N};
 use crate::errors::Result;
 use crate::normalize::now;
+use lazy_init::LazyTransform;
 use std::any::Any;
-use std::ops::Deref;
-use std::sync::{Arc as R, Mutex, MutexGuard};
+use std::fmt::{Debug, Formatter};
 
-#[derive(Debug)]
 pub struct Delay {
-    value: SharedBox<Delayed>,
+    value: LazyTransform<(Env, Core), Value>,
 }
 
 impl Delay {
     pub fn new(env: Env, exp: Core) -> Self {
         Delay {
-            value: SharedBox::new(Delayed::Later(env, exp)),
+            value: LazyTransform::new((env, exp)),
         }
     }
 
     fn force(&self) -> Value {
-        let mut dv = self.value.write_lock();
+        self.value.get_or_create(Self::eval_closure).clone()
+    }
 
-        if let Delayed::Value(x) = &*dv {
-            return x.clone();
-        }
-
-        let the_value = undelay(&dv);
-        dv.replace(Delayed::Value(the_value.clone()));
-        the_value
+    fn eval_closure((env, exp): (Env, Core)) -> Value {
+        now(&exp.val_of(&env)).into_owned()
     }
 }
 
-fn undelay(c: &SharedBoxGuard<Delayed>) -> Value {
-    match &**c {
-        Delayed::Later(env, exp) => now(&exp.val_of(env)).into_owned(),
-        _ => unreachable!(),
+impl Debug for Delay {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self.value.get() {
+            Some(x) => write!(f, "{:?}", x),
+            None => write!(f, "<DELAYED VALUE>"),
+        }
     }
 }
 
@@ -60,57 +57,5 @@ impl ValueInterface for Delay {
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {
         unimplemented!()
-    }
-}
-
-#[derive(Debug, PartialEq)]
-enum Delayed {
-    Value(Value),
-    Later(Env, Core),
-}
-
-#[derive(Debug)]
-struct SharedBox<T>(R<Mutex<T>>);
-
-struct SharedBoxGuard<'a, T: 'a>(MutexGuard<'a, T>);
-
-impl<T> Clone for SharedBox<T> {
-    fn clone(&self) -> Self {
-        SharedBox(self.0.clone())
-    }
-}
-
-impl<T> SharedBox<T> {
-    pub fn new(inner: T) -> Self {
-        SharedBox(R::new(Mutex::new(inner)))
-    }
-
-    pub fn write_lock(&self) -> SharedBoxGuard<T> {
-        SharedBoxGuard(self.0.lock().unwrap())
-    }
-
-    pub fn read_lock(&self) -> SharedBoxGuard<T> {
-        self.write_lock()
-    }
-}
-
-impl<T: PartialEq> std::cmp::PartialEq for SharedBox<T> {
-    fn eq(&self, other: &Self) -> bool {
-        let a = self.read_lock();
-        let b = other.read_lock();
-        *a == *b
-    }
-}
-
-impl<'a, T: 'a> Deref for SharedBoxGuard<'a, T> {
-    type Target = T;
-    fn deref(&self) -> &Self::Target {
-        &*self.0
-    }
-}
-
-impl<'a, T: 'a> SharedBoxGuard<'a, T> {
-    pub fn replace(&mut self, value: T) -> T {
-        std::mem::replace(&mut *self.0, value)
     }
 }
