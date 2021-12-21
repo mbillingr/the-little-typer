@@ -282,7 +282,7 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
         Err(Error::NotAFunctionType(t_out))
     }
 
-    fn now(&self) -> Option<Value> {
+    fn now(&self) -> Option<&Value> {
         None
     }
 
@@ -300,6 +300,12 @@ impl PartialEq for dyn ValueInterface {
 #[derive(Debug, Clone)]
 pub struct Value(R<dyn ValueInterface>);
 
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        &self.0 == &other.0
+    }
+}
+
 impl Value {
     pub fn new(obj: impl ValueInterface) -> Self {
         Value(R::new(obj))
@@ -307,12 +313,6 @@ impl Value {
 
     pub fn try_as<T: 'static>(&self) -> Option<&T> {
         self.as_any().downcast_ref::<T>()
-    }
-}
-
-impl PartialEq for Value {
-    fn eq(&self, other: &Self) -> bool {
-        &self.0 == &other.0
     }
 }
 
@@ -343,7 +343,7 @@ impl ValueInterface for Value {
         self.0.apply(ctx, r, rator_out, rand)
     }
 
-    fn now(&self) -> Option<Value> {
+    fn now(&self) -> Option<&Value> {
         self.0.now()
     }
 

@@ -1,11 +1,10 @@
 use crate::basics::{Core, CoreInterface, Ctx, Value, ValueInterface};
 use crate::errors::Result;
-use std::borrow::Cow;
 
-pub fn now(v: &Value) -> Cow<Value> {
+pub fn now(v: &Value) -> &Value {
     match v.now() {
-        None => Cow::Borrowed(v),
-        Some(x) => Cow::Owned(x),
+        None => v,
+        Some(x) => x,
     }
 }
 

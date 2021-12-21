@@ -16,12 +16,12 @@ impl Delay {
         }
     }
 
-    fn force(&self) -> Value {
-        self.value.get_or_create(Self::eval_closure).clone()
+    fn force(&self) -> &Value {
+        self.value.get_or_create(Self::eval_closure)
     }
 
     fn eval_closure((env, exp): (Env, Core)) -> Value {
-        now(&exp.val_of(&env)).into_owned()
+        now(&exp.val_of(&env)).clone()
     }
 }
 
@@ -51,7 +51,7 @@ impl ValueInterface for Delay {
         unimplemented!()
     }
 
-    fn now(&self) -> Option<Value> {
+    fn now(&self) -> Option<&Value> {
         Some(self.force())
     }
 
