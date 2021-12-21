@@ -4,7 +4,7 @@ use crate::basics::{
     Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value, ValueInterface, N,
 };
 use crate::errors::{Error, Result};
-use crate::normalize::{now, read_back, val_in_ctx};
+use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::reference::NeutralVar;
 use crate::types::values::later;
@@ -84,7 +84,7 @@ impl CoreInterface for Sigma<Core, Core> {
         b1: &alpha::Bindings,
         b2: &alpha::Bindings,
     ) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() {
+        if let Some(other) = other.try_as::<Self>() {
             alpha_equiv_aux(lvl, b1, b2, &self.car_type, &other.car_type)
                 && alpha_equiv_aux(
                     1 + lvl,
@@ -223,7 +223,7 @@ impl CoreInterface for Cons<Core> {
     }
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        if let Some(sigma) = now(tv).as_any().downcast_ref::<Sigma<Value, Closure>>() {
+        if let Some(sigma) = tv.try_as::<Sigma<Value, Closure>>() {
             let a_out = self.0.check(ctx, r, &sigma.car_type)?;
             let d_out = self
                 .1
@@ -364,7 +364,7 @@ impl ValueInterface for Cons<Value> {
     }
 
     fn same(&self, other: &dyn ValueInterface) -> bool {
-        if let Some(other) = other.as_any().downcast_ref::<Self>() {
+        if let Some(other) = other.try_as::<Self>() {
             self == other
         } else {
             false
@@ -427,34 +427,30 @@ impl Display for Cdr<Core> {
 }
 
 fn do_car(pv: &Value) -> Value {
-    let npv = now(pv);
-
-    match npv.try_as::<Cons<Value>>() {
+    match pv.try_as::<Cons<Value>>() {
         Some(Cons(a, _)) => return a.clone(),
         None => {}
     }
 
-    match npv.as_neutral() {
-        Some((p, ne)) => match now(p).try_as::<Sigma<Value, Closure>>() {
+    match pv.as_neutral() {
+        Some((p, ne)) => match p.try_as::<Sigma<Value, Closure>>() {
             Some(s) => return values::neutral(s.car_type.clone(), NeutralCar(ne.clone())),
             None => {}
         },
         None => {}
     }
 
-    unreachable!("{:?}", npv)
+    unreachable!("{:?}", pv)
 }
 
 fn do_cdr(pv: &Value) -> Value {
-    let npv = now(pv);
-
-    match npv.as_any().downcast_ref::<Cons<Value>>() {
+    match pv.try_as::<Cons<Value>>() {
         Some(Cons(_, d)) => return d.clone(),
         None => {}
     }
 
-    match npv.as_neutral() {
-        Some((p, ne)) => match now(p).try_as::<Sigma<Value, Closure>>() {
+    match pv.as_neutral() {
+        Some((p, ne)) => match p.try_as::<Sigma<Value, Closure>>() {
             Some(s) => {
                 return values::neutral(s.cdr_type.val_of(do_car(pv)), NeutralCdr(ne.clone()))
             }
@@ -463,7 +459,7 @@ fn do_cdr(pv: &Value) -> Value {
         None => {}
     }
 
-    unreachable!("{:?}", npv)
+    unreachable!("{:?}", pv)
 }
 
 impl NeutralInterface for NeutralCar {

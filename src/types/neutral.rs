@@ -1,6 +1,5 @@
 use crate::basics::{Core, Ctx, Value, ValueInterface, N};
 use crate::errors::Result;
-use crate::normalize::now;
 use crate::types::universe::Universe;
 use std::any::Any;
 
@@ -27,10 +26,7 @@ impl ValueInterface for Neutral {
     }
 
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
-        assert!(now(&self.type_value)
-            .as_any()
-            .downcast_ref::<Universe>()
-            .is_some());
+        assert!(self.type_value.try_as::<Universe>().is_some());
         self.kind.read_back_neutral(ctx)
     }
 

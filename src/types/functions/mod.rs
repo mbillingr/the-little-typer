@@ -4,7 +4,6 @@ mod lambda;
 mod pi;
 
 use crate::basics::{Closure, The, Value};
-use crate::normalize::now;
 use crate::types::neutral::Neutral;
 use crate::types::values::neutral;
 
@@ -14,16 +13,14 @@ pub use lambda::{Lambda, LambdaStar};
 pub use pi::{Pi, PiStar};
 
 pub fn do_ap(rator: &Value, rand: Value) -> Value {
-    match now(rator).as_any().downcast_ref::<Lambda<Closure>>() {
+    match rator.try_as::<Lambda<Closure>>() {
         Some(Lambda { body, .. }) => return body.val_of(rand),
         None => {}
     }
 
-    match now(rator).as_any().downcast_ref::<Neutral>() {
+    match rator.try_as::<Neutral>() {
         Some(neu) => {
-            if let Some(pi) = now(&neu.type_value)
-                .as_any()
-                .downcast_ref::<Pi<Value, Closure>>()
+            if let Some(pi) = neu.type_value.try_as::<Pi<Value, Closure>>()
             {
                 neutral(
                     pi.res_type.val_of(rand.clone()),
@@ -33,6 +30,6 @@ pub fn do_ap(rator: &Value, rand: Value) -> Value {
                 todo!()
             }
         }
-        None => todo!("{:?}", now(rator)),
+        None => todo!("{:?}", rator),
     }
 }

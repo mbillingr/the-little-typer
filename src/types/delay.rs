@@ -1,6 +1,5 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Value, ValueInterface, N};
 use crate::errors::Result;
-use crate::normalize::now;
 use lazy_init::LazyTransform;
 use std::any::Any;
 use std::fmt::{Debug, Formatter};
@@ -21,7 +20,7 @@ impl Delay {
     }
 
     fn eval_closure((env, exp): (Env, Core)) -> Value {
-        now(&exp.val_of(&env)).clone()
+        exp.val_of(&env)
     }
 }
 
@@ -36,26 +35,22 @@ impl Debug for Delay {
 
 impl ValueInterface for Delay {
     fn as_any(&self) -> &dyn Any {
-        self
+        self.force().as_any()
     }
 
-    fn same(&self, _other: &dyn ValueInterface) -> bool {
-        unimplemented!()
+    fn same(&self, other: &dyn ValueInterface) -> bool {
+        self.force().same(other)
     }
 
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
-        self.now().unwrap().read_back_type(ctx)
+        self.force().read_back_type(ctx)
     }
 
-    fn read_back(&self, _ctx: &Ctx, _tv: &Value, _v: &Value) -> Result<Core> {
-        unimplemented!()
-    }
-
-    fn now(&self) -> Option<&Value> {
-        Some(self.force())
+    fn read_back(&self, ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
+        self.force().read_back(ctx, tv, v)
     }
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {
-        unimplemented!()
+        self.force().as_neutral()
     }
 }

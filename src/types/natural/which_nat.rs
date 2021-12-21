@@ -3,7 +3,7 @@ use crate::basics::{
 };
 use crate::errors;
 use crate::errors::Error;
-use crate::normalize::{now, read_back};
+use crate::normalize::read_back;
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, MaybeTyped, Zero};
@@ -122,17 +122,17 @@ impl std::fmt::Display for WhichNat {
 }
 
 fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
-    match now(&tgt_v).as_any().downcast_ref::<Zero>() {
+    match tgt_v.try_as::<Zero>() {
         Some(_) => return b_v,
         None => {}
     };
 
-    match now(&tgt_v).as_any().downcast_ref::<Add1<Value>>() {
+    match tgt_v.try_as::<Add1<Value>>() {
         Some(Add1(n_minus_1v)) => return do_ap(&s_v, n_minus_1v.clone()),
         None => {}
     };
 
-    match now(&tgt_v).as_neutral() {
+    match tgt_v.as_neutral() {
         Some((_, ne)) => {
             return values::neutral(
                 bt_v.clone(),
@@ -146,7 +146,7 @@ fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
         None => {}
     };
 
-    unreachable!("{:?}", now(&tgt_v))
+    unreachable!("{:?}", tgt_v)
 }
 
 impl NeutralInterface for NeutralWhichNat {

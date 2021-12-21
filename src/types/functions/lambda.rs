@@ -1,7 +1,6 @@
 use crate::alpha::alpha_equiv_aux;
 use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::Error;
-use crate::normalize::now;
 use crate::symbol::Symbol;
 use crate::types::functions::Pi;
 use crate::types::reference::NeutralVar;
@@ -54,7 +53,7 @@ impl CoreInterface for Lambda<Core> {
     }
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> errors::Result<Core> {
-        if let Some(pi) = now(tv).as_any().downcast_ref::<Pi<Value, Closure>>() {
+        if let Some(pi) = tv.try_as::<Pi<Value, Closure>>() {
             let x_hat = ctx.fresh(&self.arg_name);
             let b_out = self.body.check(
                 &ctx.bind_free(x_hat.clone(), pi.arg_type.clone())?,

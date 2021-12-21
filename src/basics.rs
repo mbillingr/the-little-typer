@@ -39,6 +39,12 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
     fn resugar(&self) -> (HashSet<Symbol>, Core);
 }
 
+impl dyn CoreInterface {
+    pub fn try_as<T: 'static>(&self) -> Option<&T> {
+        self.as_any().downcast_ref::<T>()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Core(R<dyn CoreInterface>);
 
@@ -282,10 +288,6 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
         Err(Error::NotAFunctionType(t_out))
     }
 
-    fn now(&self) -> Option<&Value> {
-        None
-    }
-
     fn as_neutral(&self) -> Option<(&Value, &N)> {
         None
     }
@@ -294,6 +296,12 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
 impl PartialEq for dyn ValueInterface {
     fn eq(&self, other: &Self) -> bool {
         self.same(other)
+    }
+}
+
+impl dyn ValueInterface {
+    pub fn try_as<T: 'static>(&self) -> Option<&T> {
+        self.as_any().downcast_ref::<T>()
     }
 }
 
@@ -339,13 +347,6 @@ impl Value {
         rand: &Core,
     ) -> Result<(Core, Core)> {
         self.0.apply(ctx, r, rator_out, rand)
-    }
-
-    pub fn now(&self) -> &Value {
-        match self.0.now() {
-            None => return self,
-            Some(x) => return x,
-        }
     }
 
     pub fn as_neutral(&self) -> Option<(&Value, &N)> {
