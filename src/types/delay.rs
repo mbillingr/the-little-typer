@@ -26,10 +26,11 @@ impl Delay {
 
 impl Debug for Delay {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self.value.get() {
+        write!(f, "{:?}", self.force())
+        /*match self.value.get() {
             Some(x) => write!(f, "{:?}", x),
             None => write!(f, "<DELAYED VALUE>"),
-        }
+        }*/
     }
 }
 

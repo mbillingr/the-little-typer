@@ -6,6 +6,7 @@ use crate::types::cores;
 
 mod chapter_01;
 mod chapter_02;
+mod chapter_03;
 
 fn with_empty_context() -> Checker {
     Checker { ctx: Ctx::new() }

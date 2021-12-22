@@ -191,13 +191,16 @@ impl From<&Sexpr> for Core {
                 _ if is_var_name(s) => cores::refer(s.clone()),
                 name => todo!("{}", name),
             },
-            Sexpr::SmallNat(x) => Core::nat(*x),
+            Sexpr::SmallNat(x) => cores::the_nat(*x),
             Sexpr::List(list) => match &list[..] {
                 [op @ Sexpr::Symbol(s), args @ ..] if !is_var_name(s) => match (s.name(), args) {
                     ("the", [t, v]) => Core::the(Core::from(t), Core::from(v)),
                     ("add1", [n]) => cores::add1(Core::from(n)),
                     ("which-Nat", [target, base, step]) => {
                         cores::which_nat(Core::from(target), Core::from(base), Core::from(step))
+                    }
+                    ("iter-Nat", [target, base, step]) => {
+                        cores::iter_nat(Core::from(target), Core::from(base), Core::from(step))
                     }
                     ("ind-Nat", [target, motive, base, step]) => cores::ind_nat(
                         Core::from(target),
