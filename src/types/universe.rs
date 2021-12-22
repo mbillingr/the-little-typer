@@ -29,17 +29,21 @@ impl ValueInterface for Universe {
 }
 
 impl CoreInterface for Universe {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, simple_type);
+    impl_core_defaults!(
+        _,
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        simple_type,
+        check_by_synth
+    );
 
     fn val_of(&self, _env: &Env) -> Value {
         values::universe()
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
-        Err(Error::UhasNoType)
-    }
-
-    fn check(&self, _ctx: &Ctx, _r: &Renaming, _tv: &Value) -> Result<Core> {
         Err(Error::UhasNoType)
     }
 

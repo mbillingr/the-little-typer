@@ -1,10 +1,9 @@
 use the_little_typer as tlt;
 
-use std::io;
-use std::io::Write;
+use std::{io, io::Write};
 use tlt::{
     basics::{Core, Ctx},
-    rep::rep,
+    rep::norm,
     resugar::resugar,
 };
 
@@ -14,7 +13,7 @@ fn main() -> io::Result<()> {
         let src = read_line()?;
         let core: Core = src.parse().unwrap();
 
-        match rep(&ctx, &core) {
+        match norm(&ctx, &core) {
             Ok(out) => println!("{}", resugar(&out)),
             Err(e) => eprintln!("{}", e),
         }

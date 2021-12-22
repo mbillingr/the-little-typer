@@ -17,6 +17,16 @@ pub fn rep(ctx: &Ctx, e: &Core) -> Result<Core> {
     Ok(Core::the(tx, vx))
 }
 
+pub fn norm(ctx: &Ctx, e: &Core) -> Result<Core> {
+    match rep(ctx, e) {
+        Ok(e) => Ok(e),
+        Err(err) => match norm_type(ctx, e) {
+            Ok(out) => Ok(out),
+            _ => Err(err),
+        },
+    }
+}
+
 pub fn check_same(ctx: &Ctx, t: &Core, a: &Core, b: &Core) -> Result<()> {
     let t_out = t.is_type(ctx, &Renaming::new())?;
     let tv = val_in_ctx(ctx, &t_out);
@@ -231,14 +241,18 @@ mod tests {
         .is_ok());
     }
 
-    /*#[test]
-    fn same_functions() {
+    #[test]
+    fn expressions_without_type_are_only_normalized() {
+        assert_eq!(norm(&CTX, &"U".parse().unwrap()), Ok(cores::universe()));
+
         assert_eq!(
-            check_same(&CTX,
-                       &"(-> Atom Atom)".parse().unwrap(),
-                       &"(lambda (x) x)".parse().unwrap(),
-                       &"(lambda (x) x)".parse().unwrap()),
-            Ok(())
+            norm(&CTX, &"(Pair U U)".parse().unwrap()),
+            Ok(cores::sigma("x", cores::universe(), cores::universe()))
         );
-    }*/
+
+        assert_eq!(
+            norm(&CTX, &"(-> U U)".parse().unwrap()),
+            Ok(cores::pi("x", cores::universe(), cores::universe()))
+        );
+    }
 }
