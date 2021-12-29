@@ -7,12 +7,13 @@ use crate::types::cores;
 mod chapter_01;
 mod chapter_02;
 mod chapter_03;
+mod common_definitions;
 
 fn with_empty_context() -> Checker {
     Checker { ctx: Ctx::new() }
 }
 
-struct Checker {
+pub struct Checker {
     ctx: Ctx,
 }
 

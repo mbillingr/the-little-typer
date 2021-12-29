@@ -4,7 +4,7 @@ use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
 use crate::types::invalid::Invalid;
-use crate::types::natural::{Add1, IndNat, IterNat, Nat, WhichNat, Zero};
+use crate::types::natural::{Add1, IndNat, IterNat, Nat, RecNat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
 use crate::types::universe::Universe;
@@ -55,6 +55,14 @@ pub fn iter_nat(target: Core, base: Core, step: Core) -> Core {
 
 pub fn iter_nat_desugared(target: Core, base_type: Core, base: Core, step: Core) -> Core {
     Core::new(IterNat::typed(target, base_type, base, step))
+}
+
+pub fn rec_nat(target: Core, base: Core, step: Core) -> Core {
+    Core::new(RecNat::untyped(target, base, step))
+}
+
+pub fn rec_nat_desugared(target: Core, base_type: Core, base: Core, step: Core) -> Core {
+    Core::new(RecNat::typed(target, base_type, base, step))
 }
 
 pub fn ind_nat(target: Core, motive: Core, base: Core, step: Core) -> Core {

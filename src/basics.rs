@@ -202,6 +202,9 @@ impl From<&Sexpr> for Core {
                     ("iter-Nat", [target, base, step]) => {
                         cores::iter_nat(Core::from(target), Core::from(base), Core::from(step))
                     }
+                    ("rec-Nat", [target, base, step]) => {
+                        cores::rec_nat(Core::from(target), Core::from(base), Core::from(step))
+                    }
                     ("ind-Nat", [target, motive, base, step]) => cores::ind_nat(
                         Core::from(target),
                         Core::from(motive),
