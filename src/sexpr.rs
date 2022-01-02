@@ -78,6 +78,37 @@ impl Display for Sexpr {
     }
 }
 
+pub trait MaybeList {
+    fn is_list(&self) -> bool;
+    fn is_empty(&self) -> bool;
+}
+
+impl MaybeList for Sexpr {
+    fn is_list(&self) -> bool {
+        match self {
+            Sexpr::List(_) => true,
+            _ => false,
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        match self {
+            Sexpr::List(l) => l.is_empty(),
+            _ => false,
+        }
+    }
+}
+
+impl<T: MaybeList> MaybeList for &T {
+    fn is_list(&self) -> bool {
+        (*self).is_list()
+    }
+
+    fn is_empty(&self) -> bool {
+        (*self).is_empty()
+    }
+}
+
 #[macro_export]
 macro_rules! match_sexpr {
     ($expr:expr, case _ => $then:expr,) => {$then};
@@ -86,6 +117,14 @@ macro_rules! match_sexpr {
     ($expr:expr, case $var:ident => $then:expr,) => {{
         let $var = $expr;
         $then
+    }};
+
+    ($expr:expr, case () => $then:expr, $($rest:tt)*) => {{
+        if MaybeList::is_empty(&$expr) {
+            $then
+        } else {
+            match_sexpr! { $expr, $($rest)* }
+        }
     }};
 
     ($expr:expr, case $literal:expr => $then:expr, $($rest:tt)*) => {
@@ -147,5 +186,26 @@ mod tests {
             Sexpr::symbol("foo"),
             case x => x == "foo",
         })
+    }
+
+    #[test]
+    fn match_empty_list() {
+        assert!(match_sexpr! {
+            Sexpr::list(vec![]),
+            case () => true,
+            else => false,
+        });
+
+        assert!(match_sexpr! {
+            Sexpr::symbol("foo"),
+            case () => false,
+            else => true,
+        });
+
+        assert!(match_sexpr! {
+            Sexpr::list(vec![Sexpr::symbol("foo")]),
+            case () => false,
+            else => true,
+        });
     }
 }
