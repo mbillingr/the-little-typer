@@ -49,6 +49,15 @@ impl SexprFactory for Sexpr {
     }
 }
 
+impl PartialEq<u64> for Sexpr {
+    fn eq(&self, other: &u64) -> bool {
+        match self {
+            Sexpr::SmallNat(n) => n == other,
+            _ => false,
+        }
+    }
+}
+
 impl PartialEq<&str> for Sexpr {
     fn eq(&self, other: &&str) -> bool {
         match self {
@@ -79,11 +88,39 @@ impl Display for Sexpr {
 }
 
 pub trait MaybeList {
+    type Head;
+    type Tail: MaybeList + ?Sized;
     fn is_list(&self) -> bool;
     fn is_empty(&self) -> bool;
+    fn head(&self) -> Option<&Self::Head>;
+    fn tail(&self) -> Option<&Self::Tail>;
+}
+
+impl<T: MaybeList> MaybeList for &T {
+    type Head = T::Head;
+    type Tail = T::Tail;
+
+    fn is_list(&self) -> bool {
+        (*self).is_list()
+    }
+
+    fn is_empty(&self) -> bool {
+        (*self).is_empty()
+    }
+
+    fn head(&self) -> Option<&Self::Head> {
+        todo!()
+    }
+
+    fn tail(&self) -> Option<&Self::Tail> {
+        todo!()
+    }
 }
 
 impl MaybeList for Sexpr {
+    type Head = Self;
+    type Tail = [Self];
+
     fn is_list(&self) -> bool {
         match self {
             Sexpr::List(_) => true,
@@ -97,15 +134,34 @@ impl MaybeList for Sexpr {
             _ => false,
         }
     }
+
+    fn head(&self) -> Option<&Self::Head> {
+        todo!()
+    }
+
+    fn tail(&self) -> Option<&Self::Tail> {
+        todo!()
+    }
 }
 
-impl<T: MaybeList> MaybeList for &T {
+impl MaybeList for [Sexpr] {
+    type Head = Sexpr;
+    type Tail = Self;
+
     fn is_list(&self) -> bool {
-        (*self).is_list()
+        true
     }
 
     fn is_empty(&self) -> bool {
         (*self).is_empty()
+    }
+
+    fn head(&self) -> Option<&Self::Head> {
+        todo!()
+    }
+
+    fn tail(&self) -> Option<&Self::Tail> {
+        todo!()
     }
 }
 
@@ -125,6 +181,22 @@ macro_rules! match_sexpr {
         } else {
             match_sexpr! { $expr, $($rest)* }
         }
+    }};
+
+    ($expr:expr, case ($item:tt) => $then:expr, $($rest:tt)*) => {{
+        if let Some(head) = MaybeList::head(&$expr)  {
+            match_sexpr! {
+                head,
+                case $item => $then,
+                else => match_sexpr! { $expr, $($rest)* },
+            }
+        } else {
+            match_sexpr! { $expr, $($rest)* }
+        }
+    }};
+
+    ($expr:expr, case ($item:tt, $($more:tt)*) => $then:expr, $($rest:tt)*) => {{
+        todo!()
     }};
 
     ($expr:expr, case $literal:expr => $then:expr, $($rest:tt)*) => {
@@ -206,6 +278,21 @@ mod tests {
             Sexpr::list(vec![Sexpr::symbol("foo")]),
             case () => false,
             else => true,
+        });
+    }
+
+    #[test]
+    fn match_exact_list() {
+        assert!(match_sexpr! {
+            Sexpr::list(vec![Sexpr::int(1)]),
+            case (1) => true,
+            else => false,
+        });
+
+        assert!(match_sexpr! {
+            Sexpr::list(vec![Sexpr::symbol("foo"), Sexpr::int(1)]),
+            case ("foo", 1) => true,
+            else => false,
         });
     }
 }
