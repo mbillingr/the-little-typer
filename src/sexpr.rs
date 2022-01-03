@@ -58,12 +58,24 @@ impl PartialEq<u64> for Sexpr {
     }
 }
 
-impl PartialEq<&str> for Sexpr {
-    fn eq(&self, other: &&str) -> bool {
+impl PartialEq<u64> for &Sexpr {
+    fn eq(&self, other: &u64) -> bool {
+        (*self) == other
+    }
+}
+
+impl PartialEq<str> for Sexpr {
+    fn eq(&self, other: &str) -> bool {
         match self {
-            Sexpr::Symbol(s) => s.name() == *other,
+            Sexpr::Symbol(s) => s.name() == other,
             _ => false,
         }
+    }
+}
+
+impl PartialEq<&str> for Sexpr {
+    fn eq(&self, other: &&str) -> bool {
+        self == *other
     }
 }
 
@@ -136,11 +148,17 @@ impl MaybeList for Sexpr {
     }
 
     fn head(&self) -> Option<&Self::Head> {
-        todo!()
+        match self {
+            Sexpr::List(l) => l.first(),
+            _ => None,
+        }
     }
 
     fn tail(&self) -> Option<&Self::Tail> {
-        todo!()
+        match self {
+            Sexpr::List(l) => Some(&l[1..]),
+            _ => None,
+        }
     }
 }
 
@@ -157,11 +175,14 @@ impl MaybeList for [Sexpr] {
     }
 
     fn head(&self) -> Option<&Self::Head> {
-        todo!()
+        self.first()
     }
 
     fn tail(&self) -> Option<&Self::Tail> {
-        todo!()
+        match self {
+            [_, rest @ ..] => Some(rest),
+            [] => None,
+        }
     }
 }
 
@@ -184,7 +205,7 @@ macro_rules! match_sexpr {
     }};
 
     ($expr:expr, case ($item:tt) => $then:expr, $($rest:tt)*) => {{
-        if let Some(head) = MaybeList::head(&$expr)  {
+        if let Some(head) = $expr.head()  {
             match_sexpr! {
                 head,
                 case $item => $then,
@@ -196,7 +217,21 @@ macro_rules! match_sexpr {
     }};
 
     ($expr:expr, case ($item:tt, $($more:tt)*) => $then:expr, $($rest:tt)*) => {{
-        todo!()
+        if let Some(head) = MaybeList::head(&$expr)  {
+            match_sexpr! {
+                head,
+                case $item => {
+                    match_sexpr! {
+                        MaybeList::tail(&$expr).unwrap(),
+                        case ($($more)*) => $then,
+                        else => match_sexpr! { $expr, $($rest)* },
+                    }
+                },
+                else => match_sexpr! { $expr, $($rest)* },
+            }
+        } else {
+            match_sexpr! { $expr, $($rest)* }
+        }
     }};
 
     ($expr:expr, case $literal:expr => $then:expr, $($rest:tt)*) => {
