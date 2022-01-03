@@ -197,41 +197,29 @@ macro_rules! match_sexpr {
     }};
 
     ($expr:expr, case () => $then:expr, $($rest:tt)*) => {{
-        if MaybeList::is_empty(&$expr) {
-            $then
-        } else {
-            match_sexpr! { $expr, $($rest)* }
-        }
+        match_empty($expr, ||$then).unwrap_or_else(||match_sexpr! { $expr, $($rest)* })
     }};
 
-    ($expr:expr, case ($item:tt) => $then:expr, $($rest:tt)*) => {{
-        if let Some(head) = $expr.head()  {
-            match_sexpr! {
-                head,
-                case $item => $then,
-                else => match_sexpr! { $expr, $($rest)* },
-            }
-        } else {
-            match_sexpr! { $expr, $($rest)* }
-        }
-    }};
+    ($expr:expr, case ($item:tt) => $then:expr, $($rest:tt)*) => {
+        match_list($expr, |h, t| match_sexpr!{
+            h,
+            case $item => match_empty(t, ||$then),
+            else => None,
+        })
+        .unwrap_or_else(||match_sexpr! { $expr, $($rest)* })
+    };
 
     ($expr:expr, case ($item:tt, $($more:tt)*) => $then:expr, $($rest:tt)*) => {{
-        if let Some(head) = MaybeList::head(&$expr)  {
-            match_sexpr! {
-                head,
-                case $item => {
-                    match_sexpr! {
-                        MaybeList::tail(&$expr).unwrap(),
-                        case ($($more)*) => $then,
-                        else => match_sexpr! { $expr, $($rest)* },
-                    }
-                },
-                else => match_sexpr! { $expr, $($rest)* },
-            }
-        } else {
-            match_sexpr! { $expr, $($rest)* }
-        }
+        match_list($expr, |h, t| match_sexpr!{
+            h,
+            case $item => match_sexpr!{
+                t,
+                case ($($more)*) => Some($then),
+                else => None,
+            },
+            else => None,
+        })
+        .unwrap_or_else(||match_sexpr! { $expr, $($rest)* })
     }};
 
     ($expr:expr, case $literal:expr => $then:expr, $($rest:tt)*) => {
@@ -241,8 +229,23 @@ macro_rules! match_sexpr {
             match_sexpr! { $expr, $($rest)* }
         }
     };
+}
 
-    ($expr:expr, case $pat:pat => $then:expr, $($rest:tt)*) => {false};
+fn match_empty<R>(exp: &(impl MaybeList + ?Sized), body: impl Fn() -> R) -> Option<R> {
+    if exp.is_empty() {
+        Some(body())
+    } else {
+        None
+    }
+}
+
+fn match_list<'l, L: MaybeList + ?Sized, R>(
+    exp: &'l L,
+    body: impl Fn(&'l L::Head, &'l L::Tail) -> Option<R>,
+) -> Option<R> {
+    exp.head()
+        .and_then(|h| exp.tail().map(|t| (h, t)))
+        .and_then(|(h, t)| body(h, t))
 }
 
 #[cfg(test)]
@@ -260,14 +263,14 @@ mod tests {
     #[test]
     fn match_literal() {
         assert!(match_sexpr! {
-            Sexpr::int(42),
-            case Sexpr::int(42) => true,
+            &Sexpr::int(42),
+            case &Sexpr::int(42) => true,
             else => false,
         });
 
         assert!(match_sexpr! {
-            Sexpr::symbol("foo"),
-            case Sexpr::symbol("bar") => false,
+            &Sexpr::symbol("foo"),
+            case &Sexpr::symbol("bar") => false,
             else => true,
         });
     }
@@ -275,13 +278,13 @@ mod tests {
     #[test]
     fn match_literal_symbol() {
         assert!(match_sexpr! {
-            Sexpr::symbol("foo"),
+            &Sexpr::symbol("foo"),
             case "foo" => true,
             else => false,
         });
 
         assert!(match_sexpr! {
-            Sexpr::symbol("foo"),
+            &Sexpr::symbol("foo"),
             case "bar" => false,
             else => true,
         });
@@ -290,7 +293,7 @@ mod tests {
     #[test]
     fn match_binds_identifier() {
         assert!(match_sexpr! {
-            Sexpr::symbol("foo"),
+            &Sexpr::symbol("foo"),
             case x => x == "foo",
         })
     }
@@ -298,19 +301,19 @@ mod tests {
     #[test]
     fn match_empty_list() {
         assert!(match_sexpr! {
-            Sexpr::list(vec![]),
+            &Sexpr::list(vec![]),
             case () => true,
             else => false,
         });
 
         assert!(match_sexpr! {
-            Sexpr::symbol("foo"),
+            &Sexpr::symbol("foo"),
             case () => false,
             else => true,
         });
 
         assert!(match_sexpr! {
-            Sexpr::list(vec![Sexpr::symbol("foo")]),
+            &Sexpr::list(vec![Sexpr::symbol("foo")]),
             case () => false,
             else => true,
         });
@@ -319,13 +322,13 @@ mod tests {
     #[test]
     fn match_exact_list() {
         assert!(match_sexpr! {
-            Sexpr::list(vec![Sexpr::int(1)]),
+            &Sexpr::list(vec![Sexpr::int(1)]),
             case (1) => true,
             else => false,
         });
 
         assert!(match_sexpr! {
-            Sexpr::list(vec![Sexpr::symbol("foo"), Sexpr::int(1)]),
+            &Sexpr::list(vec![Sexpr::symbol("foo"), Sexpr::int(1)]),
             case ("foo", 1) => true,
             else => false,
         });
