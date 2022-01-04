@@ -209,35 +209,45 @@ macro_rules! match_sexpr {
         }
     };
 
-    ($expr:expr, case ($item:tt) => $then:expr, $($rest:tt)*) => {
-        if let Some((_h, _t)) = $crate::sexpr::MaybeList::decons($expr) {
+    ($expr:expr, case ($item:tt) => $then:expr, $($rest:tt)*) => {{
+        let result = if let Some((_h, _t)) = $crate::sexpr::MaybeList::decons($expr) {
             match_sexpr!(
                 _h,
                 case $item => match_sexpr!(
                     _t,
-                    case () => $then,
-                    else => match_sexpr!($expr, $($rest)*),),
-                else => match_sexpr!($expr, $($rest)*),
+                    case () => Some($then),
+                    else => None,
+                ),
+                else => None,
             )
         } else {
-            match_sexpr! { $expr, $($rest)* }
+            None
+        };
+        match result {
+            Some(r) => r,
+            None => match_sexpr! { $expr, $($rest)* },
         }
-    };
+    }};
 
-    ($expr:expr, case ($item:tt, $($more:tt)*) => $then:expr, $($rest:tt)*) => {
-        if let Some((_h, _t)) = $crate::sexpr::MaybeList::decons($expr) {
+    ($expr:expr, case ($item:tt, $($more:tt)*) => $then:expr, $($rest:tt)*) => {{
+        let result = if let Some((_h, _t)) = $crate::sexpr::MaybeList::decons($expr) {
             match_sexpr!(
                 _h,
                 case $item => match_sexpr!(
                     _t,
-                    case ($($more)*) => $then,
-                    else => match_sexpr!($expr, $($rest)*),),
-                else => match_sexpr!($expr, $($rest)*),
+                    case ($($more)*) => Some($then),
+                    else => None,
+                ),
+                else => None,
             )
         } else {
-            match_sexpr! { $expr, $($rest)* }
+            None
+        };
+        match result {
+            Some(r) => r,
+            None => match_sexpr! { $expr, $($rest)* },
         }
-    };
+    }};
 
     ($expr:expr, case [$pat:pat] => $then:expr, $($rest:tt)*) => {
         if let $pat = $expr {
