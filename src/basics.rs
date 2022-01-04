@@ -1,3 +1,4 @@
+use crate::alpha;
 use crate::errors::{Error, Result};
 use crate::fresh::freshen;
 use crate::normalize::val_in_ctx;
@@ -7,7 +8,7 @@ use crate::types::functions::NeutralApp;
 use crate::types::natural::NeutralWhichNat;
 use crate::types::reference::NeutralVar;
 use crate::types::{cores, values};
-use crate::{alpha, match_sexpr};
+use sexpr_matcher::match_sexpr;
 use sexpr_parser::parse;
 use std::any::Any;
 use std::collections::{HashMap, HashSet};
