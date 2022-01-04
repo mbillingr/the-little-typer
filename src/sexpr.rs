@@ -107,6 +107,8 @@ pub trait MaybeList {
     fn head(&self) -> Option<&Self::Head>;
     fn tail(&self) -> Option<&Self::Tail>;
 
+    fn as_tuple(&self) -> Option<&[Self::Head]>;
+
     fn decons(&self) -> Option<(&Self::Head, &Self::Tail)> {
         self.head().and_then(|h| self.tail().map(|t| (h, t)))
     }
@@ -130,6 +132,10 @@ impl<T: MaybeList> MaybeList for &T {
 
     fn tail(&self) -> Option<&Self::Tail> {
         todo!()
+    }
+
+    fn as_tuple(&self) -> Option<&[Self::Head]> {
+        (*self).as_tuple()
     }
 }
 
@@ -164,6 +170,13 @@ impl MaybeList for Sexpr {
             _ => None,
         }
     }
+
+    fn as_tuple(&self) -> Option<&[Self::Head]> {
+        match self {
+            Sexpr::List(l) => Some(l),
+            _ => None,
+        }
+    }
 }
 
 impl MaybeList for [Sexpr] {
@@ -188,6 +201,10 @@ impl MaybeList for [Sexpr] {
             [] => None,
         }
     }
+
+    fn as_tuple(&self) -> Option<&[Self::Head]> {
+        Some(self)
+    }
 }
 
 #[macro_export]
@@ -209,13 +226,17 @@ macro_rules! match_sexpr {
         }
     };
 
-    ($expr:expr, case ($item:tt) => $then:expr, $($rest:tt)*) => {{
+    ($expr:expr, case ($item:tt) => $then:expr, $($rest:tt)*) => {
+        match_sexpr! { $expr, case ($item :: ()) => $then, $($rest)* }
+    };
+
+    ($expr:expr, case ($item:tt :: $tail:tt) => $then:expr, $($rest:tt)*) => {{
         let result = if let Some((_h, _t)) = $crate::sexpr::MaybeList::decons($expr) {
             match_sexpr!(
                 _h,
                 case $item => match_sexpr!(
                     _t,
-                    case () => Some($then),
+                    case $tail => #[allow(unreachable_code)]Some($then),
                     else => None,
                 ),
                 else => None,
@@ -235,7 +256,7 @@ macro_rules! match_sexpr {
                 _h,
                 case $item => match_sexpr!(
                     _t,
-                    case ($($more)*) => Some($then),
+                    case ($($more)*) => #[allow(unreachable_code)]Some($then),
                     else => None,
                 ),
                 else => None,
@@ -387,13 +408,28 @@ mod tests {
             else => true,
         });
 
-        /*assert_eq!(
+        assert_eq!(
             match_sexpr! {
                 &expr,
                 case (_, 2, y) => y,
                 else => panic!(""),
             },
             &Sexpr::int(3)
-        );*/
+        );
+    }
+
+    #[test]
+    fn match_tail() {
+        let expr = Sexpr::list(vec![Sexpr::int(1), Sexpr::int(2), Sexpr::int(3)]);
+        assert!(match_sexpr! {
+            &expr,
+            case (1, 2 :: x) => x == &[Sexpr::int(3)],
+            else => false,
+        });
+        assert!(match_sexpr! {
+            &expr,
+            case (1 :: [[x@.., _]]) => x == &[Sexpr::int(2)],
+            else => false,
+        })
     }
 }
