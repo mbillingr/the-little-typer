@@ -23,7 +23,7 @@ fn main() -> io::Result<()> {
 
 fn read_eval_normalize(ctx: &mut Ctx) -> Result<Option<Core>, String> {
     let src = read_line().map_err(|e| e.to_string())?;
-    let sexpr = parse::<Sexpr>(&src).map_err(|e| format!("{:?}", e))?;
+    let sexpr = parse::<Sexpr>(&src).map_err(|e| e.to_string())?;
 
     match_sexpr!(
         &sexpr,
