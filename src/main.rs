@@ -27,11 +27,11 @@ fn read_eval_normalize(ctx: &mut Ctx) -> Result<Option<Core>, String> {
 
     match_sexpr!(
         &sexpr,
-        case ("claim", ident, expr) => {
+        case ("claim", [Sexpr::Symbol(ident)], expr) => {
             *ctx = ctx.claim(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
             return Ok(None);
         },
-        case ("define", ident, expr) => {
+        case ("define", [Sexpr::Symbol(ident)], expr) => {
             *ctx = ctx.define(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
             return Ok(None);
         },

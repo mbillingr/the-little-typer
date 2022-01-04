@@ -239,6 +239,13 @@ macro_rules! match_sexpr {
         }
     };
 
+    ($expr:expr, case [$pat:pat] => $then:expr, $($rest:tt)*) => {
+        if let $pat = $expr {
+            $then
+        }else {
+            match_sexpr! { $expr, $($rest)* }
+        }
+    };
 
     ($expr:expr, case $literal:expr => $then:expr, $($rest:tt)*) => {
         if $expr == $literal {
@@ -274,6 +281,15 @@ mod tests {
         assert!(match_sexpr! {
             Sexpr::symbol("foo"),
             case _ => true,
+        })
+    }
+
+    #[test]
+    fn match_pattern() {
+        assert!(match_sexpr! {
+            Sexpr::symbol("foo"),
+            case [Sexpr::Symbol(_)] => true,
+            else => false,
         })
     }
 
@@ -361,13 +377,13 @@ mod tests {
             else => true,
         });
 
-        assert_eq!(
+        /*assert_eq!(
             match_sexpr! {
                 &expr,
                 case (_, 2, y) => y,
                 else => panic!(""),
             },
             &Sexpr::int(3)
-        );
+        );*/
     }
 }
