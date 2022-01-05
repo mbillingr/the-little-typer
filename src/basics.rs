@@ -190,6 +190,7 @@ impl From<&Sexpr> for Core {
             case "Nat" => cores::nat(),
             case "zero" => cores::zero(),
             case "Atom" => cores::atom(),
+            case "nil" => cores::nil(),
             case [Sexpr::Symbol(s)] => if is_var_name(s) {
                     cores::refer(s.clone())
                 } else {
@@ -220,6 +221,9 @@ impl From<&Sexpr> for Core {
             case ("cons", car, cdr) => cores::cons(Core::from(car), Core::from(cdr)),
             case ("car", cons) => cores::car(Core::from(cons)),
             case ("cdr", cons) => cores::cdr(Core::from(cons)),
+            //
+            case ("List", t) => cores::list(t.into()),
+            case ("::", h, r) => cores::list_cons(h.into(), r.into()),
             case (op :: args) => cores::app_star(Core::from(op), args.iter().map(Core::from).collect()),
             case _ => todo!("{:?}", sexpr),
         }
@@ -262,7 +266,7 @@ pub trait ValueInterface: Any + Debug + Sync + Send {
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core>;
 
     fn read_back(&self, _ctx: &Ctx, _tv: &Value, _v: &Value) -> Result<Core> {
-        unimplemented!("{:?}", self)
+        unimplemented!("read_back {:?}", self)
     }
 
     fn apply(

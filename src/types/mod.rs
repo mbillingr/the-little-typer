@@ -18,25 +18,25 @@ macro_rules! impl_core_defaults {
     };
 
     ($fields:tt, no_type) => {
-        fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> crate::errors::Result<Core> {
-            Err(Error::NotAType(Core::new(self.clone())))
+        fn is_type(&self, _ctx: &crate::basics::Ctx, _r: &crate::basics::Renaming) -> crate::errors::Result<Core> {
+            Err(crate::errors::Error::NotAType(Core::new(self.clone())))
         }
     };
 
     ($fields:tt, simple_type) => {
-        fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> crate::errors::Result<Core> {
+        fn is_type(&self, _ctx: &crate::basics::Ctx, _r: &crate::basics::Renaming) -> crate::errors::Result<Core> {
             Ok(Core::new(self.clone()))
         }
     };
 
     ($fields:tt, no_synth) => {
-        fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> crate::errors::Result<(Core, Core)> {
-            Err(Error::CantDetermineType(Core::new(self.clone())))
+        fn synth(&self, _ctx: &crate::basics::Ctx, _r: &crate::basics::Renaming) -> crate::errors::Result<(Core, Core)> {
+            Err(crate::errors::Error::CantDetermineType(Core::new(self.clone())))
         }
     };
 
     ($fields:tt, check_by_synth) => {
-        fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> crate::errors::Result<Core> {
+        fn check(&self, ctx: &crate::basics::Ctx, r: &crate::basics::Renaming, tv: &crate::basics::Value) -> crate::errors::Result<Core> {
             let (t_out, e_out) = self.synth(ctx, r)?;
             crate::typechecker::same_type(ctx, &crate::normalize::val_in_ctx(ctx, &t_out), tv)?;
             Ok(e_out)
@@ -61,14 +61,14 @@ macro_rules! impl_core_defaults {
     };
 
     (_, occurring_names) => {
-        fn occurring_names(&self) -> HashSet<Symbol> {
-            HashSet::new()
+        fn occurring_names(&self) -> std::collections::HashSet<crate::symbol::Symbol> {
+            std::collections::HashSet::new()
         }
     };
 
     (($($field:tt),*), occurring_names) => {
-        fn occurring_names(&self) -> HashSet<Symbol> {
-            let names = HashSet::new();
+        fn occurring_names(&self) -> std::collections::HashSet<crate::symbol::Symbol> {
+            let names = std::collections::HashSet::new();
             $(let names = &names | &self.$field.occurring_names();)*
             names
         }
@@ -128,6 +128,7 @@ pub mod cores;
 mod delay;
 pub mod functions;
 mod invalid;
+mod lists;
 pub mod natural;
 mod neutral;
 mod pairs;

@@ -3,6 +3,7 @@ use crate::symbol::Symbol;
 use crate::types::atom::{Atom, Quote};
 use crate::types::delay::Delay;
 use crate::types::functions::{Lambda, Pi};
+use crate::types::lists::{List, ListCons, Nil};
 use crate::types::natural::Add1;
 use crate::types::natural::{Nat, Zero};
 pub use crate::types::neutral::neutral;
@@ -67,4 +68,16 @@ pub fn sigma(x: impl Into<Symbol>, car_type: Value, cdr_type: Closure) -> Value 
 
 pub fn cons(car: Value, cdr: Value) -> Value {
     Value::new(Cons(car, cdr))
+}
+
+pub fn list(t: Value) -> Value {
+    Value::new(List(t))
+}
+
+pub fn nil() -> Value {
+    Value::new(Nil)
+}
+
+pub fn list_cons(head: Value, tail: Value) -> Value {
+    Value::new(ListCons(head, tail))
 }

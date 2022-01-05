@@ -2,7 +2,6 @@ use crate::basics::{
     Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, N,
 };
 use crate::errors;
-use crate::errors::Error;
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;

@@ -4,6 +4,7 @@ use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
 use crate::types::invalid::Invalid;
+use crate::types::lists::{List, ListCons, Nil};
 use crate::types::natural::{Add1, IndNat, IterNat, Nat, RecNat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
@@ -145,4 +146,16 @@ pub fn car(cons: Core) -> Core {
 
 pub fn cdr(cons: Core) -> Core {
     Core::new(Cdr(cons))
+}
+
+pub fn list(t: Core) -> Core {
+    Core::new(List(t))
+}
+
+pub fn nil() -> Core {
+    Core::new(Nil)
+}
+
+pub fn list_cons(head: Core, tail: Core) -> Core {
+    Core::new(ListCons(head, tail))
 }
