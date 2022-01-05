@@ -156,3 +156,11 @@ impl ResultBoolAssertions for Result<bool> {
         }
     }
 }
+
+impl ResultBoolAssertions for bool {
+    fn assert(self, value: bool) {
+        if self != value {
+            panic!("expected {}, got {}", value, self)
+        }
+    }
+}
