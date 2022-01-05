@@ -342,6 +342,33 @@ impl Value {
     }
 }
 
+impl FromStr for Value {
+    type Err = String;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let sexpr = parse::<Sexpr>(s).map_err(|e| format!("{:?}", e))?;
+        Ok((&sexpr).into())
+    }
+}
+
+impl From<&Sexpr> for Value {
+    fn from(sexpr: &Sexpr) -> Self {
+        match_sexpr! {
+            sexpr,
+            case [Sexpr::Invalid(s)] => panic!("invalid value: {}", s),
+            case [Sexpr::SmallNat(x)] => values::the_nat(*x),
+            case "U" => values::universe(),
+            case "Nat" => values::nat(),
+            case "zero" => values::zero(),
+            case "Atom" => values::atom(),
+            case [Sexpr::Symbol(s)] => panic!("invalid value: {:?}", s),
+            case ("add1", n) => values::add1(Value::from(n)),
+            case ("quote", [Sexpr::Symbol(s)]) => values::quote(s.clone()),
+            case ("cons", car, cdr) => values::cons(car.into(), cdr.into()),
+            case _ => todo!("{:?}", sexpr),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub enum Closure {
     FirstOrder { env: Env, var: Symbol, expr: Core },

@@ -1,4 +1,4 @@
-use crate::basics::{Core, CoreInterface, Ctx, Renaming};
+use crate::basics::{Core, CoreInterface, Ctx, Renaming, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::val_in_ctx;
 use crate::rep;
@@ -83,6 +83,12 @@ impl CoreChecker {
     fn check(self) -> Self {
         self.expr.synth(&self.ctx, &Renaming::new()).unwrap();
         self
+    }
+
+    fn evaluates_to(&self, v: &'static str) {
+        let v: Value = v.parse().unwrap();
+        let (_, e_out) = self.expr.synth(&self.ctx, &Renaming::new()).unwrap();
+        assert_eq!(val_in_ctx(&self.ctx, &e_out), v);
     }
 }
 

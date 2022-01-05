@@ -29,6 +29,14 @@ pub fn add1(n: Value) -> Value {
     Value::new(Add1(n))
 }
 
+pub fn the_nat(n: u64) -> Value {
+    let mut out = zero();
+    for _ in 0..n {
+        out = add1(out);
+    }
+    out
+}
+
 pub fn pi(x: impl Into<Symbol>, arg_type: Value, res_type: Closure) -> Value {
     Value::new(Pi {
         arg_name: x.into(),
