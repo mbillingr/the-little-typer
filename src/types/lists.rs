@@ -2,6 +2,7 @@ use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterfa
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
+use crate::types::functions::do_ap;
 use crate::types::values::later;
 use crate::types::{cores, values, MaybeTyped};
 use std::any::Any;
@@ -218,6 +219,25 @@ impl ValueInterface for ListCons<Value> {
     }
 }
 
-fn do_rec_list(_tgt_v: Value, _bt_v: Value, _b_v: Value, _s_v: Value) -> Value {
+fn do_rec_list(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
+    _do_rec_list(&tgt_v, bt_v, b_v, &s_v)
+}
+
+fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: &Value) -> Value {
+    match tgt_v.try_as::<Nil>() {
+        Some(_) => return b_v,
+        None => {}
+    };
+
+    match tgt_v.try_as::<ListCons<Value>>() {
+        Some(ListCons(h, t)) => {
+            return do_ap(
+                &do_ap(&do_ap(s_v, h.clone()), t.clone()),
+                _do_rec_list(t, bt_v, b_v, s_v),
+            )
+        }
+        None => {}
+    };
+
     todo!()
 }

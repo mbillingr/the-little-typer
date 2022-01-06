@@ -36,3 +36,24 @@ fn test_07_08_nil_is_a_list_of_any_type() {
 fn test_09_10_nil_is_not_a_list_that_is_no_type() {
     with_empty_context().core("nil").is_a("(List 'potato)");
 }
+
+#[test]
+fn test_39_try_length() {
+    with_book_context()
+        .core("((length Atom) nil)")
+        .and("0")
+        .are_the_same("Nat")
+        .assert(true);
+
+    with_book_context()
+        .core("((length Atom) (:: 'a nil))")
+        .and("1")
+        .are_the_same("Nat")
+        .assert(true);
+
+    with_book_context()
+        .core("((length Atom) (:: 'b (:: 'a nil)))")
+        .and("2")
+        .are_the_same("Nat")
+        .assert(true);
+}
