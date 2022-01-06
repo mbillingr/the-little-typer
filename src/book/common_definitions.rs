@@ -30,4 +30,20 @@ pub fn with_book_context() -> Checker {
         .claim("length", "(Π ((E U)) (-> (List E) Nat))")
         .define("length", "(λ (E) (λ (es) (rec-List es 0 (step-length E))))")
         .unwrap()
+        // append
+        .claim(
+            "step-append",
+            "(Π ((E U)) (-> E (List E) (List E) (List E)))",
+        )
+        .define(
+            "step-append",
+            "(λ (E) (λ (e es append-es) (:: e append-es)))",
+        )
+        .unwrap()
+        .claim("append", "(Π ((E U)) (-> (List E) (List E) (List E)))")
+        .define(
+            "append",
+            "(λ (E) (λ (start end) (rec-List start end (step-append E))))",
+        )
+        .unwrap()
 }

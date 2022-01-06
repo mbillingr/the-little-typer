@@ -57,3 +57,12 @@ fn test_39_try_length() {
         .are_the_same("Nat")
         .assert(true);
 }
+
+#[test]
+fn test_50_append() {
+    with_book_context()
+        .core("(append Atom (:: 'cucumber (:: 'tomato nil)) (:: 'rye-bread nil))")
+        .and("(:: 'cucumber (:: 'tomato (:: 'rye-bread nil)))")
+        .are_the_same("(List Atom)")
+        .assert(true);
+}
