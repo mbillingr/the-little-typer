@@ -4,7 +4,7 @@ use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
 use crate::types::invalid::Invalid;
-use crate::types::lists::{List, ListCons, Nil};
+use crate::types::lists::{List, ListCons, Nil, RecList};
 use crate::types::natural::{Add1, IndNat, IterNat, Nat, RecNat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
@@ -158,4 +158,12 @@ pub fn nil() -> Core {
 
 pub fn list_cons(head: Core, tail: Core) -> Core {
     Core::new(ListCons(head, tail))
+}
+
+pub fn rec_list(target: Core, base: Core, step: Core) -> Core {
+    Core::new(RecList::untyped(target, base, step))
+}
+
+pub fn rec_list_desugared(target: Core, base_type: Core, base: Core, step: Core) -> Core {
+    Core::new(RecList::typed(target, base_type, base, step))
 }

@@ -224,6 +224,7 @@ impl From<&Sexpr> for Core {
             //
             case ("List", t) => cores::list(t.into()),
             case ("::", h, r) => cores::list_cons(h.into(), r.into()),
+            case ("rec-List", target, base, step) => cores::rec_list(Core::from(target), Core::from(base), Core::from(step)),
             case (op :: args) => cores::app_star(Core::from(op), args.iter().map(Core::from).collect()),
             case _ => todo!("{:?}", sexpr),
         }

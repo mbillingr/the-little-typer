@@ -20,4 +20,14 @@ pub fn with_book_context() -> Checker {
         .claim("flip", "(Pi ((A U) (D U)) (-> (Pair A D) (Pair D A)))")
         .define("flip", "(lambda (A D) (lambda (p) (cons (cdr p) (car p))))")
         .unwrap()
+        // length
+        .claim("step-length", "(Π ((E U)) (-> E (List E) Nat Nat))")
+        .define(
+            "step-length",
+            "(λ (E) (λ (e es length-es) (add1 length-es)))",
+        )
+        .unwrap()
+        .claim("length", "(Π ((E U)) (-> (List E) Nat))")
+        .define("length", "(λ (E) (λ (es) (rec-List es 0 (step-length E))))")
+        .unwrap()
 }

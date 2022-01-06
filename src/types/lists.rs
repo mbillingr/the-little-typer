@@ -3,7 +3,7 @@ use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::values::later;
-use crate::types::{cores, values};
+use crate::types::{cores, values, MaybeTyped};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
@@ -19,6 +19,8 @@ pub struct Nil;
 /// The type of lists
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListCons<T>(pub T, pub T);
+
+ternary_eliminator!(RecList, do_rec_list, synth_rec_list);
 
 impl CoreInterface for List<Core> {
     impl_core_defaults!(
@@ -106,6 +108,32 @@ impl CoreInterface for ListCons<Core> {
     }
 }
 
+fn synth_rec_list(this: &RecList, ctx: &Ctx, r: &Renaming, b: &Core) -> Result<(Core, Core)> {
+    let (tgt_t, tgt_out) = this.target.synth(ctx, r)?;
+    let tgt_tv = val_in_ctx(ctx, &tgt_t);
+    if let Some(List(e_tv)) = tgt_tv.try_as::<List<Value>>() {
+        let (b_t_out, b_out) = b.synth(ctx, r)?;
+        let b_t_val = val_in_ctx(ctx, &b_t_out);
+        let s_out = this.step.check(
+            ctx,
+            r,
+            &pi_type!(((_e, e_tv.clone())), {
+                let b_t_val = b_t_val.clone();
+                pi_type!(((_es, tgt_tv.clone())), {
+                    let b_t_val = b_t_val.clone();
+                    pi_type!(((_ih, b_t_val.clone())), b_t_val.clone())
+                })
+            }),
+        )?;
+        Ok((
+            b_t_out.clone(),
+            cores::rec_list_desugared(tgt_out, b_t_out, b_out, s_out),
+        ))
+    } else {
+        Err(Error::NotAListType(tgt_tv.read_back_type(ctx)?))
+    }
+}
+
 impl<T: Display> Display for List<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "(List {})", self.0)
@@ -188,4 +216,8 @@ impl ValueInterface for ListCons<Value> {
             self.1.clone(),
         )))
     }
+}
+
+fn do_rec_list(_tgt_v: Value, _bt_v: Value, _b_v: Value, _s_v: Value) -> Value {
+    todo!()
 }

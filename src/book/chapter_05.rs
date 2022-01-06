@@ -34,7 +34,5 @@ fn test_07_08_nil_is_a_list_of_any_type() {
 #[test]
 #[should_panic]
 fn test_09_10_nil_is_not_a_list_that_is_no_type() {
-    with_empty_context()
-        .core("nil")
-        .is_a("(List 'potato)");
+    with_empty_context().core("nil").is_a("(List 'potato)");
 }
