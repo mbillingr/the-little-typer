@@ -46,4 +46,27 @@ pub fn with_book_context() -> Checker {
             "(λ (E) (λ (start end) (rec-List start end (step-append E))))",
         )
         .unwrap()
+        // snoc (cons in reverse)
+        .claim("snoc", "(Π ((E U)) (-> (List E) E (List E)))")
+        .define(
+            "snoc",
+            "(λ (E) (λ (start e) (rec-List start (:: e nil) (step-append E))))",
+        )
+        .unwrap()
+        // reverse
+        .claim(
+            "step-reverse",
+            "(Π ((E U)) (-> E (List E) (List E) (List E)))",
+        )
+        .define(
+            "step-reverse",
+            "(λ (E) (λ (e es reverse-es) (snoc E reverse-es e)))",
+        )
+        .unwrap()
+        .claim("reverse", "(Π ((E U)) (-> (List E) (List E)))")
+        .define(
+            "reverse",
+            "(λ (E) (λ (es) (rec-List es (the (List E) nil) (step-reverse E))))",
+        )
+        .unwrap()
 }

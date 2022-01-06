@@ -3,6 +3,12 @@ use crate::book::{with_empty_context, Checker, ResultBoolAssertions};
 
 fn with_chapter_context() -> Checker {
     with_book_context()
+        .claim("toppings", "(List Atom)")
+        .define("toppings", "(:: 'potato (:: 'butter nil))")
+        .unwrap()
+        .claim("condiments", "(List Atom)")
+        .define("condiments", "(:: 'chives (:: 'mayonnaise nil))")
+        .unwrap()
 }
 
 #[test]
@@ -63,6 +69,17 @@ fn test_50_append() {
     with_book_context()
         .core("(append Atom (:: 'cucumber (:: 'tomato nil)) (:: 'rye-bread nil))")
         .and("(:: 'cucumber (:: 'tomato (:: 'rye-bread nil)))")
+        .are_the_same("(List Atom)")
+        .assert(true);
+}
+
+#[test]
+fn test_67_reverse() {
+    with_chapter_context()
+        .claim("kartoffelmad", "(List Atom)")
+        .define("kartoffelmad", "(append Atom (append Atom condiments toppings) (reverse Atom (:: 'plate (:: 'rye-bread nil))))").unwrap()
+        .core("kartoffelmad")
+        .and("(:: 'chives (:: 'mayonnaise (:: 'potato (:: 'butter (:: 'rye-bread (:: 'plate nil))))))")
         .are_the_same("(List Atom)")
         .assert(true);
 }
