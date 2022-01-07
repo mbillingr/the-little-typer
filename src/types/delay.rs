@@ -48,7 +48,7 @@ impl ValueInterface for Delay {
     }
 
     fn read_back(&self, ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
-        self.force().read_back(ctx, tv, v)
+        self.force().read_back(ctx, v)
     }
 
     fn as_neutral(&self) -> Option<(&Value, &N)> {

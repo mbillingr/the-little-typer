@@ -5,7 +5,7 @@ pub fn read_back(ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
     if let Some((_, ne)) = v.as_neutral() {
         ne.read_back_neutral(ctx)
     } else {
-        tv.read_back(ctx, tv, &v)
+        tv.read_back(ctx, &v)
     }
 }
 

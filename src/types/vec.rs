@@ -76,11 +76,7 @@ impl CoreInterface for VecNil {
             if n.try_as::<Zero>().is_some() {
                 Ok(cores::vecnil())
             } else {
-                Err(Error::LengthNotZero(values::nat().read_back(
-                    ctx,
-                    &values::nat(),
-                    n,
-                )?))
+                Err(Error::LengthNotZero(values::nat().read_back(ctx, n)?))
             }
         } else {
             Err(Error::NotAVecType(tv.read_back_type(ctx).unwrap()))
@@ -115,11 +111,7 @@ impl CoreInterface for VectorCons<Core> {
                         .check(ctx, r, &values::vec(etv.clone(), len_minus_one.clone()))?;
                 Ok(cores::vec_cons(h_out, t_out))
             } else {
-                Err(Error::LengthZero(values::nat().read_back(
-                    ctx,
-                    &values::nat(),
-                    n,
-                )?))
+                Err(Error::LengthZero(values::nat().read_back(ctx, n)?))
             }
         } else {
             Err(Error::NotAVecType(tv.read_back_type(ctx).unwrap()))

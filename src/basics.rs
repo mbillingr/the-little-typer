@@ -332,8 +332,8 @@ impl Value {
         self.0.read_back_type(ctx)
     }
 
-    pub fn read_back(&self, ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
-        self.0.read_back(ctx, tv, v)
+    pub fn read_back(&self, ctx: &Ctx, v: &Value) -> Result<Core> {
+        self.0.read_back(ctx, self, v)
     }
 
     pub fn apply(
