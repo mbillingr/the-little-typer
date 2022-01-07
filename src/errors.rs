@@ -27,6 +27,7 @@ pub enum Error {
     NotTheSame(Core, Core, Core),
     WrongArity(Core),
     LengthNotZero(Core),
+    LengthZero(Core),
 
     TypeMismatchVar(Value, Value),
     NotATypeVar(Value),
@@ -62,6 +63,7 @@ impl Display for Error {
                 write!(f, "Wrong number of arguments: {}", expr)
             }
             Error::LengthNotZero(n) => write!(f, "Length must be zero but was {}", n),
+            Error::LengthZero(n) => write!(f, "Length must be nonzero but was {}", n),
             Error::TypeMismatchVar(v, t) => {
                 write!(f, "The value {:?} is not a {:?}", v, t)
             }

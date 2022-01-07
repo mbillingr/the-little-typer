@@ -9,7 +9,7 @@ use crate::types::natural::{Add1, IndNat, IterNat, Nat, RecNat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
 use crate::types::universe::Universe;
-use crate::types::vec::{VecNil, Vector};
+use crate::types::vec::{VecNil, Vector, VectorCons};
 
 pub fn invalid_syntax(s: &str) -> Core {
     Core::new(Invalid(s.into()))
@@ -175,4 +175,8 @@ pub fn vec(t: Core, n: Core) -> Core {
 
 pub fn vecnil() -> Core {
     Core::new(VecNil)
+}
+
+pub fn vec_cons(head: Core, tail: Core) -> Core {
+    Core::new(VectorCons(head, tail))
 }

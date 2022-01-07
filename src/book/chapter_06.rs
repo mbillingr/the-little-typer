@@ -20,3 +20,11 @@ fn test_10_vecnil() {
         .is_a("(Vec Atom 0)")
         .assert(true)
 }
+
+#[test]
+fn test_11_vecnil() {
+    with_empty_context()
+        .core("(vec:: 'x vecnil)")
+        .is_a("(Vec Atom 1)")
+        .assert(true)
+}

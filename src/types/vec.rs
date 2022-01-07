@@ -92,29 +92,38 @@ impl CoreInterface for VecNil {
     }
 }
 
-/*impl CoreInterface for VectorCons<Core> {
-    impl_core_defaults!(
-        (0, 1),
-        as_any,
-        same,
-        occurring_names,
-        alpha_equiv,
-        no_type,
-        check_by_synth
-    );
+impl CoreInterface for VectorCons<Core> {
+    impl_core_defaults!((0, 1), as_any, same, occurring_names, alpha_equiv, no_type);
 
     fn val_of(&self, env: &Env) -> Value {
-        values::list_cons(
+        values::vec_cons(
             later(env.clone(), self.0.clone()),
             later(env.clone(), self.1.clone()),
         )
     }
 
-    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
-        let (e, e_out) = self.0.synth(ctx, r)?;
-        let lt = cores::list(e);
-        let es_out = self.1.check(ctx, r, &val_in_ctx(ctx, &lt))?;
-        Ok((lt, cores::list_cons(e_out, es_out)))
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
+        Err(Error::CantDetermineType(Core::new(self.clone())))
+    }
+
+    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
+        if let Some(Vector(etv, n)) = tv.try_as::<Vector<Value>>() {
+            if let Some(Add1(len_minus_one)) = n.try_as::<Add1<Value>>() {
+                let h_out = self.0.check(ctx, r, etv)?;
+                let t_out =
+                    self.1
+                        .check(ctx, r, &values::vec(etv.clone(), len_minus_one.clone()))?;
+                Ok(cores::vec_cons(h_out, t_out))
+            } else {
+                Err(Error::LengthZero(values::nat().read_back(
+                    ctx,
+                    &values::nat(),
+                    n,
+                )?))
+            }
+        } else {
+            Err(Error::NotAVecType(tv.read_back_type(ctx).unwrap()))
+        }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
@@ -122,7 +131,7 @@ impl CoreInterface for VecNil {
         let t = self.1.resugar();
         (&h.0 | &t.0, cores::list_cons(h.1, t.1))
     }
-}*/
+}
 
 /*fn synth_rec_vec(this: &RecList, ctx: &Ctx, r: &Renaming, b: &Core) -> Result<(Core, Core)> {
     let (tgt_t, tgt_out) = this.target.synth(ctx, r)?;
@@ -195,11 +204,14 @@ impl ValueInterface for Vector<Value> {
 
         if let Some(Add1(len_minus_one_v)) = self.1.try_as::<Add1<Value>>() {
             if let Some(VectorCons(h, t)) = v.try_as::<VectorCons<Value>>() {
-                todo!()
-                /*Ok(cores::list_cons(
-                read_back(ctx, &self.0, h)?,
-                self.read_back(ctx, tv, t)?,
-                ))*/
+                return Ok(cores::vec_cons(
+                    read_back(ctx, &self.0, h)?,
+                    read_back(
+                        ctx,
+                        &values::vec(self.0.clone(), len_minus_one_v.clone()),
+                        t,
+                    )?,
+                ));
             }
         }
 
@@ -221,7 +233,7 @@ impl ValueInterface for VecNil {
     }
 }
 
-/*impl ValueInterface for VectorCons<Value> {
+impl ValueInterface for VectorCons<Value> {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -240,7 +252,7 @@ impl ValueInterface for VecNil {
             self.1.clone(),
         )))
     }
-}*/
+}
 
 /*fn do_rec_vec(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
     _do_rec_list(&tgt_v, bt_v, b_v, &s_v)

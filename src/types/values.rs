@@ -9,7 +9,7 @@ use crate::types::natural::{Nat, Zero};
 pub use crate::types::neutral::neutral;
 use crate::types::pairs::{Cons, Sigma};
 use crate::types::universe::Universe;
-use crate::types::vec::{VecNil, Vector};
+use crate::types::vec::{VecNil, Vector, VectorCons};
 
 pub fn later(env: Env, exp: Core) -> Value {
     Value::new(Delay::new(env, exp))
@@ -89,4 +89,8 @@ pub fn vec(t: Value, n: Value) -> Value {
 
 pub fn vecnil() -> Value {
     Value::new(VecNil)
+}
+
+pub fn vec_cons(head: Value, tail: Value) -> Value {
+    Value::new(VectorCons(head, tail))
 }
