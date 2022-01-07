@@ -1,6 +1,6 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::{read_back};
+use crate::normalize::read_back;
 use crate::symbol::Symbol;
 use crate::types::natural::{Add1, Zero};
 use crate::types::values::later;
@@ -9,15 +9,15 @@ use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
 
-/// The type of lists
+/// The type of lists with length
 #[derive(Debug, Clone, PartialEq)]
 pub struct Vector<T>(pub T, pub T);
 
-/// The empty list
+/// The empty vector
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct VecNil;
 
-/// The type of lists
+/// The vector constructor
 #[derive(Debug, Clone, PartialEq)]
 pub struct VectorCons<T>(pub T, pub T);
 
@@ -120,7 +120,7 @@ impl CoreInterface for VectorCons<Core> {
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
         let h = self.0.resugar();
         let t = self.1.resugar();
-        (&h.0 | &t.0, cores::list_cons(h.1, t.1))
+        (&h.0 | &t.0, cores::vec_cons(h.1, t.1))
     }
 }
 

@@ -28,3 +28,11 @@ fn test_13_veccons() {
         .is_a("(Vec Atom 1)")
         .assert(true)
 }
+
+#[test]
+fn test_14_veccons() {
+    with_empty_context()
+        .core("(vec:: 'crimini (vec:: 'shiitake vecnil))")
+        .is_not_a("(Vec Atom 3)")
+        .assert(true)
+}
