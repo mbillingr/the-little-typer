@@ -1,11 +1,10 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::{read_back, val_in_ctx};
+use crate::normalize::{read_back};
 use crate::symbol::Symbol;
-use crate::types::functions::do_ap;
-use crate::types::natural::{Add1, Nat, Zero};
+use crate::types::natural::{Add1, Zero};
 use crate::types::values::later;
-use crate::types::{cores, values, MaybeTyped};
+use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
@@ -71,7 +70,7 @@ impl CoreInterface for VecNil {
         Err(Error::CantDetermineType(Core::new(self.clone())))
     }
 
-    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
+    fn check(&self, ctx: &Ctx, _r: &Renaming, tv: &Value) -> Result<Core> {
         if let Some(Vector(_, n)) = tv.try_as::<Vector<Value>>() {
             if n.try_as::<Zero>().is_some() {
                 Ok(cores::vecnil())

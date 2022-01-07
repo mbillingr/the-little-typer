@@ -22,9 +22,9 @@ fn test_10_vecnil() {
 }
 
 #[test]
-fn test_11_vecnil() {
+fn test_13_veccons() {
     with_empty_context()
-        .core("(vec:: 'x vecnil)")
+        .core("(vec:: 'oyster vecnil)")
         .is_a("(Vec Atom 1)")
         .assert(true)
 }
