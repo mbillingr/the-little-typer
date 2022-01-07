@@ -235,6 +235,7 @@ mod pairs;
 pub mod reference;
 mod universe;
 pub mod values;
+mod vec;
 
 fn is_type_with_fresh_binding<T: CoreInterface>(
     ctx: &Ctx,

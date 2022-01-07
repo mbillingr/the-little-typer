@@ -185,28 +185,20 @@ impl From<&Sexpr> for Core {
         match_sexpr! {
             sexpr,
             case [Sexpr::Invalid(s)] => cores::invalid_syntax(s),
+            case ("the", t, v) => Core::the(Core::from(t), Core::from(v)),
             case [Sexpr::SmallNat(x)] => cores::the_nat(*x),
             case "U" => cores::universe(),
             case "Nat" => cores::nat(),
             case "zero" => cores::zero(),
-            case "Atom" => cores::atom(),
-            case "nil" => cores::nil(),
-            case [Sexpr::Symbol(s)] => if is_var_name(s) {
-                    cores::refer(s.clone())
-                } else {
-                    todo!("{:?}", s)
-                },
-            case ("the", t, v) => Core::the(Core::from(t), Core::from(v)),
             case ("add1", n) => cores::add1(Core::from(n)),
             case ("which-Nat", target, base, step) => cores::which_nat(Core::from(target), Core::from(base), Core::from(step)),
             case ("iter-Nat", target, base, step) => cores::iter_nat(Core::from(target), Core::from(base), Core::from(step)),
             case ("rec-Nat", target, base, step) => cores::rec_nat(Core::from(target), Core::from(base), Core::from(step)),
             case ("ind-Nat", target, motive, base, step) => cores::ind_nat(Core::from(target), Core::from(motive), Core::from(base), Core::from(step)),
-            case ("quote", [Sexpr::Symbol(s)]) => Core::quote(s.clone()),
-            case ("->" :: [[ts@.., rt]]) => Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt)),
             case ("Pi", [Sexpr::List(params)], rt) => Core::pi_star(parse_binders(params), Core::from(rt)),
             case ("Π", [Sexpr::List(params)], rt) => Core::pi_star(parse_binders(params), Core::from(rt)),
             case ("∏", [Sexpr::List(params)], rt) => Core::pi_star(parse_binders(params), Core::from(rt)),
+            case ("->" :: [[ts@.., rt]]) => Core::fun(ts.iter().map(Core::from).collect(), Core::from(rt)),
             case ("lambda", [Sexpr::List(params)], body) => cores::lambda_star(
                         params.iter().map(|x| x.as_symbol().cloned().unwrap()).collect(),
                         Core::from(body).into(),
@@ -215,16 +207,27 @@ impl From<&Sexpr> for Core {
                         params.iter().map(|x| x.as_symbol().cloned().unwrap()).collect(),
                         Core::from(body).into(),
                     ),
+            case "Atom" => cores::atom(),
+            case ("quote", [Sexpr::Symbol(s)]) => Core::quote(s.clone()),
             case ("Sigma", [Sexpr::List(params)], rt) => cores::sigma_star(parse_binders(params), Core::from(rt)),
             case ("Σ", [Sexpr::List(params)], rt) => cores::sigma_star(parse_binders(params), Core::from(rt)),
             case ("Pair", a, d) => cores::pair(Core::from(a), Core::from(d)),
             case ("cons", car, cdr) => cores::cons(Core::from(car), Core::from(cdr)),
             case ("car", cons) => cores::car(Core::from(cons)),
             case ("cdr", cons) => cores::cdr(Core::from(cons)),
-            //
-            case ("List", t) => cores::list(t.into()),
             case ("::", h, r) => cores::list_cons(h.into(), r.into()),
+            case "nil" => cores::nil(),
+            case ("List", t) => cores::list(t.into()),
             case ("rec-List", target, base, step) => cores::rec_list(Core::from(target), Core::from(base), Core::from(step)),
+            //
+            case ("Vec", t, n) => cores::vec(t.into(), n.into()),
+            case "vecnil" => cores::vecnil(),
+            //
+            case [Sexpr::Symbol(s)] => if is_var_name(s) {
+                    cores::refer(s.clone())
+                } else {
+                    todo!("{:?}", s)
+                },
             case (op :: args) => cores::app_star(Core::from(op), args.iter().map(Core::from).collect()),
             case _ => todo!("{:?}", sexpr),
         }

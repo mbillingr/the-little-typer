@@ -9,6 +9,7 @@ mod chapter_02;
 mod chapter_03;
 mod chapter_04;
 mod chapter_05;
+mod chapter_06;
 mod common_definitions;
 
 fn with_empty_context() -> Checker {

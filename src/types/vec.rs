@@ -3,6 +3,7 @@ use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
+use crate::types::natural::{Add1, Nat, Zero};
 use crate::types::values::later;
 use crate::types::{cores, values, MaybeTyped};
 use std::any::Any;
@@ -11,21 +12,21 @@ use std::fmt::{Display, Formatter};
 
 /// The type of lists
 #[derive(Debug, Clone, PartialEq)]
-pub struct List<T>(pub T);
+pub struct Vector<T>(pub T, pub T);
 
 /// The empty list
 #[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Nil;
+pub struct VecNil;
 
 /// The type of lists
 #[derive(Debug, Clone, PartialEq)]
-pub struct ListCons<T>(pub T, pub T);
+pub struct VectorCons<T>(pub T, pub T);
 
-ternary_eliminator!(RecList, do_rec_list, synth_rec_list);
+//ternary_eliminator!(RecVec, do_rec_list, synth_rec_list);
 
-impl CoreInterface for List<Core> {
+impl CoreInterface for Vector<Core> {
     impl_core_defaults!(
-        (0),
+        (0, 1),
         as_any,
         same,
         occurring_names,
@@ -34,50 +35,64 @@ impl CoreInterface for List<Core> {
     );
 
     fn val_of(&self, env: &Env) -> Value {
-        values::list(later(env.clone(), self.0.clone()))
+        values::vec(
+            later(env.clone(), self.0.clone()),
+            later(env.clone(), self.1.clone()),
+        )
     }
 
     fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
         let e_out = self.0.is_type(ctx, r)?;
-        Ok(cores::list(e_out))
+        let len_out = self.1.check(ctx, r, &values::nat())?;
+        Ok(cores::vec(e_out, len_out))
     }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
         let e_out = self.0.check(ctx, r, &values::universe())?;
-        Ok((cores::universe(), cores::list(e_out)))
+        let len_out = self.1.check(ctx, r, &values::nat())?;
+        Ok((cores::universe(), cores::vec(e_out, len_out)))
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
         let t = self.0.resugar();
-        (t.0, cores::list(t.1))
+        let n = self.1.resugar();
+        (&t.0 | &n.0, cores::vec(t.1, n.1))
     }
 }
 
-impl CoreInterface for Nil {
+impl CoreInterface for VecNil {
     impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, no_type);
 
     fn val_of(&self, _env: &Env) -> Value {
-        values::nil()
+        values::vecnil()
     }
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         Err(Error::CantDetermineType(Core::new(self.clone())))
     }
 
-    fn check(&self, ctx: &Ctx, _r: &Renaming, tv: &Value) -> Result<Core> {
-        if tv.try_as::<List<Value>>().is_some() {
-            Ok(cores::nil())
+    fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
+        if let Some(Vector(_, n)) = tv.try_as::<Vector<Value>>() {
+            if n.try_as::<Zero>().is_some() {
+                Ok(cores::vecnil())
+            } else {
+                Err(Error::LengthNotZero(values::nat().read_back(
+                    ctx,
+                    &values::nat(),
+                    n,
+                )?))
+            }
         } else {
-            Err(Error::NotAListType(tv.read_back_type(ctx).unwrap()))
+            Err(Error::NotAVecType(tv.read_back_type(ctx).unwrap()))
         }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        (HashSet::new(), cores::nil())
+        (HashSet::new(), cores::vecnil())
     }
 }
 
-impl CoreInterface for ListCons<Core> {
+/*impl CoreInterface for VectorCons<Core> {
     impl_core_defaults!(
         (0, 1),
         as_any,
@@ -107,12 +122,12 @@ impl CoreInterface for ListCons<Core> {
         let t = self.1.resugar();
         (&h.0 | &t.0, cores::list_cons(h.1, t.1))
     }
-}
+}*/
 
-fn synth_rec_list(this: &RecList, ctx: &Ctx, r: &Renaming, b: &Core) -> Result<(Core, Core)> {
+/*fn synth_rec_vec(this: &RecList, ctx: &Ctx, r: &Renaming, b: &Core) -> Result<(Core, Core)> {
     let (tgt_t, tgt_out) = this.target.synth(ctx, r)?;
     let tgt_tv = val_in_ctx(ctx, &tgt_t);
-    if let Some(List(e_tv)) = tgt_tv.try_as::<List<Value>>() {
+    if let Some(Vector(e_tv)) = tgt_tv.try_as::<Vector<Value>>() {
         let (b_t_out, b_out) = b.synth(ctx, r)?;
         let b_t_val = val_in_ctx(ctx, &b_t_out);
         let s_out = this.step.check(
@@ -133,27 +148,27 @@ fn synth_rec_list(this: &RecList, ctx: &Ctx, r: &Renaming, b: &Core) -> Result<(
     } else {
         Err(Error::NotAListType(tgt_tv.read_back_type(ctx)?))
     }
-}
+}*/
 
-impl<T: Display> Display for List<T> {
+impl<T: Display> Display for Vector<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(List {})", self.0)
+        write!(f, "(Vec {} {})", self.0, self.1)
     }
 }
 
-impl std::fmt::Display for Nil {
+impl std::fmt::Display for VecNil {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "nil")
+        write!(f, "vecnil")
     }
 }
 
-impl<T: Display> Display for ListCons<T> {
+impl<T: Display> Display for VectorCons<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(:: {} {})", self.0, self.1)
+        write!(f, "(vec:: {} {})", self.0, self.1)
     }
 }
 
-impl ValueInterface for List<Value> {
+impl ValueInterface for Vector<Value> {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -167,24 +182,32 @@ impl ValueInterface for List<Value> {
     }
 
     fn read_back_type(&self, ctx: &Ctx) -> Result<Core> {
-        Ok(cores::list(self.0.read_back_type(ctx)?))
+        Ok(cores::vec(
+            self.0.read_back_type(ctx)?,
+            read_back(ctx, &values::nat(), &self.1)?,
+        ))
     }
 
     fn read_back(&self, ctx: &Ctx, tv: &Value, v: &Value) -> Result<Core> {
-        if v.try_as::<Nil>().is_some() {
-            Ok(cores::nil())
-        } else if let Some(ListCons(h, t)) = v.try_as::<ListCons<Value>>() {
-            Ok(cores::list_cons(
+        if self.1.try_as::<Zero>().is_some() && v.try_as::<VecNil>().is_some() {
+            return Ok(cores::vecnil());
+        }
+
+        if let Some(Add1(len_minus_one_v)) = self.1.try_as::<Add1<Value>>() {
+            if let Some(VectorCons(h, t)) = v.try_as::<VectorCons<Value>>() {
+                todo!()
+                /*Ok(cores::list_cons(
                 read_back(ctx, &self.0, h)?,
                 self.read_back(ctx, tv, t)?,
-            ))
-        } else {
-            Err(Error::TypeMismatchVar(v.clone(), tv.clone()))
+                ))*/
+            }
         }
+
+        Err(Error::TypeMismatchVar(v.clone(), tv.clone()))
     }
 }
 
-impl ValueInterface for Nil {
+impl ValueInterface for VecNil {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -194,11 +217,11 @@ impl ValueInterface for Nil {
     }
 
     fn read_back_type(&self, _ctx: &Ctx) -> Result<Core> {
-        Err(Error::NotATypeVar(values::nil()))
+        Err(Error::NotATypeVar(values::vecnil()))
     }
 }
 
-impl ValueInterface for ListCons<Value> {
+/*impl ValueInterface for VectorCons<Value> {
     fn as_any(&self) -> &dyn Any {
         self
     }
@@ -217,20 +240,20 @@ impl ValueInterface for ListCons<Value> {
             self.1.clone(),
         )))
     }
-}
+}*/
 
-fn do_rec_list(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
+/*fn do_rec_vec(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
     _do_rec_list(&tgt_v, bt_v, b_v, &s_v)
-}
+}*/
 
-fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: &Value) -> Value {
-    match tgt_v.try_as::<Nil>() {
+/*fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: &Value) -> Value {
+    match tgt_v.try_as::<VecNil>() {
         Some(_) => return b_v,
         None => {}
     };
 
-    match tgt_v.try_as::<ListCons<Value>>() {
-        Some(ListCons(h, t)) => {
+    match tgt_v.try_as::<VectorCons<Value>>() {
+        Some(VectorCons(h, t)) => {
             return do_ap(
                 &do_ap(&do_ap(s_v, h.clone()), t.clone()),
                 _do_rec_list(t, bt_v, b_v, s_v),
@@ -240,4 +263,4 @@ fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: &Value) -> Value {
     };
 
     todo!()
-}
+}*/

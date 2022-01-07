@@ -9,6 +9,7 @@ use crate::types::natural::{Add1, IndNat, IterNat, Nat, RecNat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
 use crate::types::universe::Universe;
+use crate::types::vec::{VecNil, Vector};
 
 pub fn invalid_syntax(s: &str) -> Core {
     Core::new(Invalid(s.into()))
@@ -166,4 +167,12 @@ pub fn rec_list(target: Core, base: Core, step: Core) -> Core {
 
 pub fn rec_list_desugared(target: Core, base_type: Core, base: Core, step: Core) -> Core {
     Core::new(RecList::typed(target, base_type, base, step))
+}
+
+pub fn vec(t: Core, n: Core) -> Core {
+    Core::new(Vector(t, n))
+}
+
+pub fn vecnil() -> Core {
+    Core::new(VecNil)
 }

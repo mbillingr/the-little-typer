@@ -23,8 +23,10 @@ pub enum Error {
     NotAFunction(Core),
     NotASigmaType(Core),
     NotAListType(Core),
+    NotAVecType(Core),
     NotTheSame(Core, Core, Core),
     WrongArity(Core),
+    LengthNotZero(Core),
 
     TypeMismatchVar(Value, Value),
     NotATypeVar(Value),
@@ -51,6 +53,7 @@ impl Display for Error {
             Error::NotAFunction(e) => write!(f, "Not a function type: {}", e),
             Error::NotASigmaType(t) => write!(f, "Not a pair or sigma type: {}", t),
             Error::NotAListType(t) => write!(f, "Not a list type: {}", t),
+            Error::NotAVecType(t) => write!(f, "Not a vec type: {}", t),
             Error::UnknownVariable(name) => write!(f, "Unknown variable {}", name.name()),
             Error::NotTheSame(t, a, b) => {
                 write!(f, "The expressions {} and {} are not the same {}", a, b, t)
@@ -58,6 +61,7 @@ impl Display for Error {
             Error::WrongArity(expr) => {
                 write!(f, "Wrong number of arguments: {}", expr)
             }
+            Error::LengthNotZero(n) => write!(f, "Length must be zero but was {}", n),
             Error::TypeMismatchVar(v, t) => {
                 write!(f, "The value {:?} is not a {:?}", v, t)
             }
