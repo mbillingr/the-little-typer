@@ -1,6 +1,6 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
-use crate::normalize::read_back;
+use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::natural::{Add1, Zero};
 use crate::types::values::later;
@@ -20,6 +20,9 @@ pub struct VecNil;
 /// The vector constructor
 #[derive(Debug, Clone, PartialEq)]
 pub struct VectorCons<T>(pub T, pub T);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Head(pub Core);
 
 //ternary_eliminator!(RecVec, do_rec_list, synth_rec_list);
 
@@ -102,25 +105,60 @@ impl CoreInterface for VectorCons<Core> {
     }
 
     fn check(&self, ctx: &Ctx, r: &Renaming, tv: &Value) -> Result<Core> {
-        if let Some(Vector(etv, n)) = tv.try_as::<Vector<Value>>() {
-            if let Some(Add1(len_minus_one)) = n.try_as::<Add1<Value>>() {
-                let h_out = self.0.check(ctx, r, etv)?;
-                let t_out =
-                    self.1
-                        .check(ctx, r, &values::vec(etv.clone(), len_minus_one.clone()))?;
-                Ok(cores::vec_cons(h_out, t_out))
-            } else {
-                Err(Error::LengthZero(values::nat().read_back(ctx, n)?))
-            }
-        } else {
-            Err(Error::NotAVecType(tv.read_back_type(ctx).unwrap()))
-        }
+        let (etv, len_minus_one) = expect_non_empty_vec(ctx, tv)?;
+        let h_out = self.0.check(ctx, r, etv)?;
+        let t_out = self
+            .1
+            .check(ctx, r, &values::vec(etv.clone(), len_minus_one.clone()))?;
+        Ok(cores::vec_cons(h_out, t_out))
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
         let h = self.0.resugar();
         let t = self.1.resugar();
         (&h.0 | &t.0, cores::vec_cons(h.1, t.1))
+    }
+}
+
+impl CoreInterface for Head {
+    impl_core_defaults!(
+        (0),
+        as_any,
+        same,
+        occurring_names,
+        check_by_synth,
+        alpha_equiv
+    );
+
+    fn val_of(&self, env: &Env) -> Value {
+        do_head(&later(env.clone(), self.0.clone())).clone()
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        unimplemented!()
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let (es_type_out, es_out) = self.0.synth(ctx, r)?;
+        let es_type_out_val = val_in_ctx(ctx, &es_type_out);
+        let (etv, _) = expect_non_empty_vec(ctx, &es_type_out_val)?;
+        Ok((etv.read_back_type(ctx)?, cores::head(es_out)))
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        unimplemented!()
+    }
+}
+
+fn expect_non_empty_vec<'a>(ctx: &Ctx, tv: &'a Value) -> Result<(&'a Value, &'a Value)> {
+    if let Some(Vector(etv, len)) = tv.try_as::<Vector<Value>>() {
+        if let Some(Add1(len_minus_one)) = len.try_as::<Add1<Value>>() {
+            Ok((etv, len_minus_one))
+        } else {
+            Err(Error::LengthZero(values::nat().read_back(ctx, len)?))
+        }
+    } else {
+        Err(Error::NotAVecType(tv.read_back_type(ctx).unwrap()))
     }
 }
 
@@ -165,6 +203,12 @@ impl std::fmt::Display for VecNil {
 impl<T: Display> Display for VectorCons<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "(vec:: {} {})", self.0, self.1)
+    }
+}
+
+impl Display for Head {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(head {})", self.0)
     }
 }
 
@@ -243,6 +287,14 @@ impl ValueInterface for VectorCons<Value> {
             self.1.clone(),
         )))
     }
+}
+
+fn do_head(tgt_v: &Value) -> &Value {
+    if let Some(VectorCons(hv, _)) = tgt_v.try_as::<VectorCons<Value>>() {
+        return hv;
+    }
+
+    todo!()
 }
 
 /*fn do_rec_vec(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {

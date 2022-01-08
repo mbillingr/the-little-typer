@@ -34,5 +34,14 @@ fn test_14_veccons() {
     with_empty_context()
         .core("(vec:: 'crimini (vec:: 'shiitake vecnil))")
         .is_not_a("(Vec Atom 3)")
-        .assert(true)
+        .assert(true);
+}
+
+#[test]
+fn test_22_head() {
+    with_empty_context()
+        .core("(head (the (Vec Atom 1) (vec:: 'a vecnil)))")
+        .and("'a")
+        .are_the_same("Atom")
+        .assert(true);
 }
