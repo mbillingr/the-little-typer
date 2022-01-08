@@ -224,6 +224,7 @@ impl From<&Sexpr> for Core {
             case "vecnil" => cores::vecnil(),
             case ("vec::", h, r) => cores::vec_cons(h.into(), r.into()),
             case ("head", v) => cores::head(v.into()),
+            case ("tail", v) => cores::tail(v.into()),
             //
             case [Sexpr::Symbol(s)] => if is_var_name(s) {
                     cores::refer(s.clone())

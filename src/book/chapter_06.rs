@@ -45,3 +45,12 @@ fn test_22_head() {
         .are_the_same("Atom")
         .assert(true);
 }
+
+#[test]
+fn test_24_tail() {
+    with_empty_context()
+        .core("(tail (the (Vec Atom 1) (vec:: 'a vecnil)))")
+        .and("vecnil")
+        .are_the_same("(Vec Atom 0)")
+        .assert(true);
+}

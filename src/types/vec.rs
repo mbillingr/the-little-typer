@@ -24,6 +24,9 @@ pub struct VectorCons<T>(pub T, pub T);
 #[derive(Debug, Clone, PartialEq)]
 pub struct Head(pub Core);
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct Tail(pub Core);
+
 //ternary_eliminator!(RecVec, do_rec_list, synth_rec_list);
 
 impl CoreInterface for Vector<Core> {
@@ -150,6 +153,42 @@ impl CoreInterface for Head {
     }
 }
 
+impl CoreInterface for Tail {
+    impl_core_defaults!(
+        (0),
+        as_any,
+        same,
+        occurring_names,
+        check_by_synth,
+        alpha_equiv
+    );
+
+    fn val_of(&self, env: &Env) -> Value {
+        do_tail(&later(env.clone(), self.0.clone())).clone()
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        unimplemented!()
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let (es_type_out, es_out) = self.0.synth(ctx, r)?;
+        let es_type_out_val = val_in_ctx(ctx, &es_type_out);
+        let (etv, len_minus_1) = expect_non_empty_vec(ctx, &es_type_out_val)?;
+        Ok((
+            cores::vec(
+                etv.read_back_type(ctx)?,
+                read_back(ctx, &values::nat(), len_minus_1)?,
+            ),
+            cores::tail(es_out),
+        ))
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        unimplemented!()
+    }
+}
+
 fn expect_non_empty_vec<'a>(ctx: &Ctx, tv: &'a Value) -> Result<(&'a Value, &'a Value)> {
     if let Some(Vector(etv, len)) = tv.try_as::<Vector<Value>>() {
         if let Some(Add1(len_minus_one)) = len.try_as::<Add1<Value>>() {
@@ -209,6 +248,12 @@ impl<T: Display> Display for VectorCons<T> {
 impl Display for Head {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "(head {})", self.0)
+    }
+}
+
+impl Display for Tail {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(tail {})", self.0)
     }
 }
 
@@ -292,6 +337,14 @@ impl ValueInterface for VectorCons<Value> {
 fn do_head(tgt_v: &Value) -> &Value {
     if let Some(VectorCons(hv, _)) = tgt_v.try_as::<VectorCons<Value>>() {
         return hv;
+    }
+
+    todo!()
+}
+
+fn do_tail(tgt_v: &Value) -> &Value {
+    if let Some(VectorCons(_, tv)) = tgt_v.try_as::<VectorCons<Value>>() {
+        return tv;
     }
 
     todo!()
