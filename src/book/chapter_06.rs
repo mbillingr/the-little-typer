@@ -6,6 +6,12 @@ fn with_chapter_context() -> Checker {
         .claim("first", "(Π ((E U) (l Nat)) (-> (Vec E (add1 l)) E))")
         .define("first", "(λ (E l v) (head v))")
         .unwrap()
+        .claim(
+            "rest",
+            "(Π ((E U) (l Nat)) (-> (Vec E (add1 l)) (Vec E l)))",
+        )
+        .define("rest", "(λ (E l v) (tail v))")
+        .unwrap()
 }
 
 #[test]
