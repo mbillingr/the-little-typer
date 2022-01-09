@@ -19,6 +19,11 @@ fn with_chapter_context() -> Checker {
             "(λ (E l-1) (λ (last_l-1) (λ (es) (last_l-1 (tail es)))))",
         )
         .unwrap()
+        .define(
+            "last",
+            "(λ (E l) (ind-Nat l (mot-last E) (base-last E) (step-last E)))",
+        )
+        .unwrap()
 }
 
 #[test]
@@ -60,4 +65,13 @@ fn test_27_also_rec_nat() {
             "(λ (X target base step) (ind-Nat target (λ (k) X) base step))",
         )
         .unwrap();
+}
+
+#[test]
+fn test_55_56_also_rec_nat() {
+    with_chapter_context()
+        .core("(last Atom 1 (vec:: 'carrot (vec:: 'celery vecnil)))")
+        .and("'celery")
+        .are_the_same("Atom")
+        .assert(true);
 }
