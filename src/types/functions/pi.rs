@@ -81,9 +81,13 @@ impl CoreInterface for Pi<Core, Core> {
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
         let arg = self.arg_type.resugar();
-        let res = self.res_type.resugar();
+        let mut res = self.res_type.resugar();
         if res.0.contains(&self.arg_name) {
-            todo!()
+            res.0.remove(&self.arg_name);
+            (
+                &arg.0 | &res.0,
+                resugar::add_pi(self.arg_name.clone(), arg.1, res.1),
+            )
         } else {
             (&arg.0 | &res.0, resugar::add_fun(arg.1, res.1))
         }

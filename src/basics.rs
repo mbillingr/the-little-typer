@@ -24,7 +24,12 @@ pub trait CoreInterface: Any + Debug + Display + Sync + Send {
 
     fn val_of(&self, env: &Env) -> Value;
 
-    fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core>;
+    fn is_type(&self, ctx: &Ctx, r: &Renaming) -> Result<Core> {
+        match self.check(ctx, r, &values::universe()) {
+            Ok(t) => Ok(t),
+            Err(_) => todo!(),
+        }
+    }
 
     fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)>;
 
@@ -226,6 +231,7 @@ impl From<&Sexpr> for Core {
             case ("head", v) => cores::head(v.into()),
             case ("tail", v) => cores::tail(v.into()),
             //
+            case ("TODO", [Sexpr::Symbol(name)]) => cores::todo(name.clone()),
             case [Sexpr::Symbol(s)] => if is_var_name(s) {
                     cores::refer(s.clone())
                 } else {

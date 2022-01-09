@@ -8,6 +8,7 @@ use crate::types::lists::{List, ListCons, Nil, RecList};
 use crate::types::natural::{Add1, IndNat, IterNat, Nat, RecNat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
+use crate::types::todo::ToDo;
 use crate::types::universe::Universe;
 use crate::types::vec::{Head, Tail, VecNil, Vector, VectorCons};
 
@@ -187,4 +188,12 @@ pub fn head(vec: Core) -> Core {
 
 pub fn tail(vec: Core) -> Core {
     Core::new(Tail(vec))
+}
+
+pub fn todo(name: impl Into<Symbol>) -> Core {
+    Core::new(ToDo::new(name))
+}
+
+pub fn annotated_todo(name: impl Into<Symbol>, typ: Core) -> Core {
+    Core::new(ToDo::annotated(name, typ))
 }

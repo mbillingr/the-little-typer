@@ -1,6 +1,6 @@
 use crate::basics::{CoreInterface, Ctx};
 use crate::errors::Error;
-use crate::rep::{norm_type, rep};
+use crate::rep::{norm, norm_type, rep};
 use crate::types::{cores::*, values};
 use lazy_static::lazy_static;
 
@@ -468,5 +468,18 @@ fn argument_to_cdr_must_be_a_pair() {
     assert_eq!(
         rep(&CTX, &"(cdr zero)".parse().unwrap()),
         Err(Error::NotASigmaType(nat()))
+    )
+}
+
+#[test]
+fn can_evaluate_u() {
+    assert_eq!(norm(&CTX, &"U".parse().unwrap()), Ok(universe()))
+}
+
+#[test]
+fn can_use_todos() {
+    assert_eq!(
+        norm(&CTX, &"(TODO a)".parse().unwrap()),
+        Ok(annotated_todo("a", universe()))
     )
 }
