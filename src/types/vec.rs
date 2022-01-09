@@ -1,4 +1,6 @@
-use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::basics::{
+    Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value, ValueInterface, N,
+};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
@@ -26,6 +28,12 @@ pub struct Head(pub Core);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tail(pub Core);
+
+#[derive(Debug)]
+pub struct NeutralHead(pub N);
+
+#[derive(Debug)]
+pub struct NeutralTail(pub N);
 
 //ternary_eliminator!(RecVec, do_rec_list, synth_rec_list);
 
@@ -164,7 +172,7 @@ impl CoreInterface for Tail {
     );
 
     fn val_of(&self, env: &Env) -> Value {
-        do_tail(&later(env.clone(), self.0.clone())).clone()
+        do_tail(&later(env.clone(), self.0.clone()))
     }
 
     fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
@@ -334,20 +342,59 @@ impl ValueInterface for VectorCons<Value> {
     }
 }
 
-fn do_head(tgt_v: &Value) -> &Value {
+fn do_head(tgt_v: &Value) -> Value {
     if let Some(VectorCons(hv, _)) = tgt_v.try_as::<VectorCons<Value>>() {
-        return hv;
+        return hv.clone();
     }
 
-    todo!()
+    match tgt_v.as_neutral() {
+        Some((vec, ne)) => match vec.try_as::<Vector<Value>>() {
+            Some(Vector(ev, lenv)) => match lenv.try_as::<Add1<Value>>() {
+                Some(Add1(_)) => return values::neutral(ev.clone(), NeutralHead(ne.clone())),
+                None => {}
+            },
+            None => {}
+        },
+        None => {}
+    }
+
+    unreachable!()
 }
 
-fn do_tail(tgt_v: &Value) -> &Value {
+fn do_tail(tgt_v: &Value) -> Value {
     if let Some(VectorCons(_, tv)) = tgt_v.try_as::<VectorCons<Value>>() {
-        return tv;
+        return tv.clone();
     }
 
-    todo!()
+    match tgt_v.as_neutral() {
+        Some((vec, ne)) => match vec.try_as::<Vector<Value>>() {
+            Some(Vector(ev, lenv)) => match lenv.try_as::<Add1<Value>>() {
+                Some(Add1(len_minus_1v)) => {
+                    return values::neutral(
+                        values::vec(ev.clone(), len_minus_1v.clone()),
+                        NeutralTail(ne.clone()),
+                    )
+                }
+                None => {}
+            },
+            None => {}
+        },
+        None => {}
+    }
+
+    unreachable!()
+}
+
+impl NeutralInterface for NeutralHead {
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        Ok(cores::head(self.0.read_back_neutral(ctx)?))
+    }
+}
+
+impl NeutralInterface for NeutralTail {
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        Ok(cores::tail(self.0.read_back_neutral(ctx)?))
+    }
 }
 
 /*fn do_rec_vec(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {

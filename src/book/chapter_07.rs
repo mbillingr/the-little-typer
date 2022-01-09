@@ -3,6 +3,22 @@ use crate::book::{with_empty_context, Checker, ResultBoolAssertions};
 
 fn with_chapter_context() -> Checker {
     with_book_context()
+        .claim("last", "(Π ((E U) (l Nat)) (-> (Vec E (add1 l)) E))")
+        .claim("base-last", "(Π ((E U)) (-> (Vec E 1) E))")
+        .define("base-last", "(λ (E) (λ (es) (head es)))")
+        .unwrap()
+        .claim("mot-last", "(-> U Nat U)")
+        .define("mot-last", "(λ (E k) (-> (Vec E (add1 k)) E))")
+        .unwrap()
+        .claim(
+            "step-last",
+            "(Π ((E U) (l-1 Nat)) (-> (mot-last E l-1) (mot-last E (add1 l-1))))",
+        )
+        .define(
+            "step-last",
+            "(λ (E l-1) (λ (last_l-1) (λ (es) (last_l-1 (tail es)))))",
+        )
+        .unwrap()
 }
 
 #[test]
