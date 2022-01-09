@@ -1,6 +1,6 @@
 use crate::alpha;
 use crate::basics::{Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value};
-use crate::errors::{Error, Result};
+use crate::errors::Result;
 use crate::symbol::Symbol;
 use crate::types::values::later;
 use crate::types::{cores, values};

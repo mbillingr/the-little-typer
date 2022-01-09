@@ -1,7 +1,7 @@
 use crate::basics::{Core, CoreInterface};
 use crate::symbol::Symbol;
 use crate::types::cores;
-use crate::types::functions::{Fun, Lambda, LambdaStar, Pi, PiStar};
+use crate::types::functions::{Fun, Lambda, LambdaStar, PiStar};
 
 pub fn resugar(term: &Core) -> Core {
     term.resugar().1
