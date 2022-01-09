@@ -35,6 +35,14 @@ fn read_eval_normalize(ctx: &mut Ctx) -> Result<Option<Core>, String> {
             *ctx = ctx.define(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
             return Ok(None);
         },
+        case ("reclaim", [Sexpr::Symbol(ident)], expr) => {
+            *ctx = ctx.reclaim(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
+            return Ok(None);
+        },
+        case ("redefine", [Sexpr::Symbol(ident)], expr) => {
+            *ctx = ctx.redefine(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
+            return Ok(None);
+        },
         else => {},
     );
 

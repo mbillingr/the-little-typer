@@ -466,12 +466,8 @@ impl Ctx {
             Some((_, Binder::Claim(_))) => return Err(Error::ClaimedName(name)),
             Some((_, Binder::Def(_, _))) => return Err(Error::DefinedName(name)),
             Some((_, Binder::Free(_))) => unreachable!("claims are only allowed in the global context, and there should never be free variables"),
-            None => {},
-        };
-
-        let t_out = t.is_type(self, &Renaming::new())?;
-        let tv = val_in_ctx(self, &t_out);
-        Ok(self.extend(name, Binder::Claim(tv)))
+            None => self.reclaim(name, t),
+        }
     }
 
     pub fn define(&self, name: impl Into<Symbol>, v: Core) -> Result<Self> {
@@ -480,6 +476,25 @@ impl Ctx {
             Some((_, Binder::Claim(tv))) => tv,
             Some((_, Binder::Def(_, _))) => return Err(Error::DefinedName(name)),
             Some((_, Binder::Free(_))) => unreachable!("definitions are only allowed in the global context, and there should never be free variables"),
+            None => return Err(Error::UnclaimedName(name)),
+        };
+
+        let v_out = v.check(self, &Renaming::new(), &tv)?;
+        let vv = val_in_ctx(self, &v_out);
+        Ok(self.extend(name, Binder::Def(tv.clone(), vv)))
+    }
+
+    pub fn reclaim(&self, name: impl Into<Symbol>, t: Core) -> Result<Self> {
+        let name = name.into();
+        let t_out = t.is_type(self, &Renaming::new())?;
+        let tv = val_in_ctx(self, &t_out);
+        Ok(self.extend(name, Binder::Claim(tv)))
+    }
+
+    pub fn redefine(&self, name: impl Into<Symbol>, v: Core) -> Result<Self> {
+        let name = name.into();
+        let tv = match self.0.find_claim(&name) {
+            Some(tv) => tv,
             None => return Err(Error::UnclaimedName(name)),
         };
 
@@ -557,6 +572,14 @@ impl CtxImpl {
             CtxImpl::Nil => None,
             CtxImpl::Entry(s, b, _) if s == x => Some((s, b)),
             CtxImpl::Entry(_, _, next) => next.0.assv(x),
+        }
+    }
+
+    fn find_claim(&self, x: &Symbol) -> Option<&Value> {
+        match self {
+            CtxImpl::Nil => None,
+            CtxImpl::Entry(s, Binder::Claim(t), _) if s == x => Some(t),
+            CtxImpl::Entry(_, _, next) => next.0.find_claim(x),
         }
     }
 }
