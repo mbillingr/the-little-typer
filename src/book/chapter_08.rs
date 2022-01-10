@@ -1,5 +1,5 @@
 use crate::book::common_definitions::with_book_context;
-use crate::book::{with_empty_context, Checker, ResultBoolAssertions};
+use crate::book::{with_empty_context, Checker, ResultAssertions, ResultBoolAssertions};
 
 fn with_chapter_context() -> Checker {
     with_book_context()
@@ -43,4 +43,20 @@ fn frame_35_same_is_an_equal() {
         .core("(same 21)")
         .is_a("(= Nat (+ 17 4) (+ 11 10))")
         .assert(true);
+}
+
+#[test]
+fn frame_38_prove_addition() {
+    with_book_context()
+        .claim("+1=add1", "(Π ((n Nat)) (= Nat (+ 1 n) (add1 n)))")
+        .define("+1=add1", "(λ (n) (same (add1 n)))")
+        .unwrap();
+}
+
+#[test]
+fn frame_44_cant_simply_prove_incr() {
+    with_chapter_context()
+        .claim("incr=add1", "(Π ((n Nat)) (= Nat (incr n) (add1 n)))")
+        .define("incr=add1", "(λ (n) (same (add1 n)))")
+        .assert_err();
 }

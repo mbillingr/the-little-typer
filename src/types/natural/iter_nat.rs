@@ -1,6 +1,6 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, N};
 use crate::errors;
-use crate::normalize::val_in_ctx;
+use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, Zero};
@@ -46,26 +46,35 @@ fn _do_iter_nat(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: &Value) -> Value {
         None => {}
     };
 
-    /*match tgt_v.as_neutral() {
+    match tgt_v.as_neutral() {
         Some((_, ne)) => {
             return values::neutral(
                 bt_v.clone(),
                 NeutralIterNat(
                     ne.clone(),
                     The(bt_v.clone(), b_v),
-                    The(pi_type!(((_n, values::nat())), { bt_v.clone() }), s_v),
+                    The(
+                        pi_type!(((_n, values::nat())), { bt_v.clone() }),
+                        s_v.clone(),
+                    ),
                 ),
             )
         }
         None => {}
-    };*/
+    };
 
     unreachable!("{:?}", tgt_v)
 }
 
 impl NeutralInterface for NeutralIterNat {
-    fn read_back_neutral(&self, _ctx: &Ctx) -> errors::Result<Core> {
-        todo!()
+    fn read_back_neutral(&self, ctx: &Ctx) -> errors::Result<Core> {
+        let NeutralIterNat(tgt, The(b_tv, b_v), The(s_tv, s_v)) = self;
+        Ok(cores::iter_nat_desugared(
+            tgt.read_back_neutral(ctx)?,
+            b_tv.read_back_type(ctx)?,
+            read_back(ctx, b_tv, b_v)?,
+            read_back(ctx, s_tv, s_v)?,
+        ))
     }
 }
 
