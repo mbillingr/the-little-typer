@@ -3,6 +3,7 @@ use the_little_typer as tlt;
 use sexpr_matcher::match_sexpr;
 use sexpr_parser::parse;
 use std::{io, io::Write};
+use the_little_typer::book::common_definitions::with_book_context;
 use the_little_typer::sexpr::Sexpr;
 use tlt::{
     basics::{Core, Ctx},
@@ -11,7 +12,7 @@ use tlt::{
 };
 
 fn main() -> io::Result<()> {
-    let mut ctx = Ctx::new();
+    let mut ctx = with_book_context().into_context();
     loop {
         match read_eval_normalize(&mut ctx) {
             Ok(None) => {}

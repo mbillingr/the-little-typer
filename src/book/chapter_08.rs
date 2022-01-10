@@ -60,3 +60,26 @@ fn frame_44_cant_simply_prove_incr() {
         .define("incr=add1", "(λ (n) (same (add1 n)))")
         .assert_err();
 }
+
+#[test]
+fn frame_59___prove_incr_with_induction() {
+    with_chapter_context()
+        .claim("incr=add1", "(Π ((n Nat)) (= Nat (incr n) (add1 n)))")
+        .claim("base-incr=add1", "(= Nat (incr zero) (add1 zero))")
+        .define("base-incr=add1", "(same (add1 zero))")
+        .unwrap()
+        .claim("mot-incr=add1", "(-> Nat U)")
+        .define("mot-incr=add1", "(λ (k) (= Nat (incr k) (add1 k)))")
+        .unwrap()
+        .claim(
+            "step-incr=add1",
+            "(Π ((n-1 Nat)) \
+                (-> (= Nat (incr n-1) (add1 n-1)) \
+                    (= Nat (add1 (incr n-1)) (add1 (add1 n-1)))))",
+        )
+        .define(
+            "step-incr=add1",
+            "(λ (n-1) (λ (incr=add1_n-1) (cong incr=add1_n-1 (+ 1))))",
+        )
+        .unwrap();
+}

@@ -20,7 +20,14 @@ pub struct Equal<T> {
 pub struct Same<T>(pub T);
 
 impl CoreInterface for Equal<Core> {
-    impl_core_defaults!((typ, from, to), as_any, same, occurring_names, alpha_equiv);
+    impl_core_defaults!(
+        (typ, from, to),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        check_by_synth
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         values::equal(
@@ -44,10 +51,6 @@ impl CoreInterface for Equal<Core> {
         let from_out = self.from.check(ctx, r, &av)?;
         let to_out = self.to.check(ctx, r, &av)?;
         Ok((cores::universe(), cores::equal(a_out, from_out, to_out)))
-    }
-
-    fn check(&self, _ctx: &Ctx, _r: &Renaming, _tv: &Value) -> Result<Core> {
-        todo!()
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

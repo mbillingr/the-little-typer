@@ -9,8 +9,7 @@ pub mod sexpr;
 pub mod symbol;
 pub mod typechecker;
 
-#[cfg(test)]
-mod book;
+pub mod book;
 mod types;
 
 #[cfg(test)]

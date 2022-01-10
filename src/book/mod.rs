@@ -12,7 +12,7 @@ mod chapter_05;
 mod chapter_06;
 mod chapter_07;
 mod chapter_08;
-mod common_definitions;
+pub mod common_definitions;
 
 fn with_empty_context() -> Checker {
     Checker { ctx: Ctx::new() }
@@ -23,6 +23,10 @@ pub struct Checker {
 }
 
 impl Checker {
+    pub fn into_context(self) -> Ctx {
+        self.ctx
+    }
+
     fn core(&self, s: &'static str) -> CoreChecker {
         CoreChecker {
             ctx: self.ctx.clone(),
