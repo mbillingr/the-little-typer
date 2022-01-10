@@ -8,9 +8,10 @@ pub mod resugar;
 pub mod sexpr;
 pub mod symbol;
 pub mod typechecker;
-
-pub mod book;
 mod types;
+
+#[cfg(test)]
+pub mod book;
 
 #[cfg(test)]
 mod tests;

@@ -108,7 +108,7 @@ impl CoreInterface for Cong {
         alpha_equiv
     );
 
-    fn val_of(&self, env: &Env) -> Value {
+    fn val_of(&self, _env: &Env) -> Value {
         todo!()
     }
 
@@ -128,7 +128,7 @@ impl CoreInterface for Cong {
         }) = p_t_outv.try_as::<Equal<Value>>()
         {
             if let Some(Pi {
-                arg_name: x,
+                arg_name: _x,
                 arg_type: bv,
                 res_type: c,
             }) = f_t_outv.try_as::<Pi<Value, Closure>>()
@@ -168,7 +168,11 @@ impl CoreInterface for Cong2 {
     );
 
     fn val_of(&self, env: &Env) -> Value {
-        todo!()
+        do_cong(
+            later(env.clone(), self.0.clone()),
+            later(env.clone(), self.1.clone()),
+            later(env.clone(), self.2.clone()),
+        )
     }
 
     fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
@@ -229,8 +233,12 @@ impl ValueInterface for Equal<Value> {
         ))
     }
 
-    fn read_back(&self, _ctx: &Ctx, _tv: &Value, _pv: &Value) -> Result<Core> {
-        todo!()
+    fn read_back(&self, ctx: &Ctx, _tv: &Value, pv: &Value) -> Result<Core> {
+        if let Some(Same(v)) = pv.try_as::<Same<Value>>() {
+            Ok(cores::same(read_back(ctx, &self.typ, v)?))
+        } else {
+            unimplemented!()
+        }
     }
 }
 
@@ -254,4 +262,12 @@ impl ValueInterface for Same<Value> {
     fn read_back(&self, _ctx: &Ctx, _tv: &Value, _pv: &Value) -> Result<Core> {
         todo!()
     }
+}
+
+fn do_cong(tgt_v: Value, _b_v: Value, fun_v: Value) -> Value {
+    if let Some(Same(v)) = tgt_v.try_as::<Same<Value>>() {
+        return values::same(do_ap(&fun_v, v.clone()));
+    }
+
+    todo!()
 }

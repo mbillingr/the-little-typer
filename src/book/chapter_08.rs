@@ -62,8 +62,8 @@ fn frame_44_cant_simply_prove_incr() {
 }
 
 #[test]
-fn frame_59___prove_incr_with_induction() {
-    with_chapter_context()
+fn frame_59_88_prove_incr_with_induction() {
+    let ctx = with_chapter_context()
         .claim("incr=add1", "(Π ((n Nat)) (= Nat (incr n) (add1 n)))")
         .claim("base-incr=add1", "(= Nat (incr zero) (add1 zero))")
         .define("base-incr=add1", "(same (add1 zero))")
@@ -81,5 +81,17 @@ fn frame_59___prove_incr_with_induction() {
             "step-incr=add1",
             "(λ (n-1) (λ (incr=add1_n-1) (cong incr=add1_n-1 (+ 1))))",
         )
+        .unwrap()
+        .define(
+            "incr=add1",
+            "(λ (n) (ind-Nat n mot-incr=add1 base-incr=add1 step-incr=add1))",
+        )
         .unwrap();
+
+    ctx.core("(incr=add1 2)").is_a("(= Nat 3 3)").assert(true);
+
+    ctx.core("(incr=add1 2)")
+        .and("(same 3)")
+        .are_the_same("(= Nat 3 3)")
+        .assert(true);
 }
