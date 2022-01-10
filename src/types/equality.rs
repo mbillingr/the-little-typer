@@ -1,8 +1,9 @@
-use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
-use crate::typechecker::convert;
+use crate::typechecker::{convert, same_type};
+use crate::types::functions::{do_ap, Pi};
 use crate::types::values::later;
 use crate::types::{cores, values};
 use std::any::Any;
@@ -18,6 +19,12 @@ pub struct Equal<T> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Same<T>(pub T);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Cong(pub Core, pub Core);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Cong2(pub Core, pub Core, pub Core);
 
 impl CoreInterface for Equal<Core> {
     impl_core_defaults!(
@@ -91,6 +98,92 @@ impl CoreInterface for Same<Core> {
     }
 }
 
+impl CoreInterface for Cong {
+    impl_core_defaults!(
+        (0, 1),
+        as_any,
+        same,
+        occurring_names,
+        check_by_synth,
+        alpha_equiv
+    );
+
+    fn val_of(&self, env: &Env) -> Value {
+        todo!()
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        todo!()
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let (p_t_out, p_out) = self.0.synth(ctx, r)?;
+        let (f_t_out, f_out) = self.1.synth(ctx, r)?;
+        let p_t_outv = val_in_ctx(ctx, &p_t_out);
+        let f_t_outv = val_in_ctx(ctx, &f_t_out);
+        if let Some(Equal {
+            typ: av,
+            from: from_v,
+            to: to_v,
+        }) = p_t_outv.try_as::<Equal<Value>>()
+        {
+            if let Some(Pi {
+                arg_name: x,
+                arg_type: bv,
+                res_type: c,
+            }) = f_t_outv.try_as::<Pi<Value, Closure>>()
+            {
+                same_type(ctx, av, bv)?;
+                let cv = c.val_of(from_v.clone());
+                let f_v = val_in_ctx(ctx, &f_out);
+                Ok((
+                    cores::equal(
+                        cv.read_back_type(ctx)?,
+                        read_back(ctx, &cv, &do_ap(&f_v, from_v.clone()))?,
+                        read_back(ctx, &cv, &do_ap(&f_v, to_v.clone()))?,
+                    ),
+                    cores::cong_desugared(p_out, cv.read_back_type(ctx)?, f_out),
+                ))
+            } else {
+                Err(Error::NotAFunctionType(f_t_outv.read_back_type(ctx)?))
+            }
+        } else {
+            Err(Error::NotAnEqualType(p_t_outv.read_back_type(ctx)?))
+        }
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
+    }
+}
+
+impl CoreInterface for Cong2 {
+    impl_core_defaults!(
+        (0, 1),
+        as_any,
+        same,
+        occurring_names,
+        check_by_synth,
+        alpha_equiv
+    );
+
+    fn val_of(&self, env: &Env) -> Value {
+        todo!()
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        todo!()
+    }
+
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
+        unreachable!()
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
+    }
+}
+
 impl<T: Display> Display for Equal<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "(= {} {} {})", self.typ, self.from, self.to)
@@ -100,6 +193,18 @@ impl<T: Display> Display for Equal<T> {
 impl<T: Display> Display for Same<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "(same {})", self.0)
+    }
+}
+
+impl Display for Cong {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(cong {} {})", self.0, self.1)
+    }
+}
+
+impl Display for Cong2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(cong2 {} {} {})", self.0, self.1, self.2)
     }
 }
 

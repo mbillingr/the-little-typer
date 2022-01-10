@@ -228,6 +228,8 @@ impl From<&Sexpr> for Core {
             case ("=", t, from, to) => cores::equal(t.into(), from.into(), to.into()),
             case ("same", e) => cores::same(e.into()),
             //
+            case ("cong", e, f) => cores::cong(e.into(), f.into()),
+            //
             case ("Vec", t, n) => cores::vec(t.into(), n.into()),
             case "vecnil" => cores::vecnil(),
             case ("vec::", h, r) => cores::vec_cons(h.into(), r.into()),
