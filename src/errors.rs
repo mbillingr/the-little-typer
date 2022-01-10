@@ -24,6 +24,7 @@ pub enum Error {
     NotASigmaType(Core),
     NotAListType(Core),
     NotAVecType(Core),
+    NotAnEqualType(Core),
     NotTheSame(Core, Core, Core),
     WrongArity(Core),
     LengthNotZero(Core),
@@ -55,6 +56,7 @@ impl Display for Error {
             Error::NotASigmaType(t) => write!(f, "Not a pair or sigma type: {}", t),
             Error::NotAListType(t) => write!(f, "Not a list type: {}", t),
             Error::NotAVecType(t) => write!(f, "Not a vec type: {}", t),
+            Error::NotAnEqualType(t) => write!(f, "Not a = type: {}", t),
             Error::UnknownVariable(name) => write!(f, "Unknown variable {}", name.name()),
             Error::NotTheSame(t, a, b) => {
                 write!(f, "The expressions {} and {} are not the same {}", a, b, t)

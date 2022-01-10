@@ -2,6 +2,7 @@ use crate::basics::Core;
 use crate::symbol::Symbol;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
+use crate::types::equality::{Equal, Same};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
 use crate::types::invalid::Invalid;
 use crate::types::lists::{List, ListCons, Nil, RecList};
@@ -196,4 +197,12 @@ pub fn todo(name: impl Into<Symbol>) -> Core {
 
 pub fn annotated_todo(name: impl Into<Symbol>, typ: Core) -> Core {
     Core::new(ToDo::annotated(name, typ))
+}
+
+pub fn equal(typ: Core, from: Core, to: Core) -> Core {
+    Core::new(Equal { typ, from, to })
+}
+
+pub fn same(e: Core) -> Core {
+    Core::new(Same(e))
 }

@@ -2,6 +2,7 @@ use crate::basics::{Closure, Core, Env, Value};
 use crate::symbol::Symbol;
 use crate::types::atom::{Atom, Quote};
 use crate::types::delay::Delay;
+use crate::types::equality::{Equal, Same};
 use crate::types::functions::{Lambda, Pi};
 use crate::types::lists::{List, ListCons, Nil};
 use crate::types::natural::Add1;
@@ -93,4 +94,12 @@ pub fn vecnil() -> Value {
 
 pub fn vec_cons(head: Value, tail: Value) -> Value {
     Value::new(VectorCons(head, tail))
+}
+
+pub fn equal(typ: Value, from: Value, to: Value) -> Value {
+    Value::new(Equal { typ, from, to })
+}
+
+pub fn same(e: Value) -> Value {
+    Value::new(Same(e))
 }

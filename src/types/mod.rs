@@ -226,6 +226,7 @@ mod annotation;
 mod atom;
 pub mod cores;
 mod delay;
+mod equality;
 pub mod functions;
 mod invalid;
 mod lists;

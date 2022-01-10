@@ -225,6 +225,9 @@ impl From<&Sexpr> for Core {
             case ("List", t) => cores::list(t.into()),
             case ("rec-List", target, base, step) => cores::rec_list(Core::from(target), Core::from(base), Core::from(step)),
             //
+            case ("=", t, from, to) => cores::equal(t.into(), from.into(), to.into()),
+            case ("same", e) => cores::same(e.into()),
+            //
             case ("Vec", t, n) => cores::vec(t.into(), n.into()),
             case "vecnil" => cores::vecnil(),
             case ("vec::", h, r) => cores::vec_cons(h.into(), r.into()),
