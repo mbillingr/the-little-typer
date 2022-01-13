@@ -227,6 +227,7 @@ impl From<&Sexpr> for Core {
             //
             case ("=", t, from, to) => cores::equal(t.into(), from.into(), to.into()),
             case ("same", e) => cores::same(e.into()),
+            case ("replace", t, m, b) => cores::replace(t.into(), m.into(), b.into()),
             //
             case ("cong", e, f) => cores::cong(e.into(), f.into()),
             //

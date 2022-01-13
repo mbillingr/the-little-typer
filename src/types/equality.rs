@@ -21,6 +21,13 @@ pub struct Equal<T> {
 pub struct Same<T>(pub T);
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct Replace {
+    pub target: Core,
+    pub motive: Core,
+    pub base: Core,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Cong(pub Core, pub Core);
 
 #[derive(Debug, Clone, PartialEq)]
@@ -90,6 +97,55 @@ impl CoreInterface for Same<Core> {
             Ok(cores::same(c_out))
         } else {
             Err(Error::NotAnEqualType(tv.read_back_type(ctx)?))
+        }
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
+    }
+}
+
+impl CoreInterface for Replace {
+    impl_core_defaults!(
+        (target, motive, base),
+        as_any,
+        same,
+        occurring_names,
+        no_type,
+        check_by_synth,
+        alpha_equiv
+    );
+
+    fn val_of(&self, env: &Env) -> Value {
+        do_replace(
+            later(env.clone(), self.target.clone()),
+            later(env.clone(), self.motive.clone()),
+            later(env.clone(), self.base.clone()),
+        )
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let Replace {
+            target: tgt,
+            motive: mot,
+            base: b,
+        } = self;
+        let (tgt_t_out, tgt_out) = tgt.synth(ctx, r)?;
+        let tgt_t_outv = val_in_ctx(ctx, &tgt_t_out);
+        if let Some(Equal {
+            typ: av,
+            from: fromv,
+            to: tov,
+        }) = tgt_t_outv.try_as::<Equal<Value>>()
+        {
+            let mot_out = mot.check(ctx, r, &pi_type!(((_x, av.clone())), values::universe()))?;
+            let b_out = b.check(ctx, r, &do_ap(&val_in_ctx(ctx, &mot_out), fromv.clone()))?;
+            Ok((
+                do_ap(&val_in_ctx(ctx, &mot_out), tov.clone()).read_back_type(ctx)?,
+                cores::replace(tgt_out, mot_out, b_out),
+            ))
+        } else {
+            Err(Error::NotAnEqualType(tgt_t_out))
         }
     }
 
@@ -200,6 +256,12 @@ impl<T: Display> Display for Same<T> {
     }
 }
 
+impl Display for Replace {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "(replace {} {} {})", self.target, self.motive, self.base)
+    }
+}
+
 impl Display for Cong {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "(cong {} {})", self.0, self.1)
@@ -262,6 +324,14 @@ impl ValueInterface for Same<Value> {
     fn read_back(&self, _ctx: &Ctx, _tv: &Value, _pv: &Value) -> Result<Core> {
         todo!()
     }
+}
+
+fn do_replace(tgt_v: Value, _mot_v: Value, b_v: Value) -> Value {
+    if let Some(Same(_)) = tgt_v.try_as::<Same<Value>>() {
+        return b_v;
+    }
+
+    todo!()
 }
 
 fn do_cong(tgt_v: Value, _b_v: Value, fun_v: Value) -> Value {
