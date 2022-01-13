@@ -61,7 +61,7 @@ fn frame_19_use_replace_instead_of_cong() {
 }
 
 #[test]
-fn frame_22_54_prove_that_twice_equals_double() {
+fn frame_22_67_prove_that_twice_equals_double_then_use_that_to_define_twicevec() {
     let ctx = with_chapter_context()
         .claim(
             "twice=double",
@@ -135,4 +135,59 @@ fn frame_22_54_prove_that_twice_equals_double() {
         .and("(same 34)")
         .are_the_same("(= Nat (twice 17) (double 17))")
         .assert(true);
+
+    let _ctx = ctx
+        .claim(
+            "twice-Vec",
+            "(Π ((E U) (l Nat)) (-> (Vec E l) (Vec E (twice l))))",
+        )
+        .claim(
+            "double-Vec",
+            "(Π ((E U) (l Nat)) (-> (Vec E l) (Vec E (double l))))",
+        )
+        .claim(
+            "base-double-Vec",
+            "(Π ((E U)) (-> (Vec E zero) (Vec E (double zero))))",
+        )
+        .define("base-double-Vec", "(λ (E es) vecnil)")
+        .unwrap()
+        .claim("mot-double-Vec", "(-> U Nat U)")
+        .define(
+            "mot-double-Vec",
+            "(λ (E k) (-> (Vec E k) (Vec E (double k))))",
+        )
+        .unwrap()
+        .claim(
+            "step-double-Vec",
+            "(Π ((E U) (l-1 Nat))
+                (-> (-> (Vec E l-1)
+                        (Vec E (double l-1)))
+                    (-> (Vec E (add1 l-1))
+                        (Vec E (double (add1 l-1))))))",
+        )
+        .define(
+            "step-double-Vec",
+            "(λ (E l-1 double-Vec_l-1 es)
+                (vec:: (head es)
+                       (vec:: (head es)
+                              (double-Vec_l-1 (tail es)))))",
+        )
+        .unwrap()
+        .define(
+            "double-Vec",
+            "(λ (E l)
+                (ind-Nat l
+                    (mot-double-Vec E)
+                    (base-double-Vec E)
+                    (step-double-Vec E)))",
+        )
+        .unwrap()
+        .define(
+            "twice-Vec",
+            "(λ (E l es)
+                (replace (symm (twice=double l))
+                         (λ (k) (Vec E k))
+                         (double-Vec E l es)))",
+        )
+        .unwrap();
 }

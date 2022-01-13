@@ -230,6 +230,7 @@ impl From<&Sexpr> for Core {
             case ("replace", t, m, b) => cores::replace(t.into(), m.into(), b.into()),
             //
             case ("cong", e, f) => cores::cong(e.into(), f.into()),
+            case ("symm", e) => cores::symm(e.into()),
             //
             case ("Vec", t, n) => cores::vec(t.into(), n.into()),
             case "vecnil" => cores::vecnil(),

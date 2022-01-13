@@ -222,3 +222,7 @@ pub fn cong(e: Core, f: Core) -> Core {
 pub fn cong_desugared(e: Core, t: Core, f: Core) -> Core {
     Core::new(Cong2(e, t, f))
 }
+
+pub fn symm(e: Core) -> Core {
+    todo!()
+}
