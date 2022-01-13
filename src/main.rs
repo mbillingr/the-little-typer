@@ -12,6 +12,7 @@ use tlt::{
 
 fn main() -> io::Result<()> {
     let mut ctx = Ctx::new();
+    prelude(&mut ctx);
     loop {
         match read_eval_normalize(&mut ctx) {
             Ok(None) => {}
@@ -23,6 +24,10 @@ fn main() -> io::Result<()> {
 
 fn read_eval_normalize(ctx: &mut Ctx) -> Result<Option<Core>, String> {
     let src = read_line().map_err(|e| e.to_string())?;
+    eval_normalize(ctx, &src)
+}
+
+fn eval_normalize(ctx: &mut Ctx, src: &str) -> Result<Option<Core>, String> {
     let sexpr = parse::<Sexpr>(&src).map_err(|e| e.to_string())?;
 
     match_sexpr!(
@@ -57,4 +62,45 @@ fn read_line() -> io::Result<String> {
     let mut buffer = String::new();
     io::stdin().read_line(&mut buffer)?;
     Ok(buffer)
+}
+
+fn prelude(ctx: &mut Ctx) {
+    let src = "
+(claim +
+    (-> Nat Nat
+        Nat))
+
+(claim step-+
+    (-> Nat
+        Nat))
+
+(define step-+
+    (λ (+_n-1)
+        (add1 +_n-1)))
+
+(define +
+    (λ (n j)
+        (iter-Nat n j step-+)))
+
+
+(claim *
+    (-> Nat Nat
+        Nat))
+
+(claim step-*
+    (-> Nat Nat Nat
+        Nat))
+
+(define step-*
+    (λ (j n-1 *_n-1)
+        (+ j *_n-1)))
+
+(define *
+    (λ (n j)
+        (rec-Nat n 0 (step-* j))))
+";
+
+    for stmt in src.split("\n\n") {
+        eval_normalize(ctx, stmt).unwrap();
+    }
 }

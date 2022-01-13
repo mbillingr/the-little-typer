@@ -9,6 +9,12 @@ fn with_chapter_context() -> Checker {
         .claim("incr", "(-> Nat Nat)")
         .define("incr", "(λ (n) (iter-Nat n 1 (+ 1)))")
         .unwrap()
+        // --------
+        //  double
+        // --------
+        .claim("double", "(-> Nat Nat)")
+        .define("double", "(λ (n) (iter-Nat n 0 (+ 2)))")
+        .unwrap()
 }
 
 #[test]
