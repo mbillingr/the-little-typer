@@ -257,8 +257,14 @@ impl CoreInterface for Symm {
         alpha_equiv
     );
 
-    fn val_of(&self, _env: &Env) -> Value {
-        todo!()
+    fn val_of(&self, env: &Env) -> Value {
+        let tgt_v = self.0.val_of(env);
+
+        if tgt_v.try_as::<Same<Value>>().is_some() {
+            return tgt_v;
+        }
+
+        todo!("neutral")
     }
 
     fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {

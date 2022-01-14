@@ -160,6 +160,13 @@ macro_rules! impl_core_defaults {
         }
     };
 
+    (($f:tt), (resugar: $core:ident)) => {
+        fn resugar(&self) -> (HashSet<Symbol>, Core) {
+            let (s, p) = self.$f.resugar();
+            (s, cores::$core(p))
+        }
+    };
+
     (($f1:tt $(,$fs:tt)*), (resugar: $core:ident)) => {
         fn resugar(&self) -> (HashSet<Symbol>, Core) {
             let (mut s, p) = self.$f1.resugar();
