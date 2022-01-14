@@ -8,7 +8,6 @@ use crate::types::values::later;
 use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
-use std::fmt::{Display, Formatter};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Equal<T> {
@@ -32,6 +31,9 @@ pub struct Cong(pub Core, pub Core);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cong2(pub Core, pub Core, pub Core);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Symm(pub Core);
 
 impl CoreInterface for Equal<Core> {
     impl_core_defaults!(
@@ -68,7 +70,10 @@ impl CoreInterface for Equal<Core> {
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        todo!()
+        let t = self.typ.resugar();
+        let a = self.from.resugar();
+        let b = self.to.resugar();
+        (&t.0 | &(&a.0 | &b.0), cores::equal(t.1, a.1, b.1))
     }
 }
 
@@ -244,35 +249,39 @@ impl CoreInterface for Cong2 {
     }
 }
 
-impl<T: Display> Display for Equal<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(= {} {} {})", self.typ, self.from, self.to)
+impl CoreInterface for Symm {
+    impl_core_defaults!(
+        (0),
+        as_any,
+        same,
+        occurring_names,
+        check_by_synth,
+        alpha_equiv
+    );
+
+    fn val_of(&self, env: &Env) -> Value {
+        todo!()
+    }
+
+    fn is_type(&self, _ctx: &Ctx, _r: &Renaming) -> Result<Core> {
+        todo!()
+    }
+
+    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
+        todo!()
+    }
+
+    fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        todo!()
     }
 }
 
-impl<T: Display> Display for Same<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(same {})", self.0)
-    }
-}
-
-impl Display for Replace {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(replace {} {} {})", self.target, self.motive, self.base)
-    }
-}
-
-impl Display for Cong {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(cong {} {})", self.0, self.1)
-    }
-}
-
-impl Display for Cong2 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(cong2 {} {} {})", self.0, self.1, self.2)
-    }
-}
+impl_sexpr_display!(T: Equal<T>, ("=", typ, from, to));
+impl_sexpr_display!(T: Same<T>, ("same", 0));
+impl_sexpr_display!(Replace, ("replace", target, motive, base));
+impl_sexpr_display!(Cong, ("cong", 0, 1));
+impl_sexpr_display!(Cong2, ("cong2", 0, 1, 2));
+impl_sexpr_display!(Symm, ("symm", 0));
 
 impl ValueInterface for Equal<Value> {
     fn as_any(&self) -> &dyn Any {

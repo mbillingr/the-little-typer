@@ -8,7 +8,6 @@ use crate::types::natural::Add1;
 use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
-use std::fmt::Formatter;
 
 /// The type of all natural numbers
 #[derive(Debug, Copy, Clone)]
@@ -62,8 +61,4 @@ impl ValueInterface for Nat {
     }
 }
 
-impl std::fmt::Display for Nat {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Nat")
-    }
-}
+impl_sexpr_display!(Nat, "Nat");

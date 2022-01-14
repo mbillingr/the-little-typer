@@ -3,7 +3,6 @@ use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, R};
 use crate::errors::{Error, Result};
 use crate::symbol::Symbol;
 use std::collections::HashSet;
-use std::fmt::Formatter;
 
 /// The type of all types
 #[derive(Debug, Clone)]
@@ -47,8 +46,4 @@ impl CoreInterface for Invalid {
     }
 }
 
-impl std::fmt::Display for Invalid {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "U")
-    }
-}
+impl_sexpr_display!(Invalid, ("INVALID", 0));

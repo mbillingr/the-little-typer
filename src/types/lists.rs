@@ -7,7 +7,6 @@ use crate::types::values::later;
 use crate::types::{cores, values, MaybeTyped};
 use std::any::Any;
 use std::collections::HashSet;
-use std::fmt::{Display, Formatter};
 
 /// The type of lists
 #[derive(Debug, Clone, PartialEq)]
@@ -135,23 +134,9 @@ fn synth_rec_list(this: &RecList, ctx: &Ctx, r: &Renaming, b: &Core) -> Result<(
     }
 }
 
-impl<T: Display> Display for List<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(List {})", self.0)
-    }
-}
-
-impl std::fmt::Display for Nil {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "nil")
-    }
-}
-
-impl<T: Display> Display for ListCons<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(:: {} {})", self.0, self.1)
-    }
-}
+impl_sexpr_display!(T: List<T>, ("List", 0));
+impl_sexpr_display!(Nil, "nil");
+impl_sexpr_display!(T: ListCons<T>, ("::", 0, 1));
 
 impl ValueInterface for List<Value> {
     fn as_any(&self) -> &dyn Any {

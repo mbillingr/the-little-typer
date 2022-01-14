@@ -4,7 +4,6 @@ use crate::symbol::Symbol;
 use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
-use std::fmt::Formatter;
 
 /// The type of all types
 #[derive(Debug, Copy, Clone)]
@@ -52,8 +51,4 @@ impl CoreInterface for Universe {
     }
 }
 
-impl std::fmt::Display for Universe {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "U")
-    }
-}
+impl_sexpr_display!(Universe, "U");

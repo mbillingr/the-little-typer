@@ -9,7 +9,6 @@ use crate::types::values::later;
 use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
-use std::fmt::{Display, Formatter};
 
 /// The type of lists with length
 #[derive(Debug, Clone, PartialEq)]
@@ -235,35 +234,11 @@ fn expect_non_empty_vec<'a>(ctx: &Ctx, tv: &'a Value) -> Result<(&'a Value, &'a 
     }
 }*/
 
-impl<T: Display> Display for Vector<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(Vec {} {})", self.0, self.1)
-    }
-}
-
-impl std::fmt::Display for VecNil {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "vecnil")
-    }
-}
-
-impl<T: Display> Display for VectorCons<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(vec:: {} {})", self.0, self.1)
-    }
-}
-
-impl Display for Head {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(head {})", self.0)
-    }
-}
-
-impl Display for Tail {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(tail {})", self.0)
-    }
-}
+impl_sexpr_display!(T: Vector<T>, ("Vec", 0, 1));
+impl_sexpr_display!(VecNil, "vecnil");
+impl_sexpr_display!(T: VectorCons<T>, ("vec::", 0, 1));
+impl_sexpr_display!(Head, ("head", 0));
+impl_sexpr_display!(Tail, ("tail", 0));
 
 impl ValueInterface for Vector<Value> {
     fn as_any(&self) -> &dyn Any {

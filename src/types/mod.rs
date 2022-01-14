@@ -11,6 +11,40 @@ macro_rules! pi_type {
     };
 }
 
+macro_rules! impl_sexpr_display {
+    ($t:ty, $($args:tt)*) => {
+        impl std::fmt::Display for $t {
+            impl_sexpr_display!(@fmt, $($args)*);
+        }
+    };
+
+    (T:$t:ty, $($args:tt)*) => {
+        impl<T: std::fmt::Display> std::fmt::Display for $t {
+            impl_sexpr_display!(@fmt, $($args)*);
+        }
+    };
+
+    (@fmt, $($args:tt)*) => {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            impl_sexpr_display!(@write, self, f, $($args)*)
+        }
+    };
+
+    (@write, $self:ident, $f:ident, ($($args:tt)*)) => {{
+        write!($f, "(")?;
+        impl_sexpr_display!(@write, $self, $f, $($args)*)?;
+        write!($f, ")")
+    }};
+
+    (@write, $self:ident, $f:ident, $repr:expr $(,$field:tt)*) => {{
+        write!($f, "{}", $repr)?;
+        $(
+            write!($f, " {}", $self.$field)?;
+        )*
+        Ok(())
+    }};
+}
+
 macro_rules! impl_core_defaults {
     ($fields:tt, as_any) => {
         fn as_any(&self) -> &dyn std::any::Any {

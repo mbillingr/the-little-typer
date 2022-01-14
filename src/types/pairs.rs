@@ -402,29 +402,10 @@ impl Display for SigmaStar {
     }
 }
 
-impl Display for Pair<Core> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(Pair {} {})", self.0, self.1)
-    }
-}
-
-impl Display for Cons<Core> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(cons {} {})", self.0, self.1)
-    }
-}
-
-impl Display for Car<Core> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(car {})", self.0)
-    }
-}
-
-impl Display for Cdr<Core> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(cdr {})", self.0)
-    }
-}
+impl_sexpr_display!(T: Pair<T>, ("Pair", 0, 1));
+impl_sexpr_display!(T: Cons<T>, ("cons", 0, 1));
+impl_sexpr_display!(T: Car<T>, ("car", 0));
+impl_sexpr_display!(T: Cdr<T>, ("cdr", 0));
 
 fn do_car(pv: &Value) -> Value {
     match pv.try_as::<Cons<Value>>() {

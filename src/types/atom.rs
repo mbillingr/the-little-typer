@@ -114,11 +114,7 @@ impl ValueInterface for Quote {
     }
 }
 
-impl std::fmt::Display for Atom {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Atom")
-    }
-}
+impl_sexpr_display!(Atom, "Atom");
 
 impl std::fmt::Display for Quote {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {

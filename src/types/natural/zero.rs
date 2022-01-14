@@ -6,7 +6,6 @@ use crate::types::values::zero;
 use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
-use std::fmt::Formatter;
 
 /// The natural number 0
 #[derive(Debug, Copy, Clone)]
@@ -50,8 +49,4 @@ impl ValueInterface for Zero {
     }
 }
 
-impl std::fmt::Display for Zero {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "zero")
-    }
-}
+impl_sexpr_display!(Zero, "zero");

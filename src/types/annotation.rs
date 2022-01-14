@@ -4,7 +4,6 @@ use crate::normalize::val_in_ctx;
 use crate::symbol::Symbol;
 use crate::types::{cores, values};
 use std::collections::HashSet;
-use std::fmt::Formatter;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct The {
@@ -52,8 +51,4 @@ impl CoreInterface for The {
     }
 }
 
-impl std::fmt::Display for The {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(the {} {})", self.typ, self.exp)
-    }
-}
+impl_sexpr_display!(The, ("the", typ, exp));

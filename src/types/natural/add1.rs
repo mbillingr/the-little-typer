@@ -5,7 +5,6 @@ use crate::types::values::{add1, later};
 use crate::types::{cores, values};
 use std::any::Any;
 use std::collections::HashSet;
-use std::fmt::Formatter;
 use std::option::Option::Some;
 use std::result::Result::Err;
 
@@ -60,8 +59,4 @@ impl ValueInterface for Add1<Value> {
     }
 }
 
-impl std::fmt::Display for Add1<Core> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "(add1 {})", self.0)
-    }
-}
+impl_sexpr_display!(T: Add1<T>, ("add1", 0));
