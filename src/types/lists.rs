@@ -29,7 +29,8 @@ impl CoreInterface for List<Core> {
         same,
         occurring_names,
         alpha_equiv,
-        check_by_synth
+        check_by_synth,
+        (resugar: list)
     );
 
     fn val_of(&self, env: &Env) -> Value {
@@ -45,15 +46,18 @@ impl CoreInterface for List<Core> {
         let e_out = self.0.check(ctx, r, &values::universe())?;
         Ok((cores::universe(), cores::list(e_out)))
     }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let t = self.0.resugar();
-        (t.0, cores::list(t.1))
-    }
 }
 
 impl CoreInterface for Nil {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, no_type);
+    impl_core_defaults!(
+        _,
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        no_type,
+        (resugar: nil)
+    );
 
     fn val_of(&self, _env: &Env) -> Value {
         values::nil()
@@ -70,10 +74,6 @@ impl CoreInterface for Nil {
             Err(Error::NotAListType(tv.read_back_type(ctx).unwrap()))
         }
     }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        (HashSet::new(), cores::nil())
-    }
 }
 
 impl CoreInterface for ListCons<Core> {
@@ -84,7 +84,8 @@ impl CoreInterface for ListCons<Core> {
         occurring_names,
         alpha_equiv,
         no_type,
-        check_by_synth
+        check_by_synth,
+        (resugar: list_cons)
     );
 
     fn val_of(&self, env: &Env) -> Value {
@@ -99,12 +100,6 @@ impl CoreInterface for ListCons<Core> {
         let lt = cores::list(e);
         let es_out = self.1.check(ctx, r, &val_in_ctx(ctx, &lt))?;
         Ok((lt, cores::list_cons(e_out, es_out)))
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let h = self.0.resugar();
-        let t = self.1.resugar();
-        (&h.0 | &t.0, cores::list_cons(h.1, t.1))
     }
 }
 

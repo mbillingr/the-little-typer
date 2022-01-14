@@ -21,7 +21,8 @@ impl CoreInterface for Nat {
         occurring_names,
         alpha_equiv,
         simple_type,
-        check_by_synth
+        check_by_synth,
+        (resugar: nat)
     );
 
     fn val_of(&self, _env: &Env) -> Value {
@@ -30,10 +31,6 @@ impl CoreInterface for Nat {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {
         Ok((cores::universe(), cores::nat()))
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        (HashSet::new(), cores::nat())
     }
 }
 

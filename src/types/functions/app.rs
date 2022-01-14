@@ -32,7 +32,8 @@ impl CoreInterface for App {
         same,
         occurring_names,
         alpha_equiv,
-        check_by_synth
+        check_by_synth,
+        (resugar: app)
     );
 
     fn val_of(&self, env: &Env) -> Value {
@@ -51,12 +52,6 @@ impl CoreInterface for App {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {
         panic!("use AppStar for synthesis")
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let f = self.fun.resugar();
-        let a = self.arg.resugar();
-        (&f.0 | &a.0, cores::app(f.1, a.1))
     }
 }
 

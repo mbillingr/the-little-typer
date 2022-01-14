@@ -148,6 +148,27 @@ macro_rules! impl_core_defaults {
         }
     };
 
+    (_, (resugar: $core:ident)) => {
+        fn resugar(&self) -> (HashSet<Symbol>, Core) {
+            (HashSet::new(), cores::$core())
+        }
+    };
+
+    ((), (resugar: $core:ident)) => {
+        fn resugar(&self) -> (HashSet<Symbol>, Core) {
+            (HashSet::new(), cores::$core())
+        }
+    };
+
+    (($f1:tt $(,$fs:tt)*), (resugar: $core:ident)) => {
+        fn resugar(&self) -> (HashSet<Symbol>, Core) {
+            let (mut s, p) = self.$f1.resugar();
+            //todo: calling resugar twice seems wasteful...
+            $(s.extend(self.$fs.resugar().0);)*
+            (s, cores::$core(p $(, self.$fs.resugar().1)*))
+        }
+    };
+
     ($fields:tt, $unknown:tt) => {
         fn $unknown() { 0 }  // cheap way to raise an error
     };

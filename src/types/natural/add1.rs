@@ -20,7 +20,8 @@ impl CoreInterface for Add1<Core> {
         occurring_names,
         alpha_equiv,
         no_type,
-        check_by_synth
+        check_by_synth,
+        (resugar: add1)
     );
 
     fn val_of(&self, env: &Env) -> Value {
@@ -32,12 +33,6 @@ impl CoreInterface for Add1<Core> {
         let tv = &values::nat();
         e.check(ctx, r, tv)
             .map(|n_out| (cores::nat(), Core::add1(n_out)))
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let term = &self.0;
-        let (names, n) = term.resugar();
-        (names, cores::add1(n))
     }
 }
 

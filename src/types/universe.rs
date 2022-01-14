@@ -35,7 +35,8 @@ impl CoreInterface for Universe {
         occurring_names,
         alpha_equiv,
         simple_type,
-        check_by_synth
+        check_by_synth,
+        (resugar: universe)
     );
 
     fn val_of(&self, _env: &Env) -> Value {
@@ -44,10 +45,6 @@ impl CoreInterface for Universe {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         Err(Error::UhasNoType)
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        (HashSet::new(), Core::new(*self))
     }
 }
 

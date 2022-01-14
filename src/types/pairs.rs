@@ -209,7 +209,15 @@ impl CoreInterface for Pair<Core> {
 }
 
 impl CoreInterface for Cons<Core> {
-    impl_core_defaults!((0, 1), as_any, same, occurring_names, alpha_equiv, no_type);
+    impl_core_defaults!(
+        (0, 1),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        no_type,
+        (resugar: cons)
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         values::cons(
@@ -232,12 +240,6 @@ impl CoreInterface for Cons<Core> {
         } else {
             Err(Error::NotASigmaType(tv.read_back_type(ctx).unwrap()))
         }
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let a = self.0.resugar();
-        let d = self.1.resugar();
-        (&a.0 | &d.0, cores::cons(a.1, d.1))
     }
 }
 

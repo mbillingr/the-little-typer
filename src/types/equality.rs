@@ -42,7 +42,8 @@ impl CoreInterface for Equal<Core> {
         same,
         occurring_names,
         alpha_equiv,
-        check_by_synth
+        check_by_synth,
+        (resugar: equal)
     );
 
     fn val_of(&self, env: &Env) -> Value {
@@ -68,17 +69,18 @@ impl CoreInterface for Equal<Core> {
         let to_out = self.to.check(ctx, r, &av)?;
         Ok((cores::universe(), cores::equal(a_out, from_out, to_out)))
     }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let t = self.typ.resugar();
-        let a = self.from.resugar();
-        let b = self.to.resugar();
-        (&t.0 | &(&a.0 | &b.0), cores::equal(t.1, a.1, b.1))
-    }
 }
 
 impl CoreInterface for Same<Core> {
-    impl_core_defaults!((0), as_any, same, occurring_names, alpha_equiv, no_type);
+    impl_core_defaults!(
+        (0),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        no_type,
+        (resugar: same)
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         values::same(later(env.clone(), self.0.clone()))
@@ -103,10 +105,6 @@ impl CoreInterface for Same<Core> {
         } else {
             Err(Error::NotAnEqualType(tv.read_back_type(ctx)?))
         }
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        todo!()
     }
 }
 
@@ -259,7 +257,7 @@ impl CoreInterface for Symm {
         alpha_equiv
     );
 
-    fn val_of(&self, env: &Env) -> Value {
+    fn val_of(&self, _env: &Env) -> Value {
         todo!()
     }
 
@@ -267,8 +265,22 @@ impl CoreInterface for Symm {
         todo!()
     }
 
-    fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
-        todo!()
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let (p_t_out, p_out) = self.0.synth(ctx, r)?;
+        let p_t_outv = val_in_ctx(ctx, &p_t_out);
+        if let Some(Equal {
+            typ: av,
+            from: from_v,
+            to: to_v,
+        }) = p_t_outv.try_as::<Equal<Value>>()
+        {
+            Ok((
+                values::equal(av.clone(), to_v.clone(), from_v.clone()).read_back_type(ctx)?,
+                cores::symm(p_out),
+            ))
+        } else {
+            Err(Error::NotAnEqualType(p_t_outv.read_back_type(ctx)?))
+        }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

@@ -43,7 +43,8 @@ impl CoreInterface for Vector<Core> {
         same,
         occurring_names,
         alpha_equiv,
-        check_by_synth
+        check_by_synth,
+        (resugar: vec)
     );
 
     fn val_of(&self, env: &Env) -> Value {
@@ -64,16 +65,18 @@ impl CoreInterface for Vector<Core> {
         let len_out = self.1.check(ctx, r, &values::nat())?;
         Ok((cores::universe(), cores::vec(e_out, len_out)))
     }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let t = self.0.resugar();
-        let n = self.1.resugar();
-        (&t.0 | &n.0, cores::vec(t.1, n.1))
-    }
 }
 
 impl CoreInterface for VecNil {
-    impl_core_defaults!(_, as_any, same, occurring_names, alpha_equiv, no_type);
+    impl_core_defaults!(
+        _,
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        no_type,
+        (resugar: vecnil)
+    );
 
     fn val_of(&self, _env: &Env) -> Value {
         values::vecnil()
@@ -94,14 +97,18 @@ impl CoreInterface for VecNil {
             Err(Error::NotAVecType(tv.read_back_type(ctx).unwrap()))
         }
     }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        (HashSet::new(), cores::vecnil())
-    }
 }
 
 impl CoreInterface for VectorCons<Core> {
-    impl_core_defaults!((0, 1), as_any, same, occurring_names, alpha_equiv, no_type);
+    impl_core_defaults!(
+        (0, 1),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        no_type,
+        (resugar: vec_cons)
+    );
 
     fn val_of(&self, env: &Env) -> Value {
         values::vec_cons(
@@ -121,12 +128,6 @@ impl CoreInterface for VectorCons<Core> {
             .1
             .check(ctx, r, &values::vec(etv.clone(), len_minus_one.clone()))?;
         Ok(cores::vec_cons(h_out, t_out))
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        let h = self.0.resugar();
-        let t = self.1.resugar();
-        (&h.0 | &t.0, cores::vec_cons(h.1, t.1))
     }
 }
 

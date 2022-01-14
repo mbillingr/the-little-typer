@@ -19,7 +19,8 @@ impl CoreInterface for Zero {
         occurring_names,
         alpha_equiv,
         no_type,
-        check_by_synth
+        check_by_synth,
+        (resugar: zero)
     );
 
     fn val_of(&self, _env: &Env) -> Value {
@@ -28,10 +29,6 @@ impl CoreInterface for Zero {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> errors::Result<(Core, Core)> {
         Ok((cores::nat(), cores::zero()))
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        (HashSet::new(), cores::zero())
     }
 }
 

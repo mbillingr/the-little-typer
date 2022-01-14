@@ -24,7 +24,8 @@ impl CoreInterface for Atom {
         occurring_names,
         alpha_equiv,
         simple_type,
-        check_by_synth
+        check_by_synth,
+        (resugar: atom)
     );
 
     fn val_of(&self, _env: &Env) -> Value {
@@ -33,10 +34,6 @@ impl CoreInterface for Atom {
 
     fn synth(&self, _ctx: &Ctx, _r: &Renaming) -> Result<(Core, Core)> {
         Ok((cores::universe(), cores::atom()))
-    }
-
-    fn resugar(&self) -> (HashSet<Symbol>, Core) {
-        (HashSet::new(), Core::new(*self))
     }
 }
 
