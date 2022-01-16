@@ -104,3 +104,29 @@ fn frame_54_specific_claim_disallows_silly_impl() {
     );
     assert!(define_silly_list_to_vec(ctx).is_err());
 }
+
+#[test]
+fn frame_77_specific_claim_with_correct_impl() {
+    with_chapter_context()
+        .claim(
+            "list->vec",
+            "(Π ((E U) (es (List E))) (Vec E (length E es)))",
+        )
+        .claim("mot-list->vec", "(Π ((E U)) (-> (List E) U))")
+        .define("mot-list->vec", "(λ (E es) (Vec E (length E es)))")
+        .unwrap()
+        .claim(
+            "step-list->vec",
+            "(Π ((E U) (e E) (es (List E))) (-> (mot-list->vec E es) (mot-list->vec E (:: e es))))",
+        )
+        .define(
+            "step-list->vec",
+            "(λ (E e es list->vec_es) (vec:: e list->vec_es))",
+        )
+        .unwrap()
+        .define(
+            "list->vec",
+            "(λ (E es) (ind-List es (mot-list->vec E) vecnil (step-list->vec E)))",
+        )
+        .unwrap();
+}

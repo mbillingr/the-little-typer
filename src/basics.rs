@@ -230,6 +230,7 @@ impl From<&Sexpr> for Core {
             case "nil" => cores::nil(),
             case ("List", t) => cores::list(t.into()),
             case ("rec-List", target, base, step) => cores::rec_list(Core::from(target), Core::from(base), Core::from(step)),
+            case ("ind-List", target, motive, base, step) => cores::ind_list(target.into(), motive.into(), base.into(), step.into()),
             //
             case ("=", t, from, to) => cores::equal(t.into(), from.into(), to.into()),
             case ("same", e) => cores::same(e.into()),

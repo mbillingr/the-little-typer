@@ -5,7 +5,7 @@ use crate::types::atom::{Atom, Quote};
 use crate::types::equality::{Cong, Cong2, Equal, Replace, Same, Symm};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
 use crate::types::invalid::Invalid;
-use crate::types::lists::{List, ListCons, Nil, RecList};
+use crate::types::lists::{IndList, List, ListCons, Nil, RecList};
 use crate::types::natural::{Add1, IndNat, IterNat, Nat, RecNat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
@@ -169,6 +169,15 @@ pub fn rec_list(target: Core, base: Core, step: Core) -> Core {
 
 pub fn rec_list_desugared(target: Core, base_type: Core, base: Core, step: Core) -> Core {
     Core::new(RecList::typed(target, base_type, base, step))
+}
+
+pub fn ind_list(target: Core, motive: Core, base: Core, step: Core) -> Core {
+    Core::new(IndList {
+        target,
+        motive,
+        base,
+        step,
+    })
 }
 
 pub fn vec(t: Core, n: Core) -> Core {

@@ -1,5 +1,6 @@
 use crate::basics::{
-    Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface, N,
+    Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface,
+    N,
 };
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
@@ -23,6 +24,14 @@ pub struct Nil;
 pub struct ListCons<T>(pub T, pub T);
 
 ternary_eliminator!(RecList, do_rec_list, synth_rec_list);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndList {
+    pub target: Core,
+    pub motive: Core,
+    pub base: Core,
+    pub step: Core,
+}
 
 #[derive(Debug)]
 pub struct NeutralRecList(pub N, pub The, pub The);
@@ -134,9 +143,75 @@ fn synth_rec_list(this: &RecList, ctx: &Ctx, r: &Renaming, b: &Core) -> Result<(
     }
 }
 
+impl CoreInterface for IndList {
+    impl_core_defaults!(
+        (target, motive, base, step),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        no_type,
+        check_by_synth,
+        (resugar: ind_list)
+    );
+
+    fn val_of(&self, env: &Env) -> Value {
+        do_ind_list(
+            later(env.clone(), self.target.clone()),
+            later(env.clone(), self.motive.clone()),
+            later(env.clone(), self.base.clone()),
+            later(env.clone(), self.step.clone()),
+        )
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let (tgt_t, tgt_out) = self.target.synth(ctx, r)?;
+        let tgt_tv = val_in_ctx(ctx, &tgt_t);
+        if let Some(List(e_tv)) = tgt_tv.try_as::<List<Value>>() {
+            let mot_out = self.motive.check(
+                ctx,
+                r,
+                &values::pi(
+                    "xs",
+                    tgt_tv.clone(),
+                    Closure::FirstOrder {
+                        env: ctx.to_env(),
+                        var: Symbol::new("xs"),
+                        expr: cores::universe(),
+                    },
+                ),
+            )?;
+            let mot_val = val_in_ctx(ctx, &mot_out);
+            let b_out = self.base.check(ctx, r, &do_ap(&mot_val, values::nil()))?;
+            let s_out = self.step.check(
+                ctx,
+                r,
+                &pi_type!(((e, e_tv.clone())), {
+                    let mot_val = mot_val.clone();
+                    pi_type!(((es, tgt_tv.clone())), {
+                        let e = e.clone();
+                        let mot_val = mot_val.clone();
+                        pi_type!(
+                            ((_ih, do_ap(&mot_val, es.clone()))),
+                            do_ap(&mot_val, values::list_cons(e.clone(), es.clone()))
+                        )
+                    })
+                }),
+            )?;
+            Ok((
+                cores::app(mot_out.clone(), tgt_out.clone()),
+                cores::ind_list(tgt_out, mot_out, b_out, s_out),
+            ))
+        } else {
+            Err(Error::NotAListType(tgt_tv.read_back_type(ctx)?))
+        }
+    }
+}
+
 impl_sexpr_display!(T: List<T>, ("List", 0));
 impl_sexpr_display!(Nil, "nil");
 impl_sexpr_display!(T: ListCons<T>, ("::", 0, 1));
+impl_sexpr_display!(IndList, ("ind-List", target, motive, base, step));
 
 impl ValueInterface for List<Value> {
     fn as_any(&self) -> &dyn Any {
@@ -249,6 +324,25 @@ fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
     }
 
     unreachable!()
+}
+
+fn do_ind_list(tgt_v: Value, mot_v: Value, b_v: Value, s_v: Value) -> Value {
+    _do_ind_list(&tgt_v, mot_v, b_v, &s_v)
+}
+
+fn _do_ind_list(tgt_v: &Value, mot_v: Value, b_v: Value, s_v: &Value) -> Value {
+    if tgt_v.try_as::<Nil>().is_some() {
+        return b_v;
+    }
+
+    if let Some(ListCons(h, t)) = tgt_v.try_as::<ListCons<Value>>() {
+        return do_ap(
+            &do_ap(&do_ap(s_v, h.clone()), t.clone()),
+            _do_ind_list(t, mot_v, b_v, s_v),
+        );
+    }
+
+    todo!()
 }
 
 impl NeutralInterface for NeutralRecList {
