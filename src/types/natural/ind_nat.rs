@@ -67,7 +67,7 @@ impl CoreInterface for IndNat {
         )?;
         let mot_val = val_in_ctx(ctx, &mot_out);
         let b_out = self.base.check(ctx, r, &do_ap(&mot_val, values::zero()))?;
-        let tv = pi_type!(((n_minus_1, values::nat())), {
+        let tv = pi_type!(((n_minus_1 as "n-1", values::nat())), {
             let mot_val = mot_val.clone();
             pi_type!(
                 ((_ih, do_ap(&mot_val, n_minus_1.clone()))),
@@ -99,7 +99,10 @@ impl std::fmt::Display for IndNat {
         write!(
             f,
             "(ind-Nat {} {} {} {})",
-            self.target, self.motive, self.base, self.step
+            self.target,
+            self.motive,
+            self.base,
+            self.step
         )
     }
 }
@@ -133,7 +136,7 @@ fn do_ind_nat(tgt_v: Value, mot_v: Value, b_v: Value, s_v: Value) -> Value {
                     base: The(do_ap(&mot_v, values::zero()), b_v),
                     step: The(
                         values::pi(
-                            "n_minus_one",
+                            "n-1",
                             values::nat(),
                             Closure::higher(move |n_minus_one| {
                                 let mot_v = mot_v.clone();

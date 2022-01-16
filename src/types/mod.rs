@@ -7,7 +7,11 @@ macro_rules! pi_type {
     ((), $ret:expr) => {$ret};
 
     ((($x:ident, $arg_t:expr) $($b:tt)*), $ret:expr) => {
-        values::pi(stringify!($x), $arg_t, crate::basics::Closure::higher(move |$x| pi_type!(($($b)*), $ret)))
+        pi_type!((($x as stringify!($x), $arg_t) $($b)*), $ret)
+    };
+
+    ((($x:ident as $name:expr, $arg_t:expr) $($b:tt)*), $ret:expr) => {
+        values::pi($name, $arg_t, crate::basics::Closure::higher(move |$x| pi_type!(($($b)*), $ret)))
     };
 }
 

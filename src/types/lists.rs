@@ -1,4 +1,6 @@
-use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::basics::{
+    Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface, N,
+};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
@@ -21,6 +23,9 @@ pub struct Nil;
 pub struct ListCons<T>(pub T, pub T);
 
 ternary_eliminator!(RecList, do_rec_list, synth_rec_list);
+
+#[derive(Debug)]
+pub struct NeutralRecList(pub N, pub The, pub The);
 
 impl CoreInterface for List<Core> {
     impl_core_defaults!(
@@ -200,10 +205,10 @@ impl ValueInterface for ListCons<Value> {
 }
 
 fn do_rec_list(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
-    _do_rec_list(&tgt_v, bt_v, b_v, &s_v)
+    _do_rec_list(&tgt_v, bt_v, b_v, s_v)
 }
 
-fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: &Value) -> Value {
+fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
     match tgt_v.try_as::<Nil>() {
         Some(_) => return b_v,
         None => {}
@@ -212,12 +217,48 @@ fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: &Value) -> Value {
     match tgt_v.try_as::<ListCons<Value>>() {
         Some(ListCons(h, t)) => {
             return do_ap(
-                &do_ap(&do_ap(s_v, h.clone()), t.clone()),
+                &do_ap(&do_ap(&s_v, h.clone()), t.clone()),
                 _do_rec_list(t, bt_v, b_v, s_v),
             )
         }
         None => {}
     };
 
-    todo!()
+    if let Some((list_t, ne)) = tgt_v.as_neutral() {
+        if let Some(List(etv)) = list_t.try_as::<List<Value>>() {
+            let etv = etv.clone();
+            let list_t = list_t.clone();
+            return values::neutral(
+                bt_v.clone(),
+                NeutralRecList(
+                    ne.clone(),
+                    The(bt_v.clone(), b_v),
+                    The(
+                        pi_type!(((_h as "h", etv.clone())), {
+                            let bt_v = bt_v.clone();
+                            pi_type!(((_t as "t", list_t.clone())), {
+                                let bt_v = bt_v.clone();
+                                pi_type!(((_ih as "ih", bt_v.clone())), bt_v.clone())
+                            })
+                        }),
+                        s_v,
+                    ),
+                ),
+            );
+        }
+    }
+
+    unreachable!()
+}
+
+impl NeutralInterface for NeutralRecList {
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        let NeutralRecList(tgt, The(b_t, b), The(s_t, s)) = self;
+        Ok(cores::rec_list_desugared(
+            tgt.read_back_neutral(ctx)?,
+            b_t.read_back_type(ctx)?,
+            read_back(ctx, b_t, b)?,
+            read_back(ctx, s_t, s)?,
+        ))
+    }
 }
