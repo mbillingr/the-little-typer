@@ -52,8 +52,14 @@ impl dyn CoreInterface {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Core(R<dyn CoreInterface>);
+
+impl Debug for Core {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl PartialEq for Core {
     fn eq(&self, other: &Self) -> bool {

@@ -6,9 +6,10 @@ use crate::types::functions::lambda::Lambda;
 use crate::types::reference::NeutralVar;
 use crate::types::values::later;
 use crate::types::{
-    check_with_fresh_binding, cores, functions, is_type_with_fresh_binding, neutral, values,
+    check_with_fresh_binding, cores, functions, is_type_with_fresh_binding, neutral,
+    occurring_binder_names, values,
 };
-use crate::{alpha, errors, resugar};
+use crate::{alpha, errors, resugar, types};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
@@ -100,7 +101,7 @@ impl CoreInterface for PiStar {
     fn occurring_names(&self) -> HashSet<Symbol> {
         self.binders
             .iter()
-            .map(|(x, t)| occurring_binder_names(x, t))
+            .map(|(x, t)| types::occurring_binder_names(x, t))
             .fold(self.res_type.occurring_names(), |a, b| &a | &b)
     }
 
@@ -255,11 +256,4 @@ fn resugar_unary_pi(x: &Symbol, arg_type: &Core, result_type: &Core) -> (HashSet
     } else {
         (&arg.0 | &res.0, resugar::add_fun(arg.1, res.1))
     }
-}
-
-pub fn occurring_binder_names(name: &Symbol, t: &Core) -> HashSet<Symbol> {
-    let expr = t;
-    let mut names = expr.occurring_names();
-    names.insert(name.clone());
-    names
 }

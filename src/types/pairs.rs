@@ -8,7 +8,9 @@ use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::types::reference::NeutralVar;
 use crate::types::values::later;
-use crate::types::{check_with_fresh_binding, cores, is_type_with_fresh_binding, values};
+use crate::types::{
+    check_with_fresh_binding, cores, is_type_with_fresh_binding, occurring_binder_names, values,
+};
 use std::any::Any;
 use std::collections::HashSet;
 use std::fmt::{Display, Formatter};
@@ -113,7 +115,10 @@ impl CoreInterface for SigmaStar {
     impl_core_defaults!((), as_any, same, check_by_synth, no_alpha_equiv);
 
     fn occurring_names(&self) -> HashSet<Symbol> {
-        todo!()
+        self.binders
+            .iter()
+            .map(|(x, t)| occurring_binder_names(x, t))
+            .fold(self.cdr_type.occurring_names(), |a, b| &a | &b)
     }
 
     fn val_of(&self, _env: &Env) -> Value {

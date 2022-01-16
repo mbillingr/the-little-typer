@@ -383,3 +383,10 @@ impl MaybeTyped {
         }
     }
 }
+
+pub fn occurring_binder_names(name: &Symbol, t: &Core) -> HashSet<Symbol> {
+    let expr = t;
+    let mut names = expr.occurring_names();
+    names.insert(name.clone());
+    names
+}
