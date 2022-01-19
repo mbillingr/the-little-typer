@@ -36,6 +36,9 @@ pub struct IndList {
 #[derive(Debug)]
 pub struct NeutralRecList(pub N, pub The, pub The);
 
+#[derive(Debug)]
+pub struct NeutralIndList(pub N, pub The, pub The, pub The);
+
 impl CoreInterface for List<Core> {
     impl_core_defaults!(
         (0),
@@ -327,10 +330,10 @@ fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
 }
 
 fn do_ind_list(tgt_v: Value, mot_v: Value, b_v: Value, s_v: Value) -> Value {
-    _do_ind_list(&tgt_v, mot_v, b_v, &s_v)
+    _do_ind_list(&tgt_v, &mot_v, b_v, &s_v)
 }
 
-fn _do_ind_list(tgt_v: &Value, mot_v: Value, b_v: Value, s_v: &Value) -> Value {
+fn _do_ind_list(tgt_v: &Value, mot_v: &Value, b_v: Value, s_v: &Value) -> Value {
     if tgt_v.try_as::<Nil>().is_some() {
         return b_v;
     }
@@ -342,7 +345,36 @@ fn _do_ind_list(tgt_v: &Value, mot_v: Value, b_v: Value, s_v: &Value) -> Value {
         );
     }
 
-    todo!()
+    if let Some((list_tv, ne)) = tgt_v.as_neutral() {
+        if let Some(List(etv)) = list_tv.try_as::<List<Value>>() {
+            let mot_tv = pi_type!(((_xs as "xs", list_tv.clone())), values::universe());
+            return values::neutral(
+                do_ap(mot_v, tgt_v.clone()),
+                NeutralIndList(
+                    ne.clone(),
+                    The(mot_tv, mot_v.clone()),
+                    The(do_ap(mot_v, values::nil()), b_v),
+                    The(
+                        {
+                            let list_tv = list_tv.clone();
+                            let mot_v = mot_v.clone();
+                            pi_type!(((h, etv.clone())), {
+                                let mot_v = mot_v.clone();
+                                pi_type!(((t, list_tv.clone())), {
+                                    let mot_v = mot_v.clone();
+                                    let h = h.clone();
+                                    pi_type!(((_ih as "ih", do_ap(&mot_v, t.clone()))), do_ap(&mot_v, values::list_cons(h.clone(), t.clone()) ))
+                                })
+                            })
+                        },
+                        s_v.clone(),
+                    ),
+                ),
+            );
+        }
+    }
+
+    unreachable!()
 }
 
 impl NeutralInterface for NeutralRecList {
@@ -354,5 +386,11 @@ impl NeutralInterface for NeutralRecList {
             read_back(ctx, b_t, b)?,
             read_back(ctx, s_t, s)?,
         ))
+    }
+}
+
+impl NeutralInterface for NeutralIndList {
+    fn read_back_neutral(&self, _ctx: &Ctx) -> Result<Core> {
+        todo!()
     }
 }
