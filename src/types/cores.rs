@@ -11,7 +11,7 @@ use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
 use crate::types::todo::ToDo;
 use crate::types::universe::Universe;
-use crate::types::vec::{Head, Tail, VecNil, Vector, VectorCons};
+use crate::types::vec::{Head, IndVec, Tail, VecNil, Vector, VectorCons};
 
 pub fn invalid_syntax(s: &str) -> Core {
     Core::new(Invalid(s.into()))
@@ -198,6 +198,16 @@ pub fn head(vec: Core) -> Core {
 
 pub fn tail(vec: Core) -> Core {
     Core::new(Tail(vec))
+}
+
+pub fn ind_vec(len: Core, target: Core, motive: Core, base: Core, step: Core) -> Core {
+    Core::new(IndVec {
+        len,
+        target,
+        motive,
+        base,
+        step,
+    })
 }
 
 pub fn todo(name: impl Into<Symbol>) -> Core {

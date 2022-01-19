@@ -244,6 +244,7 @@ impl From<&Sexpr> for Core {
             case ("vec::", h, r) => cores::vec_cons(h.into(), r.into()),
             case ("head", v) => cores::head(v.into()),
             case ("tail", v) => cores::tail(v.into()),
+            case ("ind-Vec", n, target, motive, base, step) => cores::ind_vec(n.into(), target.into(), motive.into(), base.into(), step.into()),
             //
             case ("TODO", [Sexpr::Symbol(name)]) => cores::todo(name.clone()),
             case [Sexpr::Symbol(s)] => if is_var_name(s) {

@@ -4,6 +4,8 @@ use crate::basics::{
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
+use crate::typechecker::convert;
+use crate::types::functions::do_ap;
 use crate::types::natural::{Add1, Zero};
 use crate::types::values::later;
 use crate::types::{cores, values};
@@ -27,6 +29,15 @@ pub struct Head(pub Core);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tail(pub Core);
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct IndVec {
+    pub len: Core,
+    pub target: Core,
+    pub motive: Core,
+    pub base: Core,
+    pub step: Core,
+}
 
 #[derive(Debug)]
 pub struct NeutralHead(pub N);
@@ -197,6 +208,91 @@ impl CoreInterface for Tail {
     }
 }
 
+impl CoreInterface for IndVec {
+    impl_core_defaults!(
+        (len, target, motive, base, step),
+        as_any,
+        same,
+        occurring_names,
+        alpha_equiv,
+        no_type,
+        check_by_synth,
+        (resugar: ind_vec)
+    );
+
+    fn val_of(&self, env: &Env) -> Value {
+        do_ind_vec(
+            later(env.clone(), self.len.clone()),
+            later(env.clone(), self.target.clone()),
+            later(env.clone(), self.motive.clone()),
+            later(env.clone(), self.base.clone()),
+            later(env.clone(), self.step.clone()),
+        )
+    }
+
+    fn synth(&self, ctx: &Ctx, r: &Renaming) -> Result<(Core, Core)> {
+        let nat = values::nat();
+        let len_out = self.len.check(ctx, r, &nat)?;
+        let len_v = val_in_ctx(ctx, &len_out);
+        let (vec_t, vec_out) = self.target.synth(ctx, r)?;
+        let vec_tv = val_in_ctx(ctx, &vec_t);
+        if let Some(Vector(ev, len2_v)) = vec_tv.try_as::<Vector<Value>>() {
+            convert(ctx, &nat, &len_v, len2_v)?;
+            let mot_out = {
+                let ev = ev.clone();
+                self.motive.check(
+                    ctx,
+                    r,
+                    &pi_type!(
+                        ((k, nat)),
+                        pi_type!(((_es as "es", values::vec(ev.clone(), k))), values::universe())
+                    ),
+                )?
+            };
+            let mot_val = val_in_ctx(ctx, &mot_out);
+            let b_out = self.base.check(
+                ctx,
+                r,
+                &do_ap(&do_ap(&mot_val, values::zero()), values::vecnil()),
+            )?;
+            let s_out = self
+                .step
+                .check(ctx, r, &ind_vec_step_type(ev.clone(), mot_val))?;
+            Ok((
+                cores::app(
+                    cores::app(mot_out.clone(), len_out.clone()),
+                    vec_out.clone(),
+                ),
+                cores::ind_vec(len_out, vec_out, mot_out, b_out, s_out),
+            ))
+        } else {
+            Err(Error::NotAVecType(vec_tv.read_back_type(ctx)?))
+        }
+    }
+}
+
+fn ind_vec_step_type(ev: Value, mot_v: Value) -> Value {
+    pi_type!(((k, values::nat())), {
+        let mot_v = mot_v.clone();
+        let ev = ev.clone();
+        pi_type!(((e, ev.clone())), {
+            let mot_v = mot_v.clone();
+            let k = k.clone();
+            pi_type!(((es, values::vec(ev.clone(), k.clone()))), {
+                let mot_v = mot_v.clone();
+                let k = k.clone();
+                let e = e.clone();
+                pi_type!(((_ih as "ih", do_ap(&do_ap(&mot_v, k.clone()), es.clone()))), {
+                    do_ap(
+                        &do_ap(&mot_v, values::add1(k.clone())),
+                        values::vec_cons(e.clone(), es.clone()),
+                    )
+                })
+            })
+        })
+    })
+}
+
 fn expect_non_empty_vec<'a>(ctx: &Ctx, tv: &'a Value) -> Result<(&'a Value, &'a Value)> {
     if let Some(Vector(etv, len)) = tv.try_as::<Vector<Value>>() {
         if let Some(Add1(len_minus_one)) = len.try_as::<Add1<Value>>() {
@@ -240,6 +336,7 @@ impl_sexpr_display!(VecNil, "vecnil");
 impl_sexpr_display!(T: VectorCons<T>, ("vec::", 0, 1));
 impl_sexpr_display!(Head, ("head", 0));
 impl_sexpr_display!(Tail, ("tail", 0));
+impl_sexpr_display!(IndVec, ("ind-Vec", len, target, motive, base, step));
 
 impl ValueInterface for Vector<Value> {
     fn as_any(&self) -> &dyn Any {
@@ -395,3 +492,28 @@ impl NeutralInterface for NeutralTail {
 
     todo!()
 }*/
+
+fn do_ind_vec(len_v: Value, vec_v: Value, mot_v: Value, b_v: Value, s_v: Value) -> Value {
+    _do_ind_vec(&len_v, &vec_v, mot_v, b_v, &s_v)
+}
+
+fn _do_ind_vec(len_v: &Value, vec_v: &Value, mot_v: Value, b_v: Value, s_v: &Value) -> Value {
+    if let (Some(_), Some(_)) = (len_v.try_as::<Zero>(), vec_v.try_as::<VecNil>()) {
+        return b_v;
+    }
+
+    if let (Some(Add1(len_m1_v)), Some(VectorCons(h, t))) = (
+        len_v.try_as::<Add1<Value>>(),
+        vec_v.try_as::<VectorCons<Value>>(),
+    ) {
+        return do_ap(
+            &do_ap(
+                &do_ap(&do_ap(s_v, len_m1_v.clone()), h.clone()),
+                do_tail(vec_v),
+            ),
+            _do_ind_vec(len_m1_v, t, mot_v, b_v, s_v),
+        );
+    }
+
+    todo!()
+}
