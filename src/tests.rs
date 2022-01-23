@@ -483,3 +483,54 @@ fn can_use_todos() {
         Ok(annotated_todo("a", universe()))
     )
 }
+
+#[test]
+fn simple_ind_vec() {
+    assert_eq!(
+        norm(&CTX, &"(ind-Vec 2 (the (Vec Nat 2) (vec:: 1 (vec:: 3 vecnil))) (lambda (k xs) Nat) 0 (lambda (k e es ih) (add1 ih)) )".parse().unwrap()),
+        Ok(the(nat(), add1(add1(zero()))))
+    )
+}
+
+#[test]
+fn basal_ind_vec() {
+    assert_eq!(
+        norm(&CTX, &"(ind-Vec 0 (the (Vec Nat 0) vecnil) (lambda (k xs) Nat) 0 (lambda (k e es ih) (add1 ih)) )".parse().unwrap()),
+        Ok(the(nat(), zero()))
+    )
+}
+
+#[test]
+fn neutral12_ind_vec() {
+    assert_eq!(
+        norm(
+            &CTX,
+            &"
+            (the (Pi ((k Nat) (xs (Vec Nat k))) Nat)
+                 (lambda (k xs)
+                   (ind-Vec k xs (lambda (k xs) Nat) 0 (lambda (k e es ih) (add1 ih)) )
+                 ))"
+            .parse()
+            .unwrap()
+        ),
+        Ok(the(
+            pi("k", nat(), pi("xs", vec(nat(), refer("k")), nat())),
+            lambda(
+                "k",
+                lambda(
+                    "xs",
+                    ind_vec(
+                        refer("k"),
+                        refer("xs"),
+                        lambda("k₁", lambda("xs₁", nat())),
+                        zero(),
+                        lambda(
+                            "k₁",
+                            lambda("e", lambda("es", (lambda("ih", add1(refer("ih"))))))
+                        )
+                    )
+                )
+            )
+        ))
+    )
+}
