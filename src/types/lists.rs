@@ -390,7 +390,13 @@ impl NeutralInterface for NeutralRecList {
 }
 
 impl NeutralInterface for NeutralIndList {
-    fn read_back_neutral(&self, _ctx: &Ctx) -> Result<Core> {
-        todo!()
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        let NeutralIndList(tgt, The(mot_t, mot), The(b_t, b), The(s_t, s)) = self;
+        Ok(cores::ind_list(
+            tgt.read_back_neutral(ctx)?,
+            read_back(ctx, mot_t, mot)?,
+            read_back(ctx, b_t, b)?,
+            read_back(ctx, s_t, s)?,
+        ))
     }
 }

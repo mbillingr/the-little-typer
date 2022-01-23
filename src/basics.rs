@@ -325,8 +325,14 @@ impl dyn ValueInterface {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Value(R<dyn ValueInterface>);
+
+impl Debug for Value {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
 
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
@@ -440,13 +446,6 @@ pub trait NeutralInterface: Debug + Sync + Send {
 pub struct N(R<dyn NeutralInterface>);
 
 impl N {
-    pub fn app(f: impl NeutralInterface + 'static, typ: Value, val: Value) -> Self {
-        N(R::new(NeutralApp(N(R::new(f)), The(typ, val))))
-    }
-    pub fn which_nat(target: impl NeutralInterface + 'static, base: The, step: The) -> Self {
-        N(R::new(NeutralWhichNat(N(R::new(target)), base, step)))
-    }
-
     pub fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
         self.0.read_back_neutral(ctx)
     }

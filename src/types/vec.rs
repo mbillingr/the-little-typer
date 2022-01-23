@@ -1,12 +1,12 @@
 use crate::basics::{
-    Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, Value, ValueInterface, N,
+    Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface, N,
 };
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
 use crate::typechecker::convert;
 use crate::types::functions::do_ap;
-use crate::types::natural::{Add1, Zero};
+use crate::types::natural::{Add1, Nat, Zero};
 use crate::types::values::later;
 use crate::types::{cores, values};
 use std::any::Any;
@@ -45,7 +45,14 @@ pub struct NeutralHead(pub N);
 #[derive(Debug)]
 pub struct NeutralTail(pub N);
 
-//ternary_eliminator!(RecVec, do_rec_list, synth_rec_list);
+#[derive(Debug)]
+pub struct NeutralIndVec1(pub N, pub The, pub The, pub The, pub The);
+
+#[derive(Debug)]
+pub struct NeutralIndVec2(pub The, pub N, pub The, pub The, pub The);
+
+#[derive(Debug)]
+pub struct NeutralIndVec12(pub N, pub N, pub The, pub The, pub The);
 
 impl CoreInterface for Vector<Core> {
     impl_core_defaults!(
@@ -470,29 +477,6 @@ impl NeutralInterface for NeutralTail {
     }
 }
 
-/*fn do_rec_vec(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
-    _do_rec_list(&tgt_v, bt_v, b_v, &s_v)
-}*/
-
-/*fn _do_rec_list(tgt_v: &Value, bt_v: Value, b_v: Value, s_v: &Value) -> Value {
-    match tgt_v.try_as::<VecNil>() {
-        Some(_) => return b_v,
-        None => {}
-    };
-
-    match tgt_v.try_as::<VectorCons<Value>>() {
-        Some(VectorCons(h, t)) => {
-            return do_ap(
-                &do_ap(&do_ap(s_v, h.clone()), t.clone()),
-                _do_rec_list(t, bt_v, b_v, s_v),
-            )
-        }
-        None => {}
-    };
-
-    todo!()
-}*/
-
 fn do_ind_vec(len_v: Value, vec_v: Value, mot_v: Value, b_v: Value, s_v: Value) -> Value {
     _do_ind_vec(&len_v, &vec_v, mot_v, b_v, &s_v)
 }
@@ -515,5 +499,68 @@ fn _do_ind_vec(len_v: &Value, vec_v: &Value, mot_v: Value, b_v: Value, s_v: &Val
         );
     }
 
-    todo!()
+    if let Some((vec_tv, ne)) = vec_v.as_neutral() {
+        if let Some(Vector(etv, _)) = vec_tv.try_as::<Vector<Value>>() {
+            let t_out = do_ap(&do_ap(&mot_v, len_v.clone()), vec_v.clone());
+            let m_out = The(
+                {
+                    let etv = etv.clone();
+                    pi_type!(((k, values::nat())), {
+                        let etv = etv.clone();
+                        pi_type!(((_es as "es", values::vec(etv, k))), values::universe())
+                    })
+                },
+                mot_v.clone(),
+            );
+            let b_out = The(do_ap(&do_ap(&mot_v, values::zero()), values::vecnil()), b_v);
+            let s_out = The(ind_vec_step_type(etv.clone(), mot_v), s_v.clone());
+
+            if let Some((len_tv, len)) = len_v.as_neutral() {
+                if len_tv.try_as::<Nat>().is_some() {
+                    return values::neutral(
+                        t_out,
+                        NeutralIndVec12(len.clone(), ne.clone(), m_out, b_out, s_out),
+                    );
+                }
+            }
+
+            return values::neutral(
+                t_out,
+                NeutralIndVec2(
+                    The(values::nat(), len_v.clone()),
+                    ne.clone(),
+                    m_out,
+                    b_out,
+                    s_out,
+                ),
+            );
+        }
+    }
+
+    unreachable!()
+}
+
+impl NeutralInterface for NeutralIndVec1 {
+    fn read_back_neutral(&self, _ctx: &Ctx) -> Result<Core> {
+        todo!()
+    }
+}
+
+impl NeutralInterface for NeutralIndVec2 {
+    fn read_back_neutral(&self, _ctx: &Ctx) -> Result<Core> {
+        todo!()
+    }
+}
+
+impl NeutralInterface for NeutralIndVec12 {
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        let NeutralIndVec12(len, es, The(mot_t, mot), The(b_t, b), The(s_t, s)) = self;
+        Ok(cores::ind_vec(
+            len.read_back_neutral(ctx)?,
+            es.read_back_neutral(ctx)?,
+            read_back(ctx, mot_t, mot)?,
+            read_back(ctx, b_t, b)?,
+            read_back(ctx, s_t, s)?,
+        ))
+    }
 }
