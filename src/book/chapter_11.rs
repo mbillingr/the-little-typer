@@ -88,15 +88,6 @@ fn frame_27_vec_append() {
 
 #[test]
 fn frame_35_55_the_external_proof() {
-    with_chapter_context()
-        .claim("abc", "(List Atom)")
-        .define("abc", "(:: 'a (:: 'b (:: 'c nil)))")
-        .unwrap()
-        .core("(vec->list Atom 3 (list->vec Atom abc))")
-        .and("abc")
-        .are_the_same("(List Atom)")
-        .assert(true);
-
     let _ctx = with_chapter_context()
         .claim(
             "list->vec->list=",
@@ -125,18 +116,14 @@ fn frame_35_55_the_external_proof() {
             "step-list->vec->list=",
             "(λ (E e es list->vec->list=_es) (cong list->vec->list=_es (::-fun E e)))",
         )
-        //.unwrap()
-        //.define("list->vec->list=", "(λ (E es) (ind-List es (mot-list->vec->list= E) (same nil) (step-list->vec->list= E)))")
+        .unwrap()
+        .define(
+            "list->vec->list=",
+            "(λ (E es)
+                (ind-List es (mot-list->vec->list= E) (same nil) (step-list->vec->list= E)))",
+        )
         .unwrap();
 }
-
-/// TypeMismatchVar(
-///     Neutral {
-///         type_value:
-///             List(Neutral { type_value: Universe, kind: N(NeutralVar(E)) }),
-///         kind: N(NeutralVar(vec->list_es))
-///     },
-///     List(Neutral { type_value: Universe, kind: N(NeutralVar(E)) }))
 
 #[test]
 fn frame_45_46_proving_the_treat_statement() {
