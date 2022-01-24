@@ -4,8 +4,6 @@ use crate::fresh::freshen;
 use crate::normalize::val_in_ctx;
 use crate::sexpr::Sexpr;
 use crate::symbol::Symbol;
-use crate::types::functions::NeutralApp;
-use crate::types::natural::NeutralWhichNat;
 use crate::types::reference::NeutralVar;
 use crate::types::{cores, values};
 use sexpr_matcher::match_sexpr;

@@ -526,7 +526,7 @@ fn neutral12_ind_vec() {
                         zero(),
                         lambda(
                             "k₁",
-                            lambda("e", lambda("es", (lambda("ih", add1(refer("ih"))))))
+                            lambda("e", lambda("es", lambda("ih", add1(refer("ih")))))
                         )
                     )
                 )
