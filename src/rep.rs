@@ -1,7 +1,11 @@
 use crate::basics::{Core, CoreInterface, Ctx, Renaming};
 use crate::errors::Result;
 use crate::normalize::{read_back, val_in_ctx};
+use crate::sexpr::Sexpr;
 use crate::typechecker::convert;
+use sexpr_matcher::match_sexpr;
+use sexpr_parser::parse;
+use std::result;
 
 pub fn norm_type(ctx: &Ctx, e: &Core) -> Result<Core> {
     let e_out = e.is_type(ctx, &Renaming::new())?;
@@ -35,6 +39,35 @@ pub fn check_same(ctx: &Ctx, t: &Core, a: &Core, b: &Core) -> Result<()> {
     let av = val_in_ctx(ctx, &a_out);
     let bv = val_in_ctx(ctx, &b_out);
     convert(ctx, &tv, &av, &bv)
+}
+
+pub fn eval_normalize(ctx: &mut Ctx, src: &str) -> result::Result<Option<Core>, String> {
+    let sexpr = parse::<Sexpr>(&src).map_err(|e| e.to_string())?;
+
+    match_sexpr!(
+        &sexpr,
+        case ("claim", [Sexpr::Symbol(ident)], expr) => {
+            *ctx = ctx.claim(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
+            return Ok(None);
+        },
+        case ("define", [Sexpr::Symbol(ident)], expr) => {
+            *ctx = ctx.define(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
+            return Ok(None);
+        },
+        case ("reclaim", [Sexpr::Symbol(ident)], expr) => {
+            *ctx = ctx.reclaim(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
+            return Ok(None);
+        },
+        case ("redefine", [Sexpr::Symbol(ident)], expr) => {
+            *ctx = ctx.redefine(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
+            return Ok(None);
+        },
+        else => {},
+    );
+
+    norm(ctx, &(&sexpr).into())
+        .map(Some)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]

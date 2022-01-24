@@ -3,6 +3,7 @@ use the_little_typer as tlt;
 use sexpr_matcher::match_sexpr;
 use sexpr_parser::parse;
 use std::{io, io::Write};
+use the_little_typer::rep;
 use the_little_typer::sexpr::Sexpr;
 use tlt::{
     basics::{Core, Ctx},
@@ -24,36 +25,7 @@ fn main() -> io::Result<()> {
 
 fn read_eval_normalize(ctx: &mut Ctx) -> Result<Option<Core>, String> {
     let src = read_line().map_err(|e| e.to_string())?;
-    eval_normalize(ctx, &src)
-}
-
-fn eval_normalize(ctx: &mut Ctx, src: &str) -> Result<Option<Core>, String> {
-    let sexpr = parse::<Sexpr>(&src).map_err(|e| e.to_string())?;
-
-    match_sexpr!(
-        &sexpr,
-        case ("claim", [Sexpr::Symbol(ident)], expr) => {
-            *ctx = ctx.claim(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
-            return Ok(None);
-        },
-        case ("define", [Sexpr::Symbol(ident)], expr) => {
-            *ctx = ctx.define(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
-            return Ok(None);
-        },
-        case ("reclaim", [Sexpr::Symbol(ident)], expr) => {
-            *ctx = ctx.reclaim(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
-            return Ok(None);
-        },
-        case ("redefine", [Sexpr::Symbol(ident)], expr) => {
-            *ctx = ctx.redefine(ident.clone(), expr.into()).map_err(|e| e.to_string())?;
-            return Ok(None);
-        },
-        else => {},
-    );
-
-    norm(ctx, &(&sexpr).into())
-        .map(Some)
-        .map_err(|e| e.to_string())
+    rep::eval_normalize(ctx, &src)
 }
 
 fn read_line() -> io::Result<String> {
@@ -101,6 +73,6 @@ fn prelude(ctx: &mut Ctx) {
 ";
 
     for stmt in src.split("\n\n") {
-        eval_normalize(ctx, stmt).unwrap();
+        rep::eval_normalize(ctx, stmt).unwrap();
     }
 }

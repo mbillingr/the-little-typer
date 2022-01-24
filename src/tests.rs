@@ -1,6 +1,6 @@
 use crate::basics::{CoreInterface, Ctx};
 use crate::errors::Error;
-use crate::rep::{norm, norm_type, rep};
+use crate::rep::{eval_normalize, norm, norm_type, rep};
 use crate::types::{cores::*, values};
 use lazy_static::lazy_static;
 
@@ -533,4 +533,71 @@ fn neutral12_ind_vec() {
             )
         ))
     )
+}
+
+#[test]
+fn regression_chapter11() {
+    let ctx = &mut CTX.clone();
+
+    let src = "
+;(claim _ _)
+;(define _ _)
+
+(claim length (Π ((E U)) (-> (List E) Nat)))
+(claim step-length (Π ((E U)) (-> E (List E) Nat Nat)))
+(define step-length (λ (E) (λ (e es length-es) (add1 length-es))))
+(define length (λ (E) (λ (es) (rec-List es 0 (step-length E)))))
+
+(claim list->vec (Π ((E U) (es (List E))) (Vec E (length E es))))
+(claim mot-list->vec (Π ((E U)) (-> (List E) U)))
+(define mot-list->vec (λ (E es) (Vec E (length E es))))
+(claim step-list->vec (Π ((E U) (e E) (es (List E))) (-> (mot-list->vec E es) (mot-list->vec E (:: e es)))))
+(define step-list->vec (λ (E e es list->vec_es) (vec:: e list->vec_es)))
+(define list->vec (λ (E es) (ind-List es (mot-list->vec E) vecnil (step-list->vec E))))
+
+(claim vec->list (Π ((E U) (l Nat)) (-> (Vec E l) (List E))))
+(claim mot-vec->list (Π ((E U) (l Nat)) (-> (Vec E l) U)))
+(define mot-vec->list (λ (E l es) (List E)))
+(claim step-vec->list (Π ((E U) (l-1 Nat) (e E) (es (Vec E l-1))) (-> (mot-vec->list E l-1 es) (mot-vec->list E (add1 l-1) (vec:: e es)))))
+(define step-vec->list (λ (E l-1 e es vec->list_es) (:: e vec->list_es)))
+(define vec->list (λ (E l es) (ind-Vec l es (mot-vec->list E) nil (step-vec->list E))))
+
+(claim mot-list->vec->list= (Π ((E U)) (-> (List E) U)))
+(define mot-list->vec->list= (λ (E es) (= (List E) es (vec->list E (length E es) (list->vec E es)))))
+(claim step-list->vec->list=
+    (Π ((E U) (e E) (es (List E)))
+       (-> (mot-list->vec->list= E es)
+           (mot-list->vec->list= E (:: e es)))))
+(claim ::-fun (Π ((E U)) (-> E (List E) (List E))))
+(define ::-fun (λ (E e es) (:: e es)))
+(define step-list->vec->list=
+    (λ (E e es list->vec->list=_es)
+       (cong list->vec->list=_es (::-fun E e))))
+";
+
+    let mut stmt = String::new();
+    let mut expr_balance: i32 = 0;
+    for (line_nr, line) in src.split("\n").enumerate() {
+        if line.is_empty() || line.starts_with(";") {
+            continue;
+        }
+
+        expr_balance += line
+            .chars()
+            .map(|ch| match ch {
+                '(' => 1,
+                ')' => -1,
+                _ => 0,
+            })
+            .sum::<i32>();
+        stmt += line;
+
+        if expr_balance <= 0 {
+            eval_normalize(ctx, &stmt)
+                .map_err(|e| format!("{line_nr} {line}\n{e}"))
+                .unwrap();
+            stmt = String::new();
+            expr_balance = 0;
+        }
+    }
 }
