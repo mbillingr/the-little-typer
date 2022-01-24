@@ -1,13 +1,9 @@
 use the_little_typer as tlt;
 
-use sexpr_matcher::match_sexpr;
-use sexpr_parser::parse;
 use std::{io, io::Write};
 use the_little_typer::rep;
-use the_little_typer::sexpr::Sexpr;
 use tlt::{
     basics::{Core, Ctx},
-    rep::norm,
     resugar::resugar,
 };
 
