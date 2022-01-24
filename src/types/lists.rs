@@ -239,7 +239,7 @@ impl ValueInterface for List<Value> {
         } else if let Some(ListCons(h, t)) = v.try_as::<ListCons<Value>>() {
             Ok(cores::list_cons(
                 read_back(ctx, &self.0, h)?,
-                self.read_back(ctx, tv, t)?,
+                read_back(ctx, tv, t)?,
             ))
         } else {
             Err(Error::TypeMismatchVar(v.clone(), tv.clone()))
