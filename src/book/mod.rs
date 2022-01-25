@@ -22,6 +22,7 @@ fn with_empty_context() -> Checker {
     Checker { ctx: Ctx::new() }
 }
 
+#[derive(Clone)]
 pub struct Checker {
     ctx: Ctx,
 }

@@ -1,7 +1,8 @@
 use crate::book::{chapter_08, Checker, ResultBoolAssertions};
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    chapter_08::with_chapter_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = chapter_08::with_chapter_context()
         // --------
         //  double
         // --------
@@ -13,7 +14,11 @@ pub fn with_chapter_context() -> Checker {
         // -------
         .claim("twice", "(-> Nat Nat)")
         .define("twice", "(λ (n) (+ n n))")
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]

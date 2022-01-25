@@ -1,7 +1,8 @@
 use crate::book::{chapter_10, Checker, ResultBoolAssertions};
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    chapter_10::with_chapter_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = chapter_10::with_chapter_context()
         // -----------
         //  list->vec
         // -----------
@@ -47,7 +48,11 @@ pub fn with_chapter_context() -> Checker {
             "vec->list",
             "(λ (E l es) (ind-Vec l es (mot-vec->list E) nil (step-vec->list E)))",
         )
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]

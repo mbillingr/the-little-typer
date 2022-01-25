@@ -1,7 +1,8 @@
 use crate::book::{with_empty_context, Checker};
+use lazy_static::lazy_static;
 
-pub fn with_book_context() -> Checker {
-    with_empty_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = with_empty_context()
         // + (addition)
         .claim("step-+", "(-> Nat Nat)")
         .define("step-+", "(lambda (+_n-1) (add1 +_n-1))")
@@ -68,5 +69,9 @@ pub fn with_book_context() -> Checker {
             "reverse",
             "(λ (E) (λ (es) (rec-List es (the (List E) nil) (step-reverse E))))",
         )
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_book_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }

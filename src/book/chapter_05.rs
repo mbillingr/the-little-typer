@@ -1,14 +1,19 @@
 use crate::book::common_definitions::with_book_context;
 use crate::book::{chapter_04, with_empty_context, Checker, ResultBoolAssertions};
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    chapter_04::with_chapter_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = chapter_04::with_chapter_context()
         .claim("toppings", "(List Atom)")
         .define("toppings", "(:: 'potato (:: 'butter nil))")
         .unwrap()
         .claim("condiments", "(List Atom)")
         .define("condiments", "(:: 'chives (:: 'mayonnaise nil))")
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]

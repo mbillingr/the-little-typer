@@ -2,15 +2,20 @@ use crate::book::common_definitions::with_book_context;
 use crate::book::{
     chapter_07, with_empty_context, Checker, ResultAssertions, ResultBoolAssertions,
 };
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    chapter_07::with_chapter_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = chapter_07::with_chapter_context()
         // ------
         //  incr
         // ------
         .claim("incr", "(-> Nat Nat)")
         .define("incr", "(λ (n) (iter-Nat n 1 (+ 1)))")
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]

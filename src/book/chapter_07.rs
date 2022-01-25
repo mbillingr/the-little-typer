@@ -1,7 +1,8 @@
 use crate::book::{chapter_06, with_empty_context, Checker, ResultBoolAssertions};
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    chapter_06::with_chapter_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = chapter_06::with_chapter_context()
         // ------
         //  last
         // ------
@@ -52,7 +53,11 @@ pub fn with_chapter_context() -> Checker {
             "drop-last",
             "(λ (E l) (ind-Nat l (mot-drop-last E) (base-drop-last E) (step-drop-last E)))",
         )
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]

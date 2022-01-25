@@ -1,7 +1,8 @@
 use crate::book::{chapter_05, with_empty_context, Checker, ResultBoolAssertions};
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    chapter_05::with_chapter_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = chapter_05::with_chapter_context()
         .claim("first", "(Π ((E U) (l Nat)) (-> (Vec E (add1 l)) E))")
         .define("first", "(λ (E l v) (head v))")
         .unwrap()
@@ -10,7 +11,11 @@ pub fn with_chapter_context() -> Checker {
             "(Π ((E U) (l Nat)) (-> (Vec E (add1 l)) (Vec E l)))",
         )
         .define("rest", "(λ (E l v) (tail v))")
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]

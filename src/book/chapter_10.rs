@@ -1,8 +1,9 @@
 use crate::book::common_definitions::with_book_context;
 use crate::book::{chapter_09, with_empty_context, Checker, Result, ResultBoolAssertions};
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    chapter_09::with_chapter_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = chapter_09::with_chapter_context()
         // -----------
         //  replicate
         // -----------
@@ -15,7 +16,11 @@ pub fn with_chapter_context() -> Checker {
                     vecnil
                     (λ (n-1 replicate_n-1) (vec:: e replicate_n-1))))",
         )
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]

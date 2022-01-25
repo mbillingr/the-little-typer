@@ -1,7 +1,8 @@
 use crate::book::{chapter_11, Checker};
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    chapter_11::with_chapter_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = chapter_11::with_chapter_context()
         // ------
         //  Even
         // ------
@@ -79,7 +80,11 @@ pub fn with_chapter_context() -> Checker {
             "ackermann",
             "(λ (n) (iter-Nat n (+ 1) (λ (ackermann_n-1) (repeat ackermann_n-1))))",
         )
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]

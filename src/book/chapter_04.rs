@@ -1,8 +1,9 @@
 use crate::book::common_definitions::with_book_context;
 use crate::book::{with_empty_context, Checker, ResultBoolAssertions};
+use lazy_static::lazy_static;
 
-pub fn with_chapter_context() -> Checker {
-    with_book_context()
+lazy_static! {
+    static ref CHAPTER_CONTEXT: Checker = with_book_context()
         // elim-Pair
         .claim(
             "elim-Pair",
@@ -26,7 +27,11 @@ pub fn with_chapter_context() -> Checker {
             "kdr",
             "(lambda (p) (elim-Pair Nat Nat Nat p (lambda (a d) d)))",
         )
-        .unwrap()
+        .unwrap();
+}
+
+pub fn with_chapter_context() -> Checker {
+    CHAPTER_CONTEXT.clone()
 }
 
 #[test]
