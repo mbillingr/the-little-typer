@@ -1,8 +1,8 @@
 use crate::book::common_definitions::with_book_context;
-use crate::book::{with_empty_context, Checker, ResultBoolAssertions};
+use crate::book::{chapter_04, with_empty_context, Checker, ResultBoolAssertions};
 
-fn with_chapter_context() -> Checker {
-    with_book_context()
+pub fn with_chapter_context() -> Checker {
+    chapter_04::with_chapter_context()
         .claim("toppings", "(List Atom)")
         .define("toppings", "(:: 'potato (:: 'butter nil))")
         .unwrap()

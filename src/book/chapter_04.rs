@@ -1,7 +1,7 @@
 use crate::book::common_definitions::with_book_context;
 use crate::book::{with_empty_context, Checker, ResultBoolAssertions};
 
-fn with_chapter_context() -> Checker {
+pub fn with_chapter_context() -> Checker {
     with_book_context()
         // elim-Pair
         .claim(

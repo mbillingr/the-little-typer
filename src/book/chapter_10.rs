@@ -1,8 +1,8 @@
 use crate::book::common_definitions::with_book_context;
-use crate::book::{with_empty_context, Checker, Result, ResultBoolAssertions};
+use crate::book::{chapter_09, with_empty_context, Checker, Result, ResultBoolAssertions};
 
-fn with_chapter_context() -> Checker {
-    with_book_context()
+pub fn with_chapter_context() -> Checker {
+    chapter_09::with_chapter_context()
         // -----------
         //  replicate
         // -----------
@@ -16,9 +16,6 @@ fn with_chapter_context() -> Checker {
                     (λ (n-1 replicate_n-1) (vec:: e replicate_n-1))))",
         )
         .unwrap()
-    // -----------
-    //  list->vec
-    // -----------
 }
 
 #[test]

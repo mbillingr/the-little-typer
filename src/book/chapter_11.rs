@@ -1,8 +1,7 @@
-use crate::book::common_definitions::with_book_context;
-use crate::book::{Checker, ResultBoolAssertions};
+use crate::book::{chapter_10, Checker, ResultBoolAssertions};
 
-fn with_chapter_context() -> Checker {
-    with_book_context()
+pub fn with_chapter_context() -> Checker {
+    chapter_10::with_chapter_context()
         // -----------
         //  list->vec
         // -----------

@@ -1,14 +1,7 @@
-use crate::book::common_definitions::with_book_context;
-use crate::book::{Checker, ResultBoolAssertions};
+use crate::book::{chapter_08, Checker, ResultBoolAssertions};
 
-fn with_chapter_context() -> Checker {
-    with_book_context()
-        // ------
-        //  incr
-        // ------
-        .claim("incr", "(-> Nat Nat)")
-        .define("incr", "(λ (n) (iter-Nat n 1 (+ 1)))")
-        .unwrap()
+pub fn with_chapter_context() -> Checker {
+    chapter_08::with_chapter_context()
         // --------
         //  double
         // --------
