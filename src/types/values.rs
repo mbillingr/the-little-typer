@@ -2,6 +2,7 @@ use crate::basics::{Closure, Core, Env, Value};
 use crate::symbol::Symbol;
 use crate::types::atom::{Atom, Quote};
 use crate::types::delay::Delay;
+use crate::types::either::{Either, Left, Right};
 use crate::types::equality::{Equal, Same};
 use crate::types::functions::{Lambda, Pi};
 use crate::types::lists::{List, ListCons, Nil};
@@ -102,4 +103,16 @@ pub fn equal(typ: Value, from: Value, to: Value) -> Value {
 
 pub fn same(e: Value) -> Value {
     Value::new(Same(e))
+}
+
+pub fn either(l: Value, r: Value) -> Value {
+    Value::new(Either(l, r))
+}
+
+pub fn left(l: Value) -> Value {
+    Value::new(Left(l))
+}
+
+pub fn right(r: Value) -> Value {
+    Value::new(Right(r))
 }

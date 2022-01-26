@@ -153,26 +153,26 @@ macro_rules! impl_core_defaults {
     };
 
     (_, (resugar: $core:ident)) => {
-        fn resugar(&self) -> (HashSet<Symbol>, Core) {
-            (HashSet::new(), cores::$core())
+        fn resugar(&self) -> (std::collections::HashSet<crate::symbol::Symbol>, Core) {
+            (std::collections::HashSet::new(), cores::$core())
         }
     };
 
     ((), (resugar: $core:ident)) => {
-        fn resugar(&self) -> (HashSet<Symbol>, Core) {
-            (HashSet::new(), cores::$core())
+        fn resugar(&self) -> (std::collections::HashSet<crate::symbol::Symbol>, Core) {
+            (std::collections::HashSet::new(), cores::$core())
         }
     };
 
     (($f:tt), (resugar: $core:ident)) => {
-        fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        fn resugar(&self) -> (std::collections::HashSet<crate::symbol::Symbol>, Core) {
             let (s, p) = self.$f.resugar();
             (s, cores::$core(p))
         }
     };
 
     (($f1:tt $(,$fs:tt)*), (resugar: $core:ident)) => {
-        fn resugar(&self) -> (HashSet<Symbol>, Core) {
+        fn resugar(&self) -> (std::collections::HashSet<crate::symbol::Symbol>, Core) {
             let (mut s, p) = self.$f1.resugar();
             //todo: calling resugar twice seems wasteful...
             $(s.extend(self.$fs.resugar().0);)*
@@ -292,6 +292,7 @@ mod annotation;
 mod atom;
 pub mod cores;
 mod delay;
+mod either;
 mod equality;
 pub mod functions;
 mod invalid;

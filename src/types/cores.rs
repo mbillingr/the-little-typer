@@ -2,6 +2,7 @@ use crate::basics::Core;
 use crate::symbol::Symbol;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
+use crate::types::either::{Either, Left, Right};
 use crate::types::equality::{Cong, Cong2, Equal, Replace, Same, Symm};
 use crate::types::functions::{App, AppStar, Fun, Lambda, LambdaStar, Pi, PiStar};
 use crate::types::invalid::Invalid;
@@ -244,4 +245,16 @@ pub fn cong_desugared(e: Core, t: Core, f: Core) -> Core {
 
 pub fn symm(e: Core) -> Core {
     Core::new(Symm(e))
+}
+
+pub fn either(l: Core, r: Core) -> Core {
+    Core::new(Either(l, r))
+}
+
+pub fn left(lt: Core) -> Core {
+    Core::new(Left(lt))
+}
+
+pub fn right(rt: Core) -> Core {
+    Core::new(Right(rt))
 }

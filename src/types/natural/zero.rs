@@ -1,11 +1,9 @@
 use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
 use crate::errors;
 use crate::errors::Error;
-use crate::symbol::Symbol;
 use crate::types::values::zero;
 use crate::types::{cores, values};
 use std::any::Any;
-use std::collections::HashSet;
 
 /// The natural number 0
 #[derive(Debug, Copy, Clone)]
