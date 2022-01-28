@@ -17,8 +17,8 @@ lazy_static! {
                 (ind-Either e-or-o_n-1
                     (λ (e-or-o)
                        (mot-even-or-odd (add1 n-1)))
-                    (λ (e_n-1) (right (add1-even->odd n-1 e_n1)))
-                    (λ (o_n-1) (left (add1-odd->even n-1 o_n1)))))")
+                    (λ (e_n-1) (right (add1-even->odd n-1 e_n-1)))
+                    (λ (o_n-1) (left (add1-odd->even n-1 o_n-1)))))")
         .unwrap()
         ;
 }

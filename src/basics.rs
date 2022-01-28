@@ -246,7 +246,7 @@ impl From<&Sexpr> for Core {
             case ("Either", l, r) => cores::either(l.into(), r.into()),
             case ("left", v) => cores::left(v.into()),
             case ("right", v) => cores::right(v.into()),
-            //
+            case ("ind-Either", t, m, l, r) => cores::ind_either(t.into(), m.into(), l.into(), r.into()),
             case ("TODO", [Sexpr::Symbol(name)]) => cores::todo(name.clone()),
             case [Sexpr::Symbol(s)] => if is_var_name(s) {
                     cores::refer(s.clone())
