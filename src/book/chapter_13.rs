@@ -20,6 +20,8 @@ lazy_static! {
                     (λ (e_n-1) (right (add1-even->odd n-1 e_n-1)))
                     (λ (o_n-1) (left (add1-odd->even n-1 o_n-1)))))")
         .unwrap()
+        .define("even-or-odd", "(λ (n) (ind-Nat n mot-even-or-odd (left zero-is-even) step-even-or-odd))")
+        .unwrap()
         ;
 }
 
@@ -48,4 +50,13 @@ fn frame_04_when_either_is_a_type() {
         .and("(right 'b)")
         .are_the_same("(Either Nat Atom)")
         .assert(false)
+}
+
+#[test]
+fn frame_23_the_value_of_even_or_odd() {
+    with_chapter_context()
+        .core("(even-or-odd 2)")
+        .and("(left (cons 1 (same 2)))")
+        .are_the_same("(Either (Even 2) (Odd 2))")
+        .assert(true);
 }
