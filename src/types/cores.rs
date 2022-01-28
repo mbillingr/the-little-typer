@@ -11,6 +11,7 @@ use crate::types::natural::{Add1, IndNat, IterNat, Nat, RecNat, WhichNat, Zero};
 use crate::types::pairs::{Car, Cdr, Cons, Pair, Sigma, SigmaStar};
 use crate::types::reference::Ref;
 use crate::types::todo::ToDo;
+use crate::types::trivial::{Sole, Trivial};
 use crate::types::universe::Universe;
 use crate::types::vec::{Head, IndVec, Tail, VecNil, Vector, VectorCons};
 
@@ -261,4 +262,12 @@ pub fn right(rt: Core) -> Core {
 
 pub fn ind_either(t: Core, m: Core, l: Core, r: Core) -> Core {
     Core::new(IndEither::new(t, m, l, r))
+}
+
+pub fn trivial() -> Core {
+    Core::new(Trivial)
+}
+
+pub fn sole() -> Core {
+    Core::new(Sole)
 }

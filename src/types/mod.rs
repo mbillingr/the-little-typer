@@ -302,6 +302,7 @@ mod neutral;
 mod pairs;
 pub mod reference;
 mod todo;
+mod trivial;
 mod universe;
 pub mod values;
 mod vec;

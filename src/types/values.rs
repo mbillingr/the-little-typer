@@ -10,6 +10,7 @@ use crate::types::natural::Add1;
 use crate::types::natural::{Nat, Zero};
 pub use crate::types::neutral::neutral;
 use crate::types::pairs::{Cons, Sigma};
+use crate::types::trivial::{Sole, Trivial};
 use crate::types::universe::Universe;
 use crate::types::vec::{VecNil, Vector, VectorCons};
 
@@ -115,4 +116,12 @@ pub fn left(l: Value) -> Value {
 
 pub fn right(r: Value) -> Value {
     Value::new(Right(r))
+}
+
+pub fn trivial() -> Value {
+    Value::new(Trivial)
+}
+
+pub fn sole() -> Value {
+    Value::new(Sole)
 }
