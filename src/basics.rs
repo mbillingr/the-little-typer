@@ -225,6 +225,8 @@ impl From<&Sexpr> for Core {
             case ("car", cons) => cores::car(Core::from(cons)),
             case ("cdr", cons) => cores::cdr(Core::from(cons)),
             case ("::", h, r) => cores::list_cons(h.into(), r.into()),
+            case "Trivial" => cores::trivial(),
+            case "sole" => cores::sole(),
             case "nil" => cores::nil(),
             case ("List", t) => cores::list(t.into()),
             case ("rec-List", target, base, step) => cores::rec_list(Core::from(target), Core::from(base), Core::from(step)),
