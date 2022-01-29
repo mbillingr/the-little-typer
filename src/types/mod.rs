@@ -288,6 +288,7 @@ macro_rules! ternary_eliminator {
     };
 }
 
+mod absurd;
 mod annotation;
 mod atom;
 pub mod cores;

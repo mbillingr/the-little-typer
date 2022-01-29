@@ -2,6 +2,7 @@ use crate::basics::{Core, CoreInterface, Ctx, Env, Renaming, Value};
 use crate::errors::{Error, Result};
 use crate::normalize::val_in_ctx;
 use crate::symbol::Symbol;
+use crate::types::absurd::Absurd;
 use crate::types::{cores, values};
 use std::collections::HashSet;
 
@@ -12,14 +13,7 @@ pub struct The {
 }
 
 impl CoreInterface for The {
-    impl_core_defaults!(
-        (typ, exp),
-        as_any,
-        same,
-        occurring_names,
-        alpha_equiv,
-        check_by_synth
-    );
+    impl_core_defaults!((typ, exp), as_any, same, occurring_names, check_by_synth);
 
     fn val_of(&self, env: &Env) -> Value {
         let e = &self.exp;
@@ -40,6 +34,25 @@ impl CoreInterface for The {
         let tv = &val_in_ctx(ctx, &t_out);
         let e_out = e.check(ctx, r, tv)?;
         Ok((t_out, e_out))
+    }
+
+    fn alpha_equiv_aux(
+        &self,
+        other: &dyn CoreInterface,
+        lvl: usize,
+        b1: &crate::alpha::Bindings,
+        b2: &crate::alpha::Bindings,
+    ) -> bool {
+        if let Some(other) = other.try_as::<Self>() {
+            if self.typ.try_as::<Absurd>().is_some() && other.typ.try_as::<Absurd>().is_some() {
+                true
+            } else {
+                self.typ.alpha_equiv_aux(&other.typ, lvl, b1, b2)
+                    && self.exp.alpha_equiv_aux(&other.exp, lvl, b1, b2)
+            }
+        } else {
+            false
+        }
     }
 
     fn resugar(&self) -> (HashSet<Symbol>, Core) {

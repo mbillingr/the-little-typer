@@ -1,5 +1,6 @@
 use crate::basics::{Closure, Core, Env, Value};
 use crate::symbol::Symbol;
+use crate::types::absurd::Absurd;
 use crate::types::atom::{Atom, Quote};
 use crate::types::delay::Delay;
 use crate::types::either::{Either, Left, Right};
@@ -124,4 +125,8 @@ pub fn trivial() -> Value {
 
 pub fn sole() -> Value {
     Value::new(Sole)
+}
+
+pub fn absurd() -> Value {
+    Value::new(Absurd)
 }

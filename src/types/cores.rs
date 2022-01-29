@@ -1,5 +1,6 @@
 use crate::basics::Core;
 use crate::symbol::Symbol;
+use crate::types::absurd::Absurd;
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::either::{Either, IndEither, Left, Right};
@@ -270,4 +271,8 @@ pub fn trivial() -> Core {
 
 pub fn sole() -> Core {
     Core::new(Sole)
+}
+
+pub fn absurd() -> Core {
+    Core::new(Absurd)
 }
