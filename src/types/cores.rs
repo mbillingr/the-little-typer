@@ -1,6 +1,6 @@
 use crate::basics::Core;
 use crate::symbol::Symbol;
-use crate::types::absurd::Absurd;
+use crate::types::absurd::{Absurd, IndAbsurd};
 use crate::types::annotation::The;
 use crate::types::atom::{Atom, Quote};
 use crate::types::either::{Either, IndEither, Left, Right};
@@ -275,4 +275,8 @@ pub fn sole() -> Core {
 
 pub fn absurd() -> Core {
     Core::new(Absurd)
+}
+
+pub fn ind_absurd(t: Core, m: Core) -> Core {
+    Core::new(IndAbsurd::new(t, m))
 }

@@ -232,7 +232,7 @@ impl From<&Sexpr> for Core {
             case ("rec-List", target, base, step) => cores::rec_list(Core::from(target), Core::from(base), Core::from(step)),
             case ("ind-List", target, motive, base, step) => cores::ind_list(target.into(), motive.into(), base.into(), step.into()),
             case "Absurd" => cores::absurd(),
-            //
+            case ("ind-Absurd", target, motive) => cores::ind_absurd(target.into(), motive.into()),
             case ("=", t, from, to) => cores::equal(t.into(), from.into(), to.into()),
             case ("same", e) => cores::same(e.into()),
             case ("replace", t, m, b) => cores::replace(t.into(), m.into(), b.into()),
