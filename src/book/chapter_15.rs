@@ -3,6 +3,9 @@ use lazy_static::lazy_static;
 
 lazy_static! {
     static ref CHAPTER_CONTEXT: Checker = chapter_14::with_chapter_context()
+        // --------------
+        //  =consequence
+        // --------------
         .claim("=consequence", "(-> Nat Nat U)")
         .define(
             "=consequence",
@@ -17,6 +20,9 @@ lazy_static! {
                             (λ (j-1) (= Nat n-1 j-1))))))"
         )
         .unwrap()
+        // -------------------
+        //  =consequence-same
+        // -------------------
         .claim("=consequence-same", "(Π ((n Nat)) (=consequence n n))")
         .define(
             "=consequence-same",
@@ -27,6 +33,9 @@ lazy_static! {
                     (λ (n-1 =consequence_n-1) (same n-1))))"
         )
         .unwrap()
+        // ----------
+        //  use-Nat=
+        // ----------
         .claim(
             "use-Nat=",
             "(Π ((n Nat) (j Nat)) (-> (= Nat n j) (=consequence n j)))"
@@ -35,7 +44,20 @@ lazy_static! {
             "use-Nat=",
             "(λ (n j n=j) (replace n=j (λ (k) (=consequence n k)) (=consequence-same n)))"
         )
-        .unwrap();
+        .unwrap()
+        // ---------------
+        //  zero-not-add1
+        // ---------------
+        .claim(
+            "zero-not-add1",
+            "(Π ((n Nat)) (-> (= Nat zero (add1 n)) Absurd))"
+        )
+        .define(
+            "zero-not-add1",
+            "(λ (n) (use-Nat= zero (add1 n)))"
+        )
+        .unwrap()
+    ;
 }
 
 pub fn with_chapter_context() -> Checker {
@@ -43,6 +65,15 @@ pub fn with_chapter_context() -> Checker {
 }
 
 #[test]
-fn frame__() {
-    with_chapter_context();
+fn frame_48_donut_absurdity() {
+    with_chapter_context()
+        .claim(
+            "donut-absurdity",
+            "(-> (= Nat 0 6) (= Atom 'powdered 'glazed))",
+        )
+        .define(
+            "donut-absurdity",
+            "(λ (zero=six) (ind-Absurd (zero-not-add1 5 zero=six) (= Atom 'powdered 'glazed)))",
+        )
+        .unwrap();
 }
