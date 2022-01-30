@@ -146,9 +146,10 @@ fn which_nat_stays_unresolved_if_target_is_neutral() {
                 "x",
                 lambda(
                     "f",
-                    which_nat(
+                    which_nat_desugared(
                         refer("x"),
-                        the(nat(), add1(add1(zero()))),
+                        nat(),
+                        add1(add1(zero())),
                         //lambda("n", app(refer("f"), refer("n")))  -- the reference implementation has this redundant lambda in... no idea why we don't have it
                         refer("f")
                     )

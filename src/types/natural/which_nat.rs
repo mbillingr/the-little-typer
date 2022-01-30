@@ -74,9 +74,10 @@ fn do_which_nat(tgt_v: Value, bt_v: Value, b_v: Value, s_v: Value) -> Value {
 impl NeutralInterface for NeutralWhichNat {
     fn read_back_neutral(&self, ctx: &Ctx) -> errors::Result<Core> {
         let NeutralWhichNat(tgt, The(b_tv, b_v), The(s_tv, s_v)) = self;
-        Ok(cores::which_nat(
+        Ok(cores::which_nat_desugared(
             tgt.read_back_neutral(ctx)?,
-            cores::the(b_tv.read_back_type(ctx)?, read_back(ctx, b_tv, b_v)?),
+            b_tv.read_back_type(ctx)?,
+            read_back(ctx, b_tv, b_v)?,
             read_back(ctx, s_tv, s_v)?,
         ))
     }
