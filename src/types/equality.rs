@@ -1,4 +1,7 @@
-use crate::basics::{Closure, Core, CoreInterface, Ctx, Env, Renaming, Value, ValueInterface};
+use crate::basics::{
+    Closure, Core, CoreInterface, Ctx, Env, NeutralInterface, Renaming, The, Value, ValueInterface,
+    N,
+};
 use crate::errors::{Error, Result};
 use crate::normalize::{read_back, val_in_ctx};
 use crate::symbol::Symbol;
@@ -25,6 +28,9 @@ pub struct Replace {
     pub motive: Core,
     pub base: Core,
 }
+
+#[derive(Debug)]
+pub struct NeutralReplace(N, The, The);
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Cong(pub Core, pub Core);
@@ -353,12 +359,34 @@ impl ValueInterface for Same<Value> {
     }
 }
 
-fn do_replace(tgt_v: Value, _mot_v: Value, b_v: Value) -> Value {
+fn do_replace(tgt_v: Value, mot_v: Value, b_v: Value) -> Value {
     if let Some(Same(_)) = tgt_v.try_as::<Same<Value>>() {
         return b_v;
     }
 
-    todo!()
+    if let Some((eql, ne)) = tgt_v.as_neutral() {
+        if let Some(Equal {
+            typ: a_v,
+            from: from_v,
+            to: to_v,
+        }) = eql.try_as::<Equal<Value>>()
+        {
+            let b_tv = do_ap(&mot_v, from_v.clone());
+            return values::neutral(
+                do_ap(&mot_v, to_v.clone()),
+                NeutralReplace(
+                    ne.clone(),
+                    The(
+                        pi_type!(((_x as "x", a_v.clone())), values::universe()),
+                        mot_v,
+                    ),
+                    The(b_tv, b_v),
+                ),
+            );
+        }
+    }
+
+    unreachable!()
 }
 
 fn do_cong(tgt_v: Value, _b_v: Value, fun_v: Value) -> Value {
@@ -367,4 +395,15 @@ fn do_cong(tgt_v: Value, _b_v: Value, fun_v: Value) -> Value {
     }
 
     todo!()
+}
+
+impl NeutralInterface for NeutralReplace {
+    fn read_back_neutral(&self, ctx: &Ctx) -> Result<Core> {
+        let NeutralReplace(tgt, The(mot_tv, mot_v), The(b_tv, b_v)) = self;
+        Ok(cores::replace(
+            tgt.read_back_neutral(ctx)?,
+            read_back(ctx, mot_tv, mot_v)?,
+            read_back(ctx, b_tv, b_v)?,
+        ))
+    }
 }

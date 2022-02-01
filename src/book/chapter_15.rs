@@ -57,6 +57,12 @@ lazy_static! {
             "(λ (n) (use-Nat= zero (add1 n)))"
         )
         .unwrap()
+        // -------
+        //  sub1=
+        // -------
+        .claim("sub1=", "(Π ((n Nat) (j Nat)) (-> (= Nat (add1 n) (add1 j)) (= Nat n j)))")
+        .define("sub1=", "(λ (n j) (use-Nat= (add1 n) (add1 j)))")
+        .unwrap()
     ;
 }
 
@@ -74,6 +80,17 @@ fn frame_48_donut_absurdity() {
         .define(
             "donut-absurdity",
             "(λ (zero=six) (ind-Absurd (zero-not-add1 5 zero=six) (= Atom 'powdered 'glazed)))",
+        )
+        .unwrap();
+}
+
+#[test]
+fn frame_51_prove_one_is_not_six() {
+    with_chapter_context()
+        .claim("one-not-six", "(-> (= Nat 1 6) Absurd)")
+        .define(
+            "one-not-six",
+            "(λ (one=six) (zero-not-add1 4 (sub1= 0 5 one=six)))",
         )
         .unwrap();
 }
