@@ -63,6 +63,28 @@ lazy_static! {
         .claim("sub1=", "(Π ((n Nat) (j Nat)) (-> (= Nat (add1 n) (add1 j)) (= Nat n j)))")
         .define("sub1=", "(λ (n j) (use-Nat= (add1 n) (add1 j)))")
         .unwrap()
+        // -------
+        //  front
+        // -------
+        .claim("front", "(Π ((E U) (n Nat)) (-> (Vec E (add1 n)) E))")
+        .claim("mot-front", "(Π ((E U) (k Nat)) (-> (Vec E k) U))")
+        .define("mot-front", "(λ (E k es) (Π ((j Nat)) (-> (= Nat k (add1 j)) E)))")
+        .unwrap()
+        .claim(
+            "step-front",
+            "(Π ((E U) (l Nat) (e E) (es (Vec E l)))
+                (-> (mot-front E l es) (mot-front E (add1 l) (vec:: e es))))")
+        .define("step-front", "(λ (E l e es front_es j eq) e)")
+        .unwrap()
+        .define(
+            "front",
+            "(λ (E l es)
+                ((ind-Vec (add1 l) es
+                    (mot-front E)
+                    (λ (j eq) (ind-Absurd (zero-not-add1 j eq) E))
+                    (step-front E))
+                 l (same (add1 l))))")
+        .unwrap()
     ;
 }
 
