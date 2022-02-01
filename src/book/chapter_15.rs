@@ -1,4 +1,4 @@
-use crate::book::{chapter_14, Checker, ResultBoolAssertions};
+use crate::book::{chapter_14, Checker};
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -84,6 +84,18 @@ lazy_static! {
                     (λ (j eq) (ind-Absurd (zero-not-add1 j eq) E))
                     (step-front E))
                  l (same (add1 l))))")
+        .unwrap()
+        // ---------------
+        //  pem-not-false
+        // ---------------
+        .claim("pem-not-false", "(Π ((X U)) (-> (-> (Either X (-> X Absurd)) Absurd) Absurd))")
+        .define("pem-not-false", "(λ (X pem-false) (pem-false (right (λ (x) (pem-false (left x))))))")
+        .unwrap()
+        // -----
+        //  Dec
+        // -----
+        .claim("Dec", "(-> U U)")
+        .define("Dec", "(λ (X) (Either X (-> X Absurd)))")
         .unwrap()
     ;
 }
